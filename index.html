@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Formulaire Stock</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Formulaire de Stock</h1>
+        <form id="stockForm">
+            <label>Photo: <input type="file" name="Photo" accept="image/*" /></label>
+            <label>Code Produit: <input type="text" name="Code_Produit" required /></label>
+            <label>Désignation: <input type="text" name="Désignation" required /></label>
+            <label>Quantité Consommée: <input type="number" name="Quantité_Consommée" /></label>
+            <label>Unité(s): <input type="text" name="unité(s)" /></label>
+            <label>A Commander:
+                <select name="A_Commander">
+                    <option value="Non">Non</option>
+                    <option value="Oui">Oui</option>
+                </select>
+            </label>
+            <label>Remarques: <input type="text" name="Remarques" /></label>
+            <label>Magasin: <input type="text" name="Magasin" /></label>
+            <label>Stock initial: <input type="number" name="Stock_initial" /></label>
+            <label>Seuil de commande: <input type="number" name="seuil_de_commande" /></label>
+            <label>Section employeur: <input type="text" name="Section_employeur" /></label>
+            <label>Emplacement de stockage: <input type="text" name="emplacement_de_stockage" /></label>
+            <label>Quantité en stock: <input type="number" name="quantité_en_stock" /></label>
+            <label>Quantité théorique: <input type="number" name="quantité_théorique" /></label>
+            <label>Date de sortie: <input type="date" name="Date_de_sortie" /></label>
+            <label>Axe 1: <input type="text" name="axe1" /></label>
+            <label>Axe 2: <input type="text" name="axe2" /></label>
+
+            <div id="qr-reader" style="width:300px;"></div>
+            <label>Résultat Scan: <input type="text" id="barcodeResult" name="barcode" readonly /></label>
+
+            <button type="submit">Envoyer</button>
+        </form>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
