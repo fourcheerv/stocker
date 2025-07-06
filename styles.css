@@ -49,3 +49,7 @@ button {
 button:hover {
     background-color: #45a049;
 }
+
+ #qr-reader { 
+    width: 300px; margin: 1rem 0; 
+}
