@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function loadExcelData() {
     try {
-      const response = await fetch("/stocker_temp.xlsx");
+      const response = await fetch("https://fourcheerv.github.io/stocker/stocker_temp.xlsx");
       const arrayBuffer = await response.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
