@@ -1,16 +1,15 @@
-document.addEventListener("DOMContentLoaded", async function () {
-    const form = document.getElementById("stockForm");
-    const localDB = new PouchDB("stocks");
+document.addEventListener("DOMContentLoaded", async () => {
+  const form = document.getElementById("stockForm");
+  const localDB = new PouchDB("stocks");
 
-    const remoteURL = "https://couchdb.monproprecloud.fr/stocks"; // ⚠️ Mets ton domaine ici
-    const loginURL = "https://couchdb.monproprecloud.fr/_session";
+  const remoteURL = "https://couchdb.monproprecloud.fr/stocks";
+  const loginURL = "https://couchdb.monproprecloud.fr/_session";
 
-    // Authentifie l’utilisateur via session
+  // Authentification CouchDB par cookie/session
+  try {
     const loginRes = await fetch(loginURL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: "name=admin&password=M,jvcmHSdl54!",
       credentials: "include"
     });
@@ -20,7 +19,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       return;
     }
 
-    // Configure la synchro avec cookies
     const remoteDB = new PouchDB(remoteURL, {
       fetch: (url, opts) => {
         opts.credentials = "include";
@@ -31,65 +29,107 @@ document.addEventListener("DOMContentLoaded", async function () {
     localDB.sync(remoteDB, { live: true, retry: true })
       .on("change", info => console.log("Sync change:", info))
       .on("error", err => console.error("Sync error:", err));
+  } catch (e) {
+    console.error("Erreur de connexion CouchDB :", e);
+  }
 
-    // Scanner de code-barres
-    const qrReader = new Html5Qrcode("qr-reader");
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        qrReader.start(
-          devices[0].id,
-          { fps: 10, qrbox: 250 },
-          qrCodeMessage => {
-            document.getElementById("code_produit").value = qrCodeMessage;
-            qrReader.stop();
-          },
-          errorMessage => {
-            // console.log("Scan error:", errorMessage);
-          }
-        );
-      }
+  // === GESTION DES PHOTOS ===
+  const photoCountSpan = document.getElementById("photoCount");
+  const previewContainer = document.getElementById("previewContainer");
+  const maxPhotos = 3;
+  const images = [];
+
+  function updatePreview() {
+    previewContainer.innerHTML = "";
+    images.forEach((dataUrl, index) => {
+      const div = document.createElement("div");
+      div.className = "preview-image";
+      div.innerHTML = `
+        <img src="${dataUrl}" alt="Photo ${index + 1}">
+        <button class="remove-button" data-index="${index}">×</button>
+      `;
+      previewContainer.appendChild(div);
     });
+    photoCountSpan.textContent = images.length;
+  }
 
-    // Soumission du formulaire
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const doc = { _id: new Date().toISOString() };
+  function addImage(dataUrl) {
+    if (images.length < maxPhotos) {
+      images.push(dataUrl);
+      updatePreview();
+    } else {
+      alert("Maximum 3 photos.");
+    }
+  }
 
-      formData.forEach((value, key) => {
-        if (key === "photo" && formData.get("photo").name) {
-          doc[key] = {
-            name: formData.get("photo").name,
-            type: formData.get("photo").type,
-            content: "base64-placeholder"
-          };
-        } else {
-          doc[key] = value;
-        }
-      });
-
-      const file = formData.get("photo");
-      if (file && file.name) {
-        const reader = new FileReader();
-        reader.onload = function () {
-          doc["photo"].content = reader.result.split(",")[1];
-          localDB.put(doc).then(() => {
-            alert("Données enregistrées avec succès !");
-            form.reset();
-          }).catch(err => {
-            console.error(err);
-            alert("Erreur d'enregistrement.");
-          });
-        };
-        reader.readAsDataURL(file);
-      } else {
-        localDB.put(doc).then(() => {
-          alert("Données enregistrées avec succès !");
-          form.reset();
-        }).catch(err => {
-          console.error(err);
-          alert("Erreur d'enregistrement.");
-        });
-      }
-    });
+  document.getElementById("takePhotoBtn").addEventListener("click", async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.capture = "environment";
+    input.onchange = () => {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => addImage(e.target.result);
+      reader.readAsDataURL(file);
+    };
+    input.click();
   });
+
+  document.getElementById("chooseGalleryBtn").addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => addImage(e.target.result);
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  });
+
+  previewContainer.addEventListener("click", e => {
+    if (e.target.classList.contains("remove-button")) {
+      const index = parseInt(e.target.dataset.index);
+      images.splice(index, 1);
+      updatePreview();
+    }
+  });
+
+  // === SCAN CODE BARRES ===
+  const qrReader = new Html5Qrcode("qr-reader");
+  qrReader.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    qrCodeMessage => {
+      document.getElementById("code_produit").value = qrCodeMessage;
+      qrReader.stop();
+    },
+    error => { /* Ignore decode errors */ }
+  );
+
+  // === ENREGISTREMENT FORMULAIRE ===
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const doc = {};
+    formData.forEach((value, key) => doc[key] = value);
+    doc._id = new Date().toISOString();
+    doc.photos = images;
+
+    try {
+      await localDB.put(doc);
+      alert("Enregistrement réussi !");
+      form.reset();
+      images.length = 0;
+      updatePreview();
+    } catch (err) {
+      console.error("Erreur d’enregistrement :", err);
+      alert("Erreur d’enregistrement.");
+    }
+  });
+});

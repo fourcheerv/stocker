@@ -3,75 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <title>Formulaire Stocks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
 
-  <h1>Enregistrement de Stock</h1>
+  <header>
+    <h1>Enregistrement de Stock</h1>
+  </header>
 
-  <!-- Lecteur de code-barres -->
-  <div id="qr-reader"></div>
+  <main>
+    <div id="qr-reader" style="width:100%; max-width:500px; margin:auto;"></div>
 
-  <!-- Formulaire -->
-  <form id="stockForm">
-    <label for="Photo">Photo</label>
-    <input type="file" id="photo" name="photo" accept="image/*" />
+    <form id="stockForm">
+      <div class="photo-buttons">
+        <button type="button" id="takePhotoBtn">📸 Prendre une photo</button>
+        <button type="button" id="chooseGalleryBtn">🖼️ Choisir depuis la galerie</button>
+        <p>Photos ajoutées : <span id="photoCount">0</span>/3</p>
+      </div>
 
-    <label for="Code_Produit">Code Produit (rempli par scan)</label>
-    <input type="text" id="code_produit" name="code_produit" />
+      <div id="previewContainer" class="preview-container"></div>
 
-    <label for="Désignation">Désignation</label>
-    <textarea id="designation" name="designation"></textarea>
+      <label for="code_produit">Code Produit</label>
+      <input type="text" id="code_produit" name="code_produit">
 
-    <label for="Quantité_Consommée">Quantité Consommée</label>
-    <input type="number" id="quantité_consommee" name="quantité_consommee" />
+      <label for="designation">Désignation</label>
+      <textarea id="designation" name="designation"></textarea>
 
-    <label for="unité(s)">Unité(s)</label>
-    <input type="text" id="unites" name="unites" />
+      <label for="quantité_consommee">Quantité Consommée</label>
+      <input type="number" id="quantité_consommee" name="quantité_consommee">
 
-    <label for="A Commander">A Commander</label>
-    <input type="text" id="a_commander" name="a_commander" />
+      <label for="unites">Unité(s)</label>
+      <input type="text" id="unites" name="unites">
 
-    <label for="Remarques">Remarques</label>
-    <textarea id="remarques" name="remarques"></textarea>
+      <label for="a_commander">À Commander</label>
+      <input type="text" id="a_commander" name="a_commander">
 
-    <label for="Magasin">Magasin</label>
-    <input type="text" id="magasin" name="magasin" />
+      <label for="remarques">Remarques</label>
+      <textarea id="remarques" name="remarques"></textarea>
 
-    <label for="Stock initial">Stock initial</label>
-    <input type="number" id="stock_initial" name="stock_initial" />
+      <label for="magasin">Magasin</label>
+      <input type="text" id="magasin" name="magasin">
 
-    <label for="Stock final">Stock final</label>
-    <input type="number" id="stock_final" name="stock_final" />
+      <label for="stock_initial">Stock initial</label>
+      <input type="number" id="stock_initial" name="stock_initial">
 
-    <label for="seuil de commande">Seuil de commande</label>
-    <input type="number" id="seuil_de_commande" name="seuil_de_commande" />
+      <label for="stock_final">Stock final</label>
+      <input type="number" id="stock_final" name="stock_final">
 
-    <label for="Section employeur">Section employeur</label>
-    <input type="text" id="section_employeur" name="section_employeur" />
+      <label for="seuil_de_commande">Seuil de commande</label>
+      <input type="number" id="seuil_de_commande" name="seuil_de_commande">
 
-    <label for="emplacement de stockage">Emplacement de stockage</label>
-    <input type="text" id="emplacement_de_stockage" name="emplacement_de_stockage" />
+      <label for="section_employeur">Section employeur</label>
+      <input type="text" id="section_employeur" name="section_employeur">
 
-    <label for="quantité en stock">Quantité en stock</label>
-    <input type="number" id="quantite_en_stock" name="quantite_en_stock" />
+      <label for="emplacement_de_stockage">Emplacement de stockage</label>
+      <input type="text" id="emplacement_de_stockage" name="emplacement_de_stockage">
 
-    <label for="quantité théorique">Quantité théorique</label>
-    <input type="number" id="quantite_theorique" name="quantite_theorique" />
+      <label for="quantite_en_stock">Quantité en stock</label>
+      <input type="number" id="quantite_en_stock" name="quantite_en_stock">
 
-    <label for="Date de sortie">Date de sortie</label>
-    <input type="datetime-local" id="date_sortie" name="date_sortie" required>
+      <label for="quantite_theorique">Quantité théorique</label>
+      <input type="number" id="quantite_theorique" name="quantite_theorique">
 
-    <label for="axe1">Axe 1</label>
-    <input type="text" id="axe1" name="axe1" />
+      <label for="date_sortie">Date de sortie</label>
+      <input type="datetime-local" id="date_sortie" name="date_sortie">
 
-    <label for="axe2">Axe 2</label>
-    <input type="text" id="axe2" name="axe2" />
+      <label for="axe1">Axe 1</label>
+      <input type="text" id="axe1" name="axe1">
 
-    <button type="submit">Enregistrer</button>
-  </form>
-    <script src="app.js"></script>
+      <label for="axe2">Axe 2</label>
+      <input type="text" id="axe2" name="axe2">
+
+      <button type="submit">Enregistrer</button>
+    </form>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 - Gestion de Stocks</p>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
