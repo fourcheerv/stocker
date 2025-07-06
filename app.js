@@ -62,6 +62,9 @@ function loadExcelData() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
       
+      // Debug: afficher la structure des données
+      console.log("Données Excel chargées:", excelData.slice(0, 3));
+      
       // Filtrer les désignations selon la section employeur
       filterDesignationsBySectionEmployeur();
       
@@ -76,14 +79,14 @@ function filterDesignationsBySectionEmployeur() {
   if (!sectionEmployeur) return;
   
   const list = document.getElementById("designationList");
-  list.innerHTML = ''; // Vider la liste
+  list.innerHTML = '';
   
   excelData.forEach((row) => {
-    // Vérifier si la ligne a une désignation et une section employeur
+    // Vérifier le format "E382329 - ROTATIVES"
     if (row["Désignation:"] && row["Section employeur"]) {
       const sectionValue = row["Section employeur"].toString().toUpperCase();
       
-      // Vérifier si la section employeur contient la partie texte (ROTATIVES ou EXPÉDITION)
+      // Vérifier si la section employeur contient la partie texte
       if (sectionValue.includes(sectionEmployeur)) {
         const opt = document.createElement("option");
         opt.value = row["Désignation:"];
@@ -131,14 +134,14 @@ function stopQRScanner() {
 document.getElementById("designation").addEventListener("change", () => {
   const val = document.getElementById("designation").value.trim().toLowerCase();
   
-  // Rechercher dans les données filtrées par section employeur
+  // Rechercher dans les données
   const match = excelData.find(row => {
     if (!row["Désignation:"] || !row["Section employeur"]) return false;
     
     const designation = row["Désignation:"].trim().toLowerCase();
-    const sectionValue = row["Section employeur"].toString().toUpperCase();
+    const section = row["Section employeur"].toString().toUpperCase();
     
-    return designation === val && sectionValue.includes(sectionEmployeur);
+    return designation === val && section.includes(sectionEmployeur);
   });
 
   if (!match) return;
