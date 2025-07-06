@@ -176,6 +176,8 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
     imageFiles = [];
     document.getElementById("previewContainer").innerHTML = "";
     updatePhotoCount();
+            document.getElementById("clearForm").click();
+
   } catch (err) {
     console.error("Erreur sauvegarde :", err);
     alert("Erreur lors de l'enregistrement.");
