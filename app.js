@@ -16,7 +16,7 @@
             devices[0].id,
             { fps: 10, qrbox: 250 },
             qrCodeMessage => {
-              document.getElementById("Code_Produit").value = qrCodeMessage;
+              document.getElementById("code_produit").value = qrCodeMessage;
               qrReader.stop();
             },
             errorMessage => {
@@ -33,10 +33,10 @@
         const doc = { _id: new Date().toISOString() };
 
         formData.forEach((value, key) => {
-          if (key === "Photo" && formData.get("Photo").name) {
+          if (key === "photo" && formData.get("photo").name) {
             doc[key] = {
-              name: formData.get("Photo").name,
-              type: formData.get("Photo").type,
+              name: formData.get("photo").name,
+              type: formData.get("photo").type,
               content: "base64-placeholder"
             };
           } else {
@@ -44,11 +44,11 @@
           }
         });
 
-        const file = formData.get("Photo");
+        const file = formData.get("photo");
         if (file && file.name) {
           const reader = new FileReader();
           reader.onload = function () {
-            doc["Photo"].content = reader.result.split(",")[1];
+            doc["photo"].content = reader.result.split(",")[1];
             localDB.put(doc).then(() => {
               alert("Données enregistrées avec succès !");
               form.reset();
