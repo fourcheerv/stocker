@@ -1,35 +1,83 @@
+// Variables globales
 let excelData = [];
 let imageFiles = [];
 let qrReader = null;
 let isSubmitting = false;
+let currentAccount = null;
 
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
 
 localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
 
-// === Chargement Excel ===
+// === Gestion de la session ===
 window.addEventListener("DOMContentLoaded", () => {
+  // Récupérer le compte de sessionStorage
+  currentAccount = sessionStorage.getItem('currentAccount');
+  
+  if (!currentAccount) {
+    // Rediriger vers la page de login si aucun compte n'est défini
+    window.location.href = 'login.html';
+    return;
+  }
+  
+  // Afficher le compte dans l'en-tête
+  document.getElementById('current-account').textContent = 
+    currentAccount === 'SCT=E382329' ? 'Compte Rotatives' : 'Compte Expédition';
+  
+  // Préremplir le champ axe1
+  document.getElementById('axe1').value = currentAccount;
+  
+  // Charger les données Excel
+  loadExcelData();
+});
+
+// === Déconnexion ===
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  // Réinitialiser l'application
+  resetForm();
+  
+  // Supprimer le compte de sessionStorage
+  sessionStorage.removeItem('currentAccount');
+  
+  // Rediriger vers la page de login
+  window.location.href = 'login.html';
+});
+
+// === Chargement Excel ===
+function loadExcelData() {
   fetch("stocker_temp.xlsx")
     .then((r) => r.arrayBuffer())
     .then((data) => {
       const workbook = XLSX.read(data, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
-      const list = document.getElementById("designationList");
-      excelData.forEach((row) => {
-        if (row["Désignation:"]) {
-          const opt = document.createElement("option");
-          opt.value = row["Désignation:"];
-          list.appendChild(opt);
-        }
-      });
+      
+      // Filtrer les désignations selon le compte
+      filterDesignationsByAccount();
+      
+      // Initialiser le scanner QR
+      initQRScanner();
     })
     .catch((e) => console.error("Erreur chargement Excel :", e));
+}
 
-  // Initialisation du scanner QR
-  initQRScanner();
-});
+// Filtrer les désignations selon le compte sélectionné
+function filterDesignationsByAccount() {
+  if (!currentAccount) return;
+  
+  const list = document.getElementById("designationList");
+  list.innerHTML = ''; // Vider la liste
+  
+  excelData.forEach((row) => {
+    // Vérifier si la ligne correspond au compte sélectionné
+    if (row["Désignation:"] && row["axe1"] === currentAccount) {
+      const opt = document.createElement("option");
+      opt.value = row["Désignation:"];
+      list.appendChild(opt);
+    }
+  });
+}
 
 // === Initialisation du scanner QR ===
 function initQRScanner() {
@@ -89,7 +137,6 @@ document.getElementById("designation").addEventListener("change", () => {
     "quantité en stock": "quantite_en_stock",
     "quantité théorique": "quantite_theorique",
     "Date de sortie": "date_sortie",
-    "axe1": "axe1",
     "axe2": "axe2"
   };
 
@@ -98,6 +145,8 @@ document.getElementById("designation").addEventListener("change", () => {
       document.getElementById(id).value = match[key];
     }
   }
+  
+  // Ne pas modifier axe1 car il est déterminé par le compte
 });
 
 // === Gestion Photos ===
@@ -180,6 +229,11 @@ document.getElementById("chooseGalleryBtn").addEventListener("click", () =>
 document.getElementById("stockForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   
+  if (!currentAccount) {
+    alert("Veuillez vous authentifier avant de soumettre le formulaire");
+    return;
+  }
+  
   if (isSubmitting) return;
   isSubmitting = true;
   
@@ -231,11 +285,14 @@ function resetForm() {
   document.getElementById("previewContainer").innerHTML = "";
   updatePhotoCount();
   
-  // Réinitialisation supplémentaire pour le scanner QR
+  // Réinitialiser le code produit
   document.getElementById("code_produit").value = "";
   
-  // Réinitialisation de la liste d'autocomplétion
+  // Réinitialiser la liste d'autocomplétion
   document.getElementById("designation").value = "";
+  
+  // Remettre le compte actuel
+  document.getElementById("axe1").value = currentAccount;
 }
 
 // === Bouton de réinitialisation ===
