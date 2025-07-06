@@ -128,33 +128,38 @@ document.addEventListener("DOMContentLoaded", async () => {
   designationField.addEventListener("change", () => {
   const input = designationField.value.trim().toLowerCase();
   const match = excelData.find(row =>
-    (row["Désignation"] || "").toLowerCase() === input
+    (row["Désignation:"] || "").toLowerCase() === input
   );
 
   if (!match) return;
 
   const mapping = {
-    "Code produit": "code_produit",
-    "Unité(s)": "unites",
+    "Code Produit": "code_produit",
+    "Quantité_Consommée": "quantité_consommee",
+    "unité(s)": "unites",
+    "A Commander": "a_commander",
+    "Remarques:": "remarques",
     "Magasin": "magasin",
     "Stock initial": "stock_initial",
     "Stock final": "stock_final",
-    "Seuil de commande": "seuil_de_commande",
+    "seuil de commande": "seuil_de_commande",
     "Section employeur": "section_employeur",
-    "Emplacement de stockage": "emplacement_de_stockage",
-    "Quantité en stock": "quantite_en_stock",
-    "Quantité théorique": "quantite_theorique",
-    "Axe 1": "axe1",
-    "Axe 2": "axe2"
+    "emplacement de stockage": "emplacement_de_stockage",
+    "quantité en stock": "quantite_en_stock",
+    "quantité théorique": "quantite_theorique",
+    "Date de sortie": "date_sortie",
+    "axe 1": "axe1",
+    "axe 2": "axe2"
   };
 
   for (const [excelKey, inputId] of Object.entries(mapping)) {
-    const inputEl = document.getElementById(inputId);
-    if (inputEl && match[excelKey] !== undefined) {
-      inputEl.value = match[excelKey];
+    const el = document.getElementById(inputId);
+    if (el && match[excelKey] !== undefined) {
+      el.value = match[excelKey];
     }
   }
 });
+
 
 
   // ENREGISTREMENT
