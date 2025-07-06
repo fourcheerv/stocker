@@ -124,14 +124,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     const list = document.getElementById("designationList");
     list.innerHTML = [...new Set(values)].map(val => `<option value="${val}">`).join("");
   }
-
+ 
   designationField.addEventListener("change", () => {
-    const input = designationField.value.trim().toLowerCase();
-    const match = excelData.find(row => row["Désignation"]?.toLowerCase() === input);
-    if (match) {
-      codeField.value = match["Code produit"] || "";
+  const input = designationField.value.trim().toLowerCase();
+  const match = excelData.find(row =>
+    (row["Désignation"] || "").toLowerCase() === input
+  );
+
+  if (!match) return;
+
+  const mapping = {
+    "Code produit": "code_produit",
+    "Unité(s)": "unites",
+    "Magasin": "magasin",
+    "Stock initial": "stock_initial",
+    "Stock final": "stock_final",
+    "Seuil de commande": "seuil_de_commande",
+    "Section employeur": "section_employeur",
+    "Emplacement de stockage": "emplacement_de_stockage",
+    "Quantité en stock": "quantite_en_stock",
+    "Quantité théorique": "quantite_theorique",
+    "Axe 1": "axe1",
+    "Axe 2": "axe2"
+  };
+
+  for (const [excelKey, inputId] of Object.entries(mapping)) {
+    const inputEl = document.getElementById(inputId);
+    if (inputEl && match[excelKey] !== undefined) {
+      inputEl.value = match[excelKey];
     }
-  });
+  }
+});
+
 
   // ENREGISTREMENT
   form.addEventListener("submit", async e => {
