@@ -26,7 +26,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (currentAccount === 'SCT=E382329') {
     sectionEmployeur = 'E382329 -SERVICE ROTATIVES';
   } else if (currentAccount === 'SCT=E390329') {
-    sectionEmployeur = 'E390329 -SERVICE EXPEDITION';
+    sectionEmployeur = 'E390329 -SERVICE DEPART EXPEDITION';
   }
   
   // Afficher le compte dans l'en-tête
