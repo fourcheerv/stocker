@@ -1,5 +1,7 @@
 let excelData = [];
 let imageFiles = [];
+let qrReader = null;
+let isSubmitting = false;
 
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
@@ -24,7 +26,44 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     })
     .catch((e) => console.error("Erreur chargement Excel :", e));
+
+  // Initialisation du scanner QR
+  initQRScanner();
 });
+
+// === Initialisation du scanner QR ===
+function initQRScanner() {
+  if (Html5Qrcode.getCameras().then) {
+    Html5Qrcode.getCameras()
+      .then(devices => {
+        if (devices && devices.length) {
+          qrReader = new Html5Qrcode("qr-reader");
+          qrReader.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (text) => {
+              if (!isSubmitting) {
+                document.getElementById("code_produit").value = text;
+              }
+            },
+            (err) => console.warn("QR error", err)
+          ).catch((err) => console.error("QR init error", err));
+        } else {
+          console.log("No cameras found");
+        }
+      })
+      .catch(err => console.error("Camera access error:", err));
+  }
+}
+
+// === Fonction pour arrêter le scanner QR ===
+function stopQRScanner() {
+  if (qrReader) {
+    qrReader.stop().then(() => {
+      console.log("QR Scanner stopped");
+    }).catch(err => console.error("Failed to stop QR scanner", err));
+  }
+}
 
 // === Auto-remplissage par désignation ===
 document.getElementById("designation").addEventListener("change", () => {
@@ -60,17 +99,6 @@ document.getElementById("designation").addEventListener("change", () => {
     }
   }
 });
-
-// === QR Code ===
-const qrReader = new Html5Qrcode("qr-reader");
-qrReader
-  .start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 250, height: 250 } },
-    (text) => (document.getElementById("code_produit").value = text),
-    (err) => console.warn("QR error", err)
-  )
-  .catch((err) => console.error("QR init error", err));
 
 // === Gestion Photos ===
 function compresserImage(file, callback) {
@@ -117,7 +145,7 @@ function handleFiles(fileList) {
         removeBtn.textContent = "x";
 
         removeBtn.addEventListener("click", () => {
-          const idx = Array.from(previewContainer.children).indexOf(wrapper);
+          const idx = Array.from(document.getElementById("previewContainer").children).indexOf(wrapper);
           if (idx !== -1) {
             imageFiles.splice(idx, 1);
             wrapper.remove();
@@ -151,8 +179,18 @@ document.getElementById("chooseGalleryBtn").addEventListener("click", () =>
 // === Soumission du formulaire ===
 document.getElementById("stockForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  
+  if (isSubmitting) return;
+  isSubmitting = true;
+  
+  if (imageFiles.length === 0) {
+    alert("Ajoutez au moins une photo.");
+    isSubmitting = false;
+    return;
+  }
 
-  if (imageFiles.length === 0) return alert("Ajoutez au moins une photo.");
+  // Arrêter le scanner QR pendant le traitement
+  stopQRScanner();
 
   const form = new FormData(e.target);
   const record = { _id: new Date().toISOString(), photos: [] };
@@ -172,13 +210,37 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   try {
     await localDB.put(record);
     alert("Stock enregistré !");
-    e.target.reset();
-    imageFiles = [];
-    document.getElementById("previewContainer").innerHTML = "";
-    updatePhotoCount();
-
+    
+    // Réinitialisation complète
+    resetForm();
+    
   } catch (err) {
     console.error("Erreur sauvegarde :", err);
     alert("Erreur lors de l'enregistrement.");
+  } finally {
+    isSubmitting = false;
+    // Redémarrer le scanner après traitement
+    initQRScanner();
+  }
+});
+
+// === Réinitialisation du formulaire ===
+function resetForm() {
+  document.getElementById("stockForm").reset();
+  imageFiles = [];
+  document.getElementById("previewContainer").innerHTML = "";
+  updatePhotoCount();
+  
+  // Réinitialisation supplémentaire pour le scanner QR
+  document.getElementById("code_produit").value = "";
+  
+  // Réinitialisation de la liste d'autocomplétion
+  document.getElementById("designation").value = "";
+}
+
+// === Bouton de réinitialisation ===
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Voulez-vous vraiment réinitialiser le formulaire ?")) {
+    resetForm();
   }
 });
