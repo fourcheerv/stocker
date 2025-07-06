@@ -5,13 +5,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const remoteURL = "https://couchdb.monproprecloud.fr/stocks";
   const loginURL = "https://couchdb.monproprecloud.fr/_session";
 
-  // Authentification CouchDB par cookie/session
+  // Authentification par session (cookie)
   try {
     const loginRes = await fetch(loginURL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: "name=admin&password=M,jvcmHSdl54!",
-      credentials: "include"
+      credentials: "include"  // Important pour inclure les cookies
     });
 
     if (!loginRes.ok) {
@@ -19,19 +19,32 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    // Créer remoteDB avec fetch personnalisé qui inclut les credentials
     const remoteDB = new PouchDB(remoteURL, {
       fetch: (url, opts) => {
-        opts.credentials = "include";
-        return PouchDB.fetch(url, opts);
+        return fetch(url, {
+          ...opts,
+          credentials: "include"  // Pour inclure les cookies de session
+        });
       }
     });
 
-    localDB.sync(remoteDB, { live: true, retry: true })
-      .on("change", info => console.log("Sync change:", info))
-      .on("error", err => console.error("Sync error:", err));
+    // Synchronisation live
+    localDB.sync(remoteDB, {
+      live: true,
+      retry: true
+    })
+    .on("change", info => console.log("Sync change:", info))
+    .on("paused", info => console.log("Sync paused:", info))
+    .on("active", () => console.log("Sync active"))
+    .on("denied", err => console.error("Sync denied:", err))
+    .on("complete", info => console.log("Sync complete:", info))
+    .on("error", err => console.error("Sync error:", err));
+
   } catch (e) {
     console.error("Erreur de connexion CouchDB :", e);
   }
+
 
   // === GESTION DES PHOTOS ===
   const photoCountSpan = document.getElementById("photoCount");
