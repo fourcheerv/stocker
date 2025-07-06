@@ -1,9 +1,10 @@
-// Variables globales
+// app.js (avec corrections pour le filtrage par section employeur)
 let excelData = [];
 let imageFiles = [];
 let qrReader = null;
 let isSubmitting = false;
 let currentAccount = null;
+let sectionEmployeur = null; // Nouvelle variable pour stocker la section employeur
 
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
@@ -16,17 +17,24 @@ window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem('currentAccount');
   
   if (!currentAccount) {
-    // Rediriger vers la page de login si aucun compte n'est défini
     window.location.href = 'login.html';
     return;
+  }
+  
+  // Déterminer la section employeur en fonction du compte
+  if (currentAccount === 'SCT=E382329') {
+    sectionEmployeur = 'ROTATIVES';
+  } else if (currentAccount === 'SCT=E390329') {
+    sectionEmployeur = 'EXPÉDITION';
   }
   
   // Afficher le compte dans l'en-tête
   document.getElementById('current-account').textContent = 
     currentAccount === 'SCT=E382329' ? 'Compte Rotatives' : 'Compte Expédition';
   
-  // Préremplir le champ axe1
+  // Préremplir les champs axe1 et section_employeur
   document.getElementById('axe1').value = currentAccount;
+  document.getElementById('section_employeur').value = sectionEmployeur;
   
   // Charger les données Excel
   loadExcelData();
@@ -34,13 +42,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // === Déconnexion ===
 document.getElementById('logoutBtn').addEventListener('click', () => {
-  // Réinitialiser l'application
   resetForm();
-  
-  // Supprimer le compte de sessionStorage
   sessionStorage.removeItem('currentAccount');
-  
-  // Rediriger vers la page de login
   window.location.href = 'login.html';
 });
 
@@ -53,8 +56,8 @@ function loadExcelData() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
       
-      // Filtrer les désignations selon le compte
-      filterDesignationsByAccount();
+      // Filtrer les désignations selon la section employeur
+      filterDesignationsBySectionEmployeur();
       
       // Initialiser le scanner QR
       initQRScanner();
@@ -62,16 +65,19 @@ function loadExcelData() {
     .catch((e) => console.error("Erreur chargement Excel :", e));
 }
 
-// Filtrer les désignations selon le compte sélectionné
-function filterDesignationsByAccount() {
-  if (!currentAccount) return;
+// Filtrer les désignations selon la section employeur
+function filterDesignationsBySectionEmployeur() {
+  if (!sectionEmployeur) return;
   
   const list = document.getElementById("designationList");
-  list.innerHTML = ''; // Vider la liste
+  list.innerHTML = '';
   
   excelData.forEach((row) => {
-    // Vérifier si la ligne correspond au compte sélectionné
-    if (row["Désignation:"] && row["axe1"] === currentAccount) {
+    // Vérifier si la ligne correspond à la section employeur
+    if (row["Désignation:"] && 
+        row["Section employeur"] && 
+        row["Section employeur"].trim().toUpperCase() === sectionEmployeur) {
+      
       const opt = document.createElement("option");
       opt.value = row["Désignation:"];
       list.appendChild(opt);
@@ -116,8 +122,13 @@ function stopQRScanner() {
 // === Auto-remplissage par désignation ===
 document.getElementById("designation").addEventListener("change", () => {
   const val = document.getElementById("designation").value.trim().toLowerCase();
-  const match = excelData.find(
-    (row) => (row["Désignation:"] || "").toLowerCase() === val
+  
+  // Rechercher dans les données filtrées par section employeur
+  const match = excelData.find(row => 
+    row["Désignation:"] && 
+    row["Section employeur"] && 
+    row["Section employeur"].trim().toUpperCase() === sectionEmployeur &&
+    row["Désignation:"].trim().toLowerCase() === val
   );
 
   if (!match) return;
@@ -137,6 +148,7 @@ document.getElementById("designation").addEventListener("change", () => {
     "quantité en stock": "quantite_en_stock",
     "quantité théorique": "quantite_theorique",
     "Date de sortie": "date_sortie",
+    "axe1": "axe1",
     "axe2": "axe2"
   };
 
@@ -145,8 +157,6 @@ document.getElementById("designation").addEventListener("change", () => {
       document.getElementById(id).value = match[key];
     }
   }
-  
-  // Ne pas modifier axe1 car il est déterminé par le compte
 });
 
 // === Gestion Photos ===
@@ -243,7 +253,6 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
     return;
   }
 
-  // Arrêter le scanner QR pendant le traitement
   stopQRScanner();
 
   const form = new FormData(e.target);
@@ -251,7 +260,6 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
 
   form.forEach((val, key) => (record[key] = val));
 
-  // Traitement images (converties en base64)
   for (const file of imageFiles) {
     const base64 = await new Promise((resolve) => {
       const reader = new FileReader();
@@ -264,16 +272,12 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   try {
     await localDB.put(record);
     alert("Stock enregistré !");
-    
-    // Réinitialisation complète
     resetForm();
-    
   } catch (err) {
     console.error("Erreur sauvegarde :", err);
     alert("Erreur lors de l'enregistrement.");
   } finally {
     isSubmitting = false;
-    // Redémarrer le scanner après traitement
     initQRScanner();
   }
 });
@@ -284,15 +288,10 @@ function resetForm() {
   imageFiles = [];
   document.getElementById("previewContainer").innerHTML = "";
   updatePhotoCount();
-  
-  // Réinitialiser le code produit
   document.getElementById("code_produit").value = "";
-  
-  // Réinitialiser la liste d'autocomplétion
   document.getElementById("designation").value = "";
-  
-  // Remettre le compte actuel
   document.getElementById("axe1").value = currentAccount;
+  document.getElementById("section_employeur").value = sectionEmployeur;
 }
 
 // === Bouton de réinitialisation ===
