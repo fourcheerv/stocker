@@ -2,21 +2,48 @@ document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("stockForm");
   const localDB = new PouchDB("stocks");
 
-  // Connexion directe avec login:motdepasse dans l'URL
-  const remoteURL = "https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks";
-  const remoteDB = new PouchDB(remoteURL);
+  // === Authentification CouchDB par session ===
+  try {
+    const response = await fetch("https://couchdb.monproprecloud.fr/_session", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        name: "admin",
+        password: "M,jvcmHSdl54!"
+      }),
+      credentials: "include"
+    });
 
-  // Synchronisation continue
-  localDB.sync(remoteDB, {
-    live: true,
-    retry: true
-  })
-  .on("change", info => console.log("Sync change:", info))
-  .on("paused", info => console.log("Sync paused:", info))
-  .on("active", () => console.log("Sync active"))
-  .on("denied", err => console.error("Sync denied:", err))
-  .on("complete", info => console.log("Sync complete:", info))
-  .on("error", err => console.error("Sync error:", err));
+    if (!response.ok) {
+      throw new Error(`Erreur d'authentification: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Session active :", data);
+
+    // === Synchronisation après login réussi ===
+    const remoteDB = new PouchDB("https://couchdb.monproprecloud.fr/stocks", {
+      fetch: (url, opts) => {
+        opts.credentials = "include"; // Important pour que le cookie soit envoyé à chaque requête
+        return PouchDB.fetch(url, opts);
+      }
+    });
+
+    localDB.sync(remoteDB, {
+      live: true,
+      retry: true
+    })
+    .on("change", info => console.log("Sync change:", info))
+    .on("paused", info => console.log("Sync paused:", info))
+    .on("active", () => console.log("Sync active"))
+    .on("denied", err => console.error("Sync denied:", err))
+    .on("complete", info => console.log("Sync complete:", info))
+    .on("error", err => console.error("Sync error:", err));
+
+  } catch (err) {
+    console.error("Échec de la connexion à CouchDB :", err);
+    alert("Impossible de se connecter à la base distante.");
+  }
 
   // === GESTION DES PHOTOS ===
   const photoCountSpan = document.getElementById("photoCount");
@@ -100,7 +127,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   form.addEventListener("submit", async e => {
     e.preventDefault();
 
-    // Vérifie qu'au moins une photo est ajoutée
     if (images.length === 0) {
       alert("Ajoutez au moins une photo.");
       return;
