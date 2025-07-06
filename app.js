@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // === BASES DE DONNÉES ===
   const localDB = new PouchDB("stocks");
-
   const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
 
   localDB.sync(remoteDB, {
@@ -104,6 +103,41 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Ignorer les erreurs de décodage
     }
   );
+
+  // === CHARGEMENT DES DONNÉES EXCEL POUR AUTO-COMPLÉTION ===
+  const designationField = document.getElementById("designation");
+  const codeField = document.getElementById("code_produit");
+  let excelData = [];
+
+  async function loadExcelData() {
+    try {
+      const response = await fetch("/stocks.xlsx");
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      excelData = XLSX.utils.sheet_to_json(sheet);
+
+      const datalist = document.createElement("datalist");
+      datalist.id = "designationList";
+      document.body.appendChild(datalist);
+
+      const uniqueDesignations = [...new Set(excelData.map(row => row["Désignation"]).filter(Boolean))];
+      datalist.innerHTML = uniqueDesignations.map(des => `<option value="${des}">`).join("");
+      designationField.setAttribute("list", "designationList");
+    } catch (err) {
+      console.error("Erreur lors du chargement de l'Excel:", err);
+    }
+  }
+
+  await loadExcelData();
+
+  designationField.addEventListener("change", () => {
+    const input = designationField.value.trim().toLowerCase();
+    const match = excelData.find(row => row["Désignation"]?.toLowerCase() === input);
+    if (match) {
+      codeField.value = match["Code produit"] || "";
+    }
+  });
 
   // === ENREGISTREMENT FORMULAIRE ===
   form.addEventListener("submit", async e => {

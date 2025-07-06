@@ -5,89 +5,90 @@
   <title>Formulaire Stocks</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Dépendances -->
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
 
-  <header>
-    <h1>Enregistrement de Stock</h1>
-  </header>
+<header>
+  <h1>Enregistrement de Stock</h1>
+</header>
 
-  <main>
-    <div id="qr-reader" style="width:100%; max-width:500px; margin:auto;"></div>
+<main>
+  <div id="qr-reader" style="width:100%; max-width:500px; margin:auto;"></div>
 
-    <form id="stockForm">
-      <div class="photo-buttons">
-        <button type="button" id="takePhotoBtn">📸 Prendre une photo</button>
-        <button type="button" id="chooseGalleryBtn">🖼️ Choisir depuis la galerie</button>
-        <p>Photos ajoutées : <span id="photoCount">0</span>/3</p>
-      </div>
+  <form id="stockForm">
+    <div class="photo-buttons">
+      <button type="button" id="takePhotoBtn">📸 Prendre une photo</button>
+      <button type="button" id="chooseGalleryBtn">🖼️ Choisir depuis la galerie</button>
+      <p>Photos ajoutées : <span id="photoCount">0</span>/3</p>
+    </div>
 
-      <div id="previewContainer" class="preview-container"></div>
+    <div id="previewContainer" class="preview-container"></div>
 
-  <label for="code_produit">Code Produit</label>
-  <input type="text" id="code_produit" name="code_produit" required>
+    <label for="code_produit">Code Produit</label>
+    <input type="text" id="code_produit" name="code_produit" required>
 
-  <label for="designation">Désignation</label>
-  <textarea id="designation" name="designation" required></textarea>
+    <label for="designation">Désignation</label>
+    <input list="designationList" id="designation" name="designation" required>
+    <datalist id="designationList"></datalist>
 
-  <label for="quantité_consommee">Quantité Consommée</label>
-  <input type="number" id="quantité_consommee" name="quantité_consommee" required>
+    <label for="quantité_consommee">Quantité Consommée</label>
+    <input type="number" id="quantité_consommee" name="quantité_consommee" required>
 
-  <label for="unites">Unité(s)</label>
-  <input type="text" id="unites" name="unites" required>
+    <label for="unites">Unité(s)</label>
+    <input type="text" id="unites" name="unites" required>
 
-  <label for="a_commander">À Commander</label>
-  <input type="text" id="a_commander" name="a_commander" required>
+    <label for="a_commander">À Commander</label>
+    <input type="text" id="a_commander" name="a_commander" required>
 
-  <label for="remarques">Remarques</label>
-  <textarea id="remarques" name="remarques" required></textarea>
+    <label for="remarques">Remarques</label>
+    <textarea id="remarques" name="remarques" required></textarea>
 
-  <label for="magasin">Magasin</label>
-  <input type="text" id="magasin" name="magasin" required>
+    <label for="magasin">Magasin</label>
+    <input type="text" id="magasin" name="magasin" required>
 
-  <label for="stock_initial">Stock initial</label>
-  <input type="number" id="stock_initial" name="stock_initial" required>
+    <label for="stock_initial">Stock initial</label>
+    <input type="number" id="stock_initial" name="stock_initial" required>
 
-  <label for="stock_final">Stock final</label>
-  <input type="number" id="stock_final" name="stock_final" required>
+    <label for="stock_final">Stock final</label>
+    <input type="number" id="stock_final" name="stock_final" required>
 
-  <label for="seuil_de_commande">Seuil de commande</label>
-  <input type="number" id="seuil_de_commande" name="seuil_de_commande" required>
+    <label for="seuil_de_commande">Seuil de commande</label>
+    <input type="number" id="seuil_de_commande" name="seuil_de_commande" required>
 
-  <label for="section_employeur">Section employeur</label>
-  <input type="text" id="section_employeur" name="section_employeur" required>
+    <label for="section_employeur">Section employeur</label>
+    <input type="text" id="section_employeur" name="section_employeur" required>
 
-  <label for="emplacement_de_stockage">Emplacement de stockage</label>
-  <input type="text" id="emplacement_de_stockage" name="emplacement_de_stockage" required>
+    <label for="emplacement_de_stockage">Emplacement de stockage</label>
+    <input type="text" id="emplacement_de_stockage" name="emplacement_de_stockage" required>
 
-  <label for="quantite_en_stock">Quantité en stock</label>
-  <input type="number" id="quantite_en_stock" name="quantite_en_stock" required>
+    <label for="quantite_en_stock">Quantité en stock</label>
+    <input type="number" id="quantite_en_stock" name="quantite_en_stock" required>
 
-  <label for="quantite_theorique">Quantité théorique</label>
-  <input type="number" id="quantite_theorique" name="quantite_theorique" required>
+    <label for="quantite_theorique">Quantité théorique</label>
+    <input type="number" id="quantite_theorique" name="quantite_theorique" required>
 
-  <label for="date_sortie">Date de sortie</label>
-  <input type="datetime-local" id="date_sortie" name="date_sortie" required>
+    <label for="date_sortie">Date de sortie</label>
+    <input type="datetime-local" id="date_sortie" name="date_sortie" required>
 
-  <label for="axe1">Axe 1</label>
-  <input type="text" id="axe1" name="axe1" required>
+    <label for="axe1">Axe 1</label>
+    <input type="text" id="axe1" name="axe1" required>
 
-  <label for="axe2">Axe 2</label>
-  <input type="text" id="axe2" name="axe2" required>
+    <label for="axe2">Axe 2</label>
+    <input type="text" id="axe2" name="axe2" required>
 
-  <button type="submit">Enregistrer</button>
-</form>
-  </main>
+    <button type="submit">Enregistrer</button>
+  </form>
+</main>
 
+<footer>
+  <p>&copy; 2025 - Gestion de Stocks</p>
+</footer>
 
-
-  
-  <footer>
-    <p>&copy; 2025 - Gestion de Stocks</p>
-  </footer>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
