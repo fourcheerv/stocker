@@ -23,6 +23,9 @@
     <div class="photo-buttons">
       <button type="button" id="takePhotoBtn">📸 Prendre une photo</button>
       <button type="button" id="chooseGalleryBtn">🖼️ Choisir depuis la galerie</button>
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
+      <input type="file" id="galleryInput" accept="image/*" multiple style="display:none;">
+
       <p>Photos ajoutées : <span id="photoCount">0</span>/3</p>
     </div>
 

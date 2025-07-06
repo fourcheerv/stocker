@@ -1,38 +1,42 @@
 let excelData = [];
-let selectedPhotos = [];
+let imageFiles = [];
 
-// Chargement automatique du fichier Excel
+const localDB = new PouchDB("stocks");
+const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
+
+localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
+
+// === Chargement Excel ===
 window.addEventListener("DOMContentLoaded", () => {
   fetch("stocker_temp.xlsx")
-    .then(response => response.arrayBuffer())
-    .then(data => {
+    .then((r) => r.arrayBuffer())
+    .then((data) => {
       const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
       const list = document.getElementById("designationList");
-      excelData.forEach(row => {
+      excelData.forEach((row) => {
         if (row["Désignation:"]) {
-          const option = document.createElement("option");
-          option.value = row["Désignation:"];
-          list.appendChild(option);
+          const opt = document.createElement("option");
+          opt.value = row["Désignation:"];
+          list.appendChild(opt);
         }
       });
     })
-    .catch(error => console.error("Erreur chargement Excel :", error));
+    .catch((e) => console.error("Erreur chargement Excel :", e));
 });
 
-// Auto-remplissage à partir de la désignation
+// === Auto-remplissage par désignation ===
 document.getElementById("designation").addEventListener("change", () => {
-  const input = document.getElementById("designation").value.trim().toLowerCase();
-  const match = excelData.find(row =>
-    (row["Désignation:"] || "").toLowerCase() === input
+  const val = document.getElementById("designation").value.trim().toLowerCase();
+  const match = excelData.find(
+    (row) => (row["Désignation:"] || "").toLowerCase() === val
   );
 
   if (!match) return;
 
   const map = {
-    "Code Produit": "code_produit",
+    "Code_Produit": "code_produit",
     "Quantité_Consommée": "quantité_consommee",
     "unité(s)": "unites",
     "A Commander": "a_commander",
@@ -46,71 +50,134 @@ document.getElementById("designation").addEventListener("change", () => {
     "quantité en stock": "quantite_en_stock",
     "quantité théorique": "quantite_theorique",
     "Date de sortie": "date_sortie",
-    "axe 1": "axe1",
-    "axe 2": "axe2"
+    "axe1": "axe1",
+    "axe2": "axe2"
   };
 
-  for (const [excelKey, inputId] of Object.entries(map)) {
-    const el = document.getElementById(inputId);
-    if (el && match[excelKey] !== undefined) {
-      el.value = match[excelKey];
+  for (const [key, id] of Object.entries(map)) {
+    if (match[key] !== undefined) {
+      document.getElementById(id).value = match[key];
     }
   }
 });
 
-// QR Code Scanner
+// === QR Code ===
 const qrReader = new Html5Qrcode("qr-reader");
-qrReader.start(
-  { facingMode: "environment" },
-  {
-    fps: 10,
-    qrbox: { width: 250, height: 250 }
-  },
-  (decodedText) => {
-    document.getElementById("code_produit").value = decodedText;
-  },
-  (err) => {
-    console.warn("QR Code scan error", err);
-  }
-).catch(err => console.error("Erreur démarrage scanner", err));
+qrReader
+  .start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    (text) => (document.getElementById("code_produit").value = text),
+    (err) => console.warn("QR error", err)
+  )
+  .catch((err) => console.error("QR init error", err));
 
-// Photo : Prendre une photo
-document.getElementById("takePhotoBtn").addEventListener("click", () => {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-  input.capture = "environment";
-  input.click();
-  input.onchange = () => handlePhotoUpload(input.files[0]);
-});
-
-// Photo : Choisir depuis la galerie
-document.getElementById("chooseGalleryBtn").addEventListener("click", () => {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-  input.click();
-  input.onchange = () => handlePhotoUpload(input.files[0]);
-});
-
-function handlePhotoUpload(file) {
-  if (!file || selectedPhotos.length >= 3) return;
+// === Gestion Photos ===
+function compresserImage(file, callback) {
   const reader = new FileReader();
-  reader.onload = function (e) {
-    selectedPhotos.push(e.target.result);
-    updatePreview();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = (img.height / img.width) * 800;
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(callback, "image/jpeg", 0.7);
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-function updatePreview() {
-  const container = document.getElementById("previewContainer");
-  container.innerHTML = "";
-  selectedPhotos.forEach((src, index) => {
-    const img = document.createElement("img");
-    img.src = src;
-    img.className = "preview";
-    container.appendChild(img);
-  });
-  document.getElementById("photoCount").innerText = selectedPhotos.length;
+function updatePhotoCount() {
+  document.getElementById("photoCount").textContent = imageFiles.length;
 }
+
+function handleFiles(fileList) {
+  const files = Array.from(fileList);
+  if (imageFiles.length + files.length > 3) {
+    alert("Maximum 3 photos !");
+    return;
+  }
+
+  files.forEach((file) => {
+    if (!file.type.startsWith("image/")) return;
+    compresserImage(file, (blob) => {
+      imageFiles.push(blob);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "preview-image";
+
+        const img = document.createElement("img");
+        img.src = e.target.result;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "remove-button";
+        removeBtn.textContent = "x";
+
+        removeBtn.addEventListener("click", () => {
+          const idx = Array.from(previewContainer.children).indexOf(wrapper);
+          if (idx !== -1) {
+            imageFiles.splice(idx, 1);
+            wrapper.remove();
+            updatePhotoCount();
+          }
+        });
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+        document.getElementById("previewContainer").appendChild(wrapper);
+        updatePhotoCount();
+      };
+      reader.readAsDataURL(blob);
+    });
+  });
+}
+
+document.getElementById("cameraInput").addEventListener("change", (e) =>
+  handleFiles(e.target.files)
+);
+document.getElementById("galleryInput").addEventListener("change", (e) =>
+  handleFiles(e.target.files)
+);
+document.getElementById("takePhotoBtn").addEventListener("click", () =>
+  document.getElementById("cameraInput").click()
+);
+document.getElementById("chooseGalleryBtn").addEventListener("click", () =>
+  document.getElementById("galleryInput").click()
+);
+
+// === Soumission du formulaire ===
+document.getElementById("stockForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (imageFiles.length === 0) return alert("Ajoutez au moins une photo.");
+
+  const form = new FormData(e.target);
+  const record = { _id: new Date().toISOString(), photos: [] };
+
+  form.forEach((val, key) => (record[key] = val));
+
+  // Traitement images (converties en base64)
+  for (const file of imageFiles) {
+    const base64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+    record.photos.push(base64);
+  }
+
+  try {
+    await localDB.put(record);
+    alert("Stock enregistré !");
+    e.target.reset();
+    imageFiles = [];
+    document.getElementById("previewContainer").innerHTML = "";
+    updatePhotoCount();
+  } catch (err) {
+    console.error("Erreur sauvegarde :", err);
+    alert("Erreur lors de l'enregistrement.");
+  }
+});
