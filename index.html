@@ -5,7 +5,6 @@
   <title>Formulaire Stocks</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
-
   <!-- Dépendances -->
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -19,6 +18,12 @@
 
 <main>
   <div id="qr-reader" style="width:100%; max-width:500px; margin:auto;"></div>
+
+  <div style="text-align:center; margin:1em 0;">
+    <label for="excelInput">📁 Charger un fichier Excel</label>
+    <input type="file" id="excelInput" accept=".xlsx" />
+    <p id="excelStatus">Aucun fichier chargé</p>
+  </div>
 
   <form id="stockForm">
     <div class="photo-buttons">
@@ -81,7 +86,7 @@
     <label for="axe2">Axe 2</label>
     <input type="text" id="axe2" name="axe2" required>
 
-    <button type="submit">Enregistrer</button>
+    <button type="submit" id="submitBtn">Enregistrer</button>
   </form>
 </main>
 

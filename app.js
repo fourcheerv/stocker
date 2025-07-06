@@ -1,31 +1,29 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("stockForm");
+  const submitBtn = document.getElementById("submitBtn");
   const photoCountSpan = document.getElementById("photoCount");
   const previewContainer = document.getElementById("previewContainer");
+  const designationField = document.getElementById("designation");
+  const codeField = document.getElementById("code_produit");
+  const excelInput = document.getElementById("excelInput");
+  const excelStatus = document.getElementById("excelStatus");
 
-  if (!form || !photoCountSpan || !previewContainer) {
-    console.error("Certains éléments HTML nécessaires sont manquants.");
-    return;
-  }
-
-  // === BASES DE DONNÉES ===
   const localDB = new PouchDB("stocks");
-  const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
+  const remoteDB = new PouchDB("https://couchdb.monproprecloud.fr/stocks", {
+    auth: {
+      username: "admin",
+      password: "M,jvcmHSdl54!" // ⚠️ Idéalement, utilise un token sécurisé via backend
+    }
+  });
 
   localDB.sync(remoteDB, {
     live: true,
     retry: true
-  })
-  .on("change", info => console.log("Sync change:", info))
-  .on("paused", info => console.log("Sync paused:", info))
-  .on("active", () => console.log("Sync active"))
-  .on("denied", err => console.error("Sync denied:", err))
-  .on("complete", info => console.log("Sync complete:", info))
-  .on("error", err => console.error("Sync error:", err));
+  }).on("error", err => console.error("Sync error:", err));
 
-  // === GESTION DES PHOTOS ===
   const maxPhotos = 3;
   const images = [];
+  let excelData = [];
 
   function updatePreview() {
     previewContainer.innerHTML = "";
@@ -87,49 +85,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // === SCAN CODE BARRES ===
+  // QR CODE
   const qrReader = new Html5Qrcode("qr-reader");
   qrReader.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
-    qrCodeMessage => {
+    msg => {
       const codeInput = document.getElementById("code_produit");
       if (codeInput) {
-        codeInput.value = qrCodeMessage;
+        codeInput.value = msg;
         qrReader.stop();
       }
     },
-    error => {
-      // Ignorer les erreurs de décodage
-    }
-  );
+    () => {} // silence decode errors
+  ).catch(err => {
+    console.error("Erreur démarrage caméra:", err);
+  });
 
-  // === CHARGEMENT DES DONNÉES EXCEL POUR AUTO-COMPLÉTION ===
-  const designationField = document.getElementById("designation");
-  const codeField = document.getElementById("code_produit");
-  let excelData = [];
+  // CHARGEMENT EXCEL
+  excelInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  async function loadExcelData() {
-    try {
-      const response = await fetch("stocker_temp.xlsx");
-      const arrayBuffer = await response.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+    const reader = new FileReader();
+    reader.onload = event => {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      excelData = XLSX.utils.sheet_to_json(sheet);
+      const rawData = XLSX.utils.sheet_to_json(sheet);
+      excelData = rawData.filter(row => row["Désignation"] && row["Code produit"]);
+      updateDatalist(excelData.map(row => row["Désignation"]));
+      excelStatus.textContent = `${excelData.length} articles chargés`;
+    };
+    reader.readAsArrayBuffer(file);
+  });
 
-      const datalist = document.createElement("datalist");
-      datalist.id = "designationList";
-      document.body.appendChild(datalist);
-
-      const uniqueDesignations = [...new Set(excelData.map(row => row["Désignation"]).filter(Boolean))];
-      datalist.innerHTML = uniqueDesignations.map(des => `<option value="${des}">`).join("");
-      designationField.setAttribute("list", "designationList");
-    } catch (err) {
-      console.error("Erreur lors du chargement de l'Excel:", err);
-    }
+  function updateDatalist(values) {
+    const list = document.getElementById("designationList");
+    list.innerHTML = [...new Set(values)].map(val => `<option value="${val}">`).join("");
   }
-
-  await loadExcelData();
 
   designationField.addEventListener("change", () => {
     const input = designationField.value.trim().toLowerCase();
@@ -139,20 +133,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // === ENREGISTREMENT FORMULAIRE ===
+  // ENREGISTREMENT
   form.addEventListener("submit", async e => {
     e.preventDefault();
-
-    if (images.length === 0) {
-      alert("Ajoutez au moins une photo.");
-      return;
-    }
+    if (images.length === 0) return alert("Ajoutez au moins une photo.");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Enregistrement...";
 
     const formData = new FormData(form);
     const doc = {};
-    formData.forEach((value, key) => doc[key] = value);
+    formData.forEach((value, key) => {
+      doc[key] = value;
+    });
     doc._id = new Date().toISOString();
-    doc.photos = images;
+    doc.created_at = new Date().toISOString();
+    doc.photos = [...images];
 
     try {
       await localDB.put(doc);
@@ -163,6 +158,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       console.error("Erreur d’enregistrement :", err);
       alert("Erreur d’enregistrement.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Enregistrer";
     }
   });
 });
