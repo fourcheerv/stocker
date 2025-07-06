@@ -24,9 +24,9 @@ window.addEventListener("DOMContentLoaded", () => {
   
   // Déterminer la section employeur en fonction du compte
   if (currentAccount === 'SCT=E382329') {
-    sectionEmployeur = 'E382329-ROTATIVES';
+    sectionEmployeur = 'E382329 -ROTATIVES';
   } else if (currentAccount === 'SCT=E390329') {
-    sectionEmployeur = 'E390329-EXPEDITION';
+    sectionEmployeur = 'E390329 -EXPEDITION';
   }
   
   // Afficher le compte dans l'en-tête
