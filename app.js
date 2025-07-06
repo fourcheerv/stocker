@@ -1,11 +1,18 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("stockForm");
+  const photoCountSpan = document.getElementById("photoCount");
+  const previewContainer = document.getElementById("previewContainer");
+
+  if (!form || !photoCountSpan || !previewContainer) {
+    console.error("Certains éléments HTML nécessaires sont manquants.");
+    return;
+  }
+
+  // === BASES DE DONNÉES ===
   const localDB = new PouchDB("stocks");
 
-  // === Authentification directe via URL ===
   const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
 
-  // === Synchronisation continue ===
   localDB.sync(remoteDB, {
     live: true,
     retry: true
@@ -16,12 +23,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   .on("denied", err => console.error("Sync denied:", err))
   .on("complete", info => console.log("Sync complete:", info))
   .on("error", err => console.error("Sync error:", err));
-});
-
 
   // === GESTION DES PHOTOS ===
-  const photoCountSpan = document.getElementById("photoCount");
-  const previewContainer = document.getElementById("previewContainer");
   const maxPhotos = 3;
   const images = [];
 
@@ -48,7 +51,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  document.getElementById("takePhotoBtn").addEventListener("click", async () => {
+  document.getElementById("takePhotoBtn")?.addEventListener("click", async () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -63,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     input.click();
   });
 
-  document.getElementById("chooseGalleryBtn").addEventListener("click", () => {
+  document.getElementById("chooseGalleryBtn")?.addEventListener("click", () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -91,10 +94,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
     qrCodeMessage => {
-      document.getElementById("code_produit").value = qrCodeMessage;
-      qrReader.stop();
+      const codeInput = document.getElementById("code_produit");
+      if (codeInput) {
+        codeInput.value = qrCodeMessage;
+        qrReader.stop();
+      }
     },
-    error => { /* Ignore decode errors */ }
+    error => {
+      // Ignorer les erreurs de décodage
+    }
   );
 
   // === ENREGISTREMENT FORMULAIRE ===
