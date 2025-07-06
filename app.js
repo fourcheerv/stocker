@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // === BASES DE DONNÉES ===
   const localDB = new PouchDB("stocks");
-  const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
+  const remoteDB = new PouchDB("");
 
   localDB.sync(remoteDB, {
     live: true,
