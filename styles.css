@@ -1,9 +1,8 @@
-/* ================================
-   VARIABLES
-================================== */
 :root {
   --color-primary: #003d66;
   --color-secondary: #0c81b4;
+  --color-rotatives: #3498db;
+  --color-expedition: #2ecc71;
   --color-error: #e74c3c;
   --color-success: #27ae60;
   --color-white: #fff;
@@ -15,9 +14,6 @@
   --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* ================================
-   GLOBAL STYLES
-================================== */
 * {
   margin: 0;
   padding: 0;
@@ -32,9 +28,6 @@ body {
   padding: 20px;
 }
 
-/* ================================
-   HEADER
-================================== */
 header {
   text-align: center;
   margin-bottom: 30px;
@@ -45,14 +38,41 @@ header {
   box-shadow: var(--box-shadow);
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.account-info {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.logout-btn {
+  background: none;
+  border: 1px solid var(--color-white);
+  color: var(--color-white);
+  padding: 5px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 h1 {
   font-size: 2.2rem;
   margin-bottom: 0;
 }
 
-/* ================================
-   MAIN CONTENT
-================================== */
 main {
   max-width: 800px;
   margin: 0 auto;
@@ -62,9 +82,6 @@ main {
   box-shadow: var(--box-shadow);
 }
 
-/* ================================
-   QR SCANNER
-================================== */
 #qr-reader {
   width: 100%;
   max-width: 500px;
@@ -74,9 +91,6 @@ main {
   overflow: hidden;
 }
 
-/* ================================
-   PHOTO SECTION
-================================== */
 .photo-section {
   background: var(--color-light-gray);
   padding: 20px;
@@ -100,9 +114,6 @@ main {
   text-align: center;
 }
 
-/* ================================
-   FORMULAIRE
-================================== */
 #stockForm {
   display: grid;
   grid-template-columns: 1fr;
@@ -144,9 +155,6 @@ input[type="file"] {
   display: none;
 }
 
-/* ================================
-   PREVIEW IMAGES
-================================== */
 .preview-container {
   display: flex;
   gap: 10px;
@@ -194,9 +202,6 @@ input[type="file"] {
   background-color: #c0392b;
 }
 
-/* ================================
-   BUTTONS
-================================== */
 button {
   background-color: var(--color-primary);
   color: var(--color-white);
@@ -238,16 +243,10 @@ button:hover {
   background-color: #c0392b;
 }
 
-/* ================================
-   FULL WIDTH ELEMENTS
-================================== */
 .full-width {
   grid-column: span 1;
 }
 
-/* ================================
-   FOOTER
-================================== */
 footer {
   text-align: center;
   margin-top: 30px;
@@ -255,9 +254,6 @@ footer {
   color: #7f8c8d;
 }
 
-/* ================================
-   RESPONSIVE DESIGN
-================================== */
 @media (min-width: 768px) {
   #stockForm {
     grid-template-columns: 1fr 1fr;
@@ -287,5 +283,10 @@ footer {
   
   .photo-buttons {
     flex-direction: column;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 10px;
   }
 }
