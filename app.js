@@ -2,49 +2,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("stockForm");
   const localDB = new PouchDB("stocks");
 
-  const remoteURL = "https://couchdb.monproprecloud.fr/stocks";
-  const loginURL = "https://couchdb.monproprecloud.fr/_session";
+  // Connexion directe avec login:motdepasse dans l'URL
+  const remoteURL = "https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks";
+  const remoteDB = new PouchDB(remoteURL);
 
-  // Authentification par session (cookie)
-  try {
-    const loginRes = await fetch(loginURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "name=admin&password=M,jvcmHSdl54!",
-      credentials: "include"  // Important pour inclure les cookies
-    });
-
-    if (!loginRes.ok) {
-      alert("Échec de l'authentification CouchDB.");
-      return;
-    }
-
-    // Créer remoteDB avec fetch personnalisé qui inclut les credentials
-    const remoteDB = new PouchDB(remoteURL, {
-      fetch: (url, opts) => {
-        return fetch(url, {
-          ...opts,
-          credentials: "include"  // Pour inclure les cookies de session
-        });
-      }
-    });
-
-    // Synchronisation live
-    localDB.sync(remoteDB, {
-      live: true,
-      retry: true
-    })
-    .on("change", info => console.log("Sync change:", info))
-    .on("paused", info => console.log("Sync paused:", info))
-    .on("active", () => console.log("Sync active"))
-    .on("denied", err => console.error("Sync denied:", err))
-    .on("complete", info => console.log("Sync complete:", info))
-    .on("error", err => console.error("Sync error:", err));
-
-  } catch (e) {
-    console.error("Erreur de connexion CouchDB :", e);
-  }
-
+  // Synchronisation continue
+  localDB.sync(remoteDB, {
+    live: true,
+    retry: true
+  })
+  .on("change", info => console.log("Sync change:", info))
+  .on("paused", info => console.log("Sync paused:", info))
+  .on("active", () => console.log("Sync active"))
+  .on("denied", err => console.error("Sync denied:", err))
+  .on("complete", info => console.log("Sync complete:", info))
+  .on("error", err => console.error("Sync error:", err));
 
   // === GESTION DES PHOTOS ===
   const photoCountSpan = document.getElementById("photoCount");
@@ -127,6 +99,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // === ENREGISTREMENT FORMULAIRE ===
   form.addEventListener("submit", async e => {
     e.preventDefault();
+
+    // Vérifie qu'au moins une photo est ajoutée
+    if (images.length === 0) {
+      alert("Ajoutez au moins une photo.");
+      return;
+    }
 
     const formData = new FormData(form);
     const doc = {};
