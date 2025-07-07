@@ -121,6 +121,18 @@
         <input type="datetime-local" id="date_sortie" name="date_sortie" required>
       </div>
 
+    <script>
+      // Obtenir la date et l'heure actuelles
+      const now = new Date();
+      
+      // Formater la date au format attendu par datetime-local (YYYY-MM-DDTHH:MM)
+      // On compense le décalage de fuseau horaire pour éviter les problèmes
+      const timezoneOffset = now.getTimezoneOffset() * 60000; // offset en millisecondes
+      const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+      
+      // Définir la valeur par défaut
+      document.getElementById('date_sortie').value = localISOTime;
+    </script>
       <div class="full-width">
         <label for="axe1">Axe 1 (Compte)</label>
         <input type="text" id="axe1" name="axe1" readonly>
