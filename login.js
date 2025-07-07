@@ -1,16 +1,29 @@
-// Gestion de la connexion
-document.getElementById('btn-rotatives').addEventListener('click', () => {
-  // Stocker le compte dans sessionStorage
-  sessionStorage.setItem('currentAccount', 'SCT=E382329');
-  // Rediriger vers la page principale
-  window.location.href = 'index.html';
-});
+// Gestion de la connexion pour tous les comptes
+const accountMappings = {
+  'btn-info-sport': 'SCT=E260329',
+  'btn-support-redac': 'SCT=E272329',
+  'btn-maintenance': 'SCT=E370329',
+  'btn-rotatives': 'SCT=E382329',
+  'btn-expedition': 'SCT=E390329',
+  'btn-direction': 'SCT=E500329',
+  'btn-ler': 'SCT=E730329',
+  'btn-travaux': 'SCT=E736329',
+  'btn-achats': 'SCT=E760329',
+  'btn-manutention': 'SCT=E762329',
+  'btn-coursiers': 'SCT=E772329',
+  'btn-cantine': 'SCT=E860329',
+  'btn-neutre': 'Invite'
+};
 
-document.getElementById('btn-expedition').addEventListener('click', () => {
-  // Stocker le compte dans sessionStorage
-  sessionStorage.setItem('currentAccount', 'SCT=E390329');
-  // Rediriger vers la page principale
-  window.location.href = 'index.html';
+// Ajout des écouteurs pour tous les boutons
+Object.keys(accountMappings).forEach(btnId => {
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.addEventListener('click', () => {
+      sessionStorage.setItem('currentAccount', accountMappings[btnId]);
+      window.location.href = 'index.html';
+    });
+  }
 });
 
 // Animation au chargement de la page
@@ -23,7 +36,7 @@ window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         btn.style.opacity = '1';
         btn.style.transform = 'translateY(0)';
-      }, 300 * index);
+      }, 100 * index);
     });
   }, 500);
   

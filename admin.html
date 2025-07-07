@@ -27,26 +27,33 @@
     </div>
 
     <div class="search-filter-container">
-        <!-- Dans la div search-filter-container, ajoutez ces éléments -->
-        <div class="search-filter-container">
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Rechercher...">
-            <button id="searchBtn">🔍</button>
-        </div>
-        
-        <!-- Filtre par date -->
-        <div class="filter-container">
-            <input type="date" id="dateFilter" class="filter-input">
-        </div>
-        
-        <!-- Filtre par compte existant -->
-        <div class="filter-container">
-            <select id="filterSelect">
-            <option value="">Tous les comptes</option>
-            <option value="SCT=E382329">Compte Rotatives</option>
-            <option value="SCT=E390329">Compte Expédition</option>
-            </select>
-        </div>
+    <div class="search-container">
+      <input type="text" id="searchInput" placeholder="Rechercher...">
+      <button id="searchBtn">🔍</button>
+    </div>
+    
+    <div class="filter-container">
+      <input type="date" id="dateFilter" class="filter-input">
+    </div>
+    
+    <div class="filter-container">
+      <select id="filterSelect">
+        <option value="">Tous les comptes</option>
+        <option value="SCT=E260329">SCE Informations Sportives</option>
+        <option value="SCT=E272329">SCE Support Rédaction</option>
+        <option value="SCT=E370329">Maintenance Machines</option>
+        <option value="SCT=E382329">Service Rotatives</option>
+        <option value="SCT=E390329">Service Expédition</option>
+        <option value="SCT=E500329">Direction Vente</option>
+        <option value="SCT=E730329">LER Charges</option>
+        <option value="SCT=E736329">Service Travaux</option>
+        <option value="SCT=E760329">Achats Magasin</option>
+        <option value="SCT=E762329">Manutention Papier</option>
+        <option value="SCT=E772329">Coursiers</option>
+        <option value="SCT=E860329">Cantine</option>
+        <option value="NEUTRE">Compte Invite</option>
+      </select>
+    </div>
         
         <!-- Nouveau filtre "À commander" -->
         <div class="filter-container">

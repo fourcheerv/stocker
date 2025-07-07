@@ -585,7 +585,23 @@ function formatDate(isoString) {
 }
 
 function getAxe1Label(axe1) {
-  return axe1 === 'SCT=E382329' ? 'Rotatives' : 'Expédition';
+  const mappings = {
+    'SCT=E260329': 'SCE Informations Sportives',
+    'SCT=E272329': 'SCE Support Rédaction',
+    'SCT=E370329': 'Maintenance Machines',
+    'SCT=E382329': 'Service Rotatives',
+    'SCT=E390329': 'Service Expédition',
+    'SCT=E500329': 'Direction Vente',
+    'SCT=E730329': 'LER Charges',
+    'SCT=E736329': 'Service Travaux',
+    'SCT=E760329': 'Achats Magasin',
+    'SCT=E762329': 'Manutention Papier',
+    'SCT=E772329': 'Coursiers',
+    'SCT=E860329': 'Cantine',
+    'NEUTRE': 'Compte Invite'
+  };
+  
+  return mappings[axe1] || axe1;
 }
 
 function logout() {

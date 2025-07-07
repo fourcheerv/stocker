@@ -12,23 +12,34 @@ localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
 
 // === Gestion de la session ===
 window.addEventListener("DOMContentLoaded", () => {
-  // Récupérer le compte de sessionStorage
   currentAccount = sessionStorage.getItem('currentAccount');
   
   if (!currentAccount) {
-    // Rediriger vers la page de login si aucun compte n'est défini
     window.location.href = 'login.html';
     return;
   }
   
-  // Afficher le compte dans l'en-tête
+  // Mapper le code du compte à un nom lisible
+  const accountNames = {
+    'SCT=E260329': 'SCE Informations Sportives',
+    'SCT=E272329': 'SCE Support Rédaction',
+    'SCT=E370329': 'Maintenance Machines',
+    'SCT=E382329': 'Service Rotatives',
+    'SCT=E390329': 'Service Expédition',
+    'SCT=E500329': 'Direction Vente',
+    'SCT=E730329': 'LER Charges',
+    'SCT=E736329': 'Service Travaux',
+    'SCT=E760329': 'Achats Magasin',
+    'SCT=E762329': 'Manutention Papier',
+    'SCT=E772329': 'Coursiers',
+    'SCT=E860329': 'Cantine',
+    'NEUTRE': 'Compte Neutre'
+  };
+  
   document.getElementById('current-account').textContent = 
-    currentAccount === 'SCT=E382329' ? 'Compte Rotatives' : 'Compte Expédition';
+    accountNames[currentAccount] || currentAccount;
   
-  // Préremplir le champ axe1
   document.getElementById('axe1').value = currentAccount;
-  
-  // Charger les données Excel
   loadExcelData();
 });
 
