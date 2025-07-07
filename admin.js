@@ -34,23 +34,30 @@ async function initDB() {
 
 // Chargement des données
 async function loadData() {
+    console.log("Tentative de chargement des données...");
     try {
         const result = await localDB.allDocs({ include_docs: true });
+        console.log("Résultat brut de CouchDB:", result);
         
-        // Tri des données
-        allSortedRows = result.rows.sort((a, b) => {
-            const dateA = new Date(a.doc._id);
-            const dateB = new Date(b.doc._id);
-            return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-        });
-        
-        updateTable();
-        updatePaginationControls();
-        updateSortIndicator();
-        
+        if (!result.rows || result.rows.length === 0) {
+            console.warn("Aucune donnée trouvée dans la base locale");
+            // Vérifiez directement dans CouchDB
+            try {
+                const remoteResult = await remoteDB.allDocs({ include_docs: true });
+                console.log("Résultat direct de CouchDB:", remoteResult);
+                if (remoteResult.rows.length > 0) {
+                    console.error("Données présentes sur CouchDB mais pas en local - Problème de synchronisation");
+                }
+            } catch (remoteError) {
+                console.error("Erreur d'accès direct à CouchDB:", remoteError);
+            }
+            return;
+        }
+
+        // ... reste du code existant ...
     } catch (error) {
-        console.error('Erreur de chargement:', error);
-        alert('Erreur lors du chargement des données');
+        console.error("Erreur complète:", error);
+        alert("Erreur technique - Voir la console (F12)");
     }
 }
 
