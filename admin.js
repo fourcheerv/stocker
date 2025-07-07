@@ -32,6 +32,13 @@ function setupEventListeners() {
   document.getElementById('syncBtn').addEventListener('click', syncWithServer);
   document.getElementById('deleteSelectedBtn').addEventListener('click', confirmDeleteSelected);
   document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
+  document.querySelectorAll('.view-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    closeAllModals();
+    showDetails(e.target.dataset.id);
+  });
+});
+  
   document.addEventListener('click', function(e) {
   if (e.target.classList.contains('edit-btn')) {
     const docId = e.target.dataset.id;
@@ -39,7 +46,7 @@ function setupEventListeners() {
     if (doc) setupEditModal(doc);
   }
 });
-  
+ 
   // Recherche/filtre
   document.getElementById('searchInput').addEventListener('input', filterData);
   document.getElementById('searchBtn').addEventListener('click', filterData);
@@ -270,6 +277,9 @@ async function syncWithServer() {
 // Ajoutez ces nouvelles fonctions :
 
 function setupEditModal(doc) {
+  // Ferme la modal de visualisation si elle est ouverte
+  closeModal();
+  
   const modal = document.createElement('div');
   modal.className = 'modal';
   modal.id = 'editModal';
@@ -300,11 +310,13 @@ function setupEditModal(doc) {
   });
 
   // Gestion de la sauvegarde
-  modal.querySelector('#saveEditBtn').addEventListener('click', async () => {
+  modal.querySelector('#saveEditBtn').addEventListener('click', async (e) => {
+    e.preventDefault();
     await saveEditedDoc(doc._id);
     modal.remove();
   });
 }
+
 // Début édition
 function generateEditFields(doc) {
   let fields = '';
@@ -495,6 +507,9 @@ async function deleteDocs(docIds) {
 // Fonctions d'affichage
 
 function showDetails(docId) {
+  // Ferme la modal d'édition si elle est ouverte
+  const editModal = document.getElementById('editModal');
+  if (editModal) editModal.remove();
   const doc = allDocs.find(d => d._id === docId);
   if (!doc) return;
 
@@ -534,13 +549,17 @@ function showDetails(docId) {
   document.getElementById('detailsModal').style.display = 'flex';
 }
 
-
-
 function closeModal() {
   document.getElementById('detailsModal').style.display = 'none';
 }
 
-
+function closeAllModals() {
+  const detailsModal = document.getElementById('detailsModal');
+  if (detailsModal) detailsModal.style.display = 'none';
+  
+  const editModal = document.getElementById('editModal');
+  if (editModal) editModal.remove();
+}
 
 
 // Fonctions utilitaires
