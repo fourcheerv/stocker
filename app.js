@@ -264,7 +264,26 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   const form = new FormData(e.target);
   const record = { _id: new Date().toISOString(), photos: [] };
 
-  form.forEach((val, key) => (record[key] = val));
+  // Traiter chaque champ du formulaire
+  form.forEach((val, key) => {
+    // Formater spécifiquement la date de sortie
+    if (key === "date_sortie") {
+      const date = new Date(val);
+      if (!isNaN(date.getTime())) {
+        record[key] = date.toLocaleString('fr-FR', {
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit',
+          hour: '2-digit', 
+          minute: '2-digit'
+        });
+      } else {
+        record[key] = val; // Garder la valeur originale si ce n'est pas une date valide
+      }
+    } else {
+      record[key] = val;
+    }
+  });
 
   // Traitement images (converties en base64)
   for (const file of imageFiles) {
