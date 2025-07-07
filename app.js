@@ -142,7 +142,22 @@ document.getElementById("designation").addEventListener("change", () => {
 
   for (const [key, id] of Object.entries(map)) {
     if (match[key] !== undefined) {
-      document.getElementById(id).value = match[key];
+      if (key === "Date de sortie") {
+        // Formater la date au format fr-FR
+        const date = new Date(match[key]);
+        if (!isNaN(date.getTime())) {
+          const formattedDate = date.toLocaleString('fr-FR', {
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit',
+            hour: '2-digit', 
+            minute: '2-digit'
+          });
+          document.getElementById(id).value = formattedDate;
+        }
+      } else {
+        document.getElementById(id).value = match[key];
+      }
     }
   }
   
