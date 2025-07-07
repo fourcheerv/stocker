@@ -4,7 +4,6 @@ let imageFiles = [];
 let qrReader = null;
 let isSubmitting = false;
 let currentAccount = null;
-let sectionEmployeur = null;
 
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
@@ -22,20 +21,12 @@ window.addEventListener("DOMContentLoaded", () => {
     return;
   }
   
-  // Déterminer la section employeur en fonction du compte
-  if (currentAccount === 'SCT=E382329') {
-    sectionEmployeur = 'E382329 -SERVICE ROTATIVES';
-  } else if (currentAccount === 'SCT=E390329') {
-    sectionEmployeur = 'E390329 -SERVICE DEPART EXPEDITION';
-  }
-  
   // Afficher le compte dans l'en-tête
   document.getElementById('current-account').textContent = 
     currentAccount === 'SCT=E382329' ? 'Compte Rotatives' : 'Compte Expédition';
   
-  // Préremplir les champs axe1 et section_employeur
+  // Préremplir le champ axe1
   document.getElementById('axe1').value = currentAccount;
-  document.getElementById('section_employeur').value = sectionEmployeur;
   
   // Charger les données Excel
   loadExcelData();
@@ -62,11 +53,8 @@ function loadExcelData() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
       
-      // Debug: afficher la structure des données
-      console.log("Données Excel chargées:", excelData.slice(0, 3));
-      
-      // Filtrer les désignations selon la section employeur
-      filterDesignationsBySectionEmployeur();
+      // Filtrer les désignations selon le compte
+      filterDesignationsByAccount();
       
       // Initialiser le scanner QR
       initQRScanner();
@@ -74,24 +62,19 @@ function loadExcelData() {
     .catch((e) => console.error("Erreur chargement Excel :", e));
 }
 
-// Filtrer les désignations selon la section employeur
-function filterDesignationsBySectionEmployeur() {
-  if (!sectionEmployeur) return;
+// Filtrer les désignations selon le compte sélectionné
+function filterDesignationsByAccount() {
+  if (!currentAccount) return;
   
   const list = document.getElementById("designationList");
-  list.innerHTML = '';
+  list.innerHTML = ''; // Vider la liste
   
   excelData.forEach((row) => {
-    // Vérifier le format "E382329 - ROTATIVES"
-    if (row["Désignation:"] && row["Section employeur"]) {
-      const sectionValue = row["Section employeur"].toString().toUpperCase();
-      
-      // Vérifier si la section employeur contient la partie texte
-      if (sectionValue.includes(sectionEmployeur)) {
-        const opt = document.createElement("option");
-        opt.value = row["Désignation:"];
-        list.appendChild(opt);
-      }
+    // Vérifier si la ligne correspond au compte sélectionné
+    if (row["Désignation:"] && row["axe1"] === currentAccount) {
+      const opt = document.createElement("option");
+      opt.value = row["Désignation:"];
+      list.appendChild(opt);
     }
   });
 }
@@ -133,16 +116,9 @@ function stopQRScanner() {
 // === Auto-remplissage par désignation ===
 document.getElementById("designation").addEventListener("change", () => {
   const val = document.getElementById("designation").value.trim().toLowerCase();
-  
-  // Rechercher dans les données
-  const match = excelData.find(row => {
-    if (!row["Désignation:"] || !row["Section employeur"]) return false;
-    
-    const designation = row["Désignation:"].trim().toLowerCase();
-    const section = row["Section employeur"].toString().toUpperCase();
-    
-    return designation === val && section.includes(sectionEmployeur);
-  });
+  const match = excelData.find(
+    (row) => (row["Désignation:"] || "").toLowerCase() === val
+  );
 
   if (!match) return;
 
@@ -161,7 +137,6 @@ document.getElementById("designation").addEventListener("change", () => {
     "quantité en stock": "quantite_en_stock",
     "quantité théorique": "quantite_theorique",
     "Date de sortie": "date_sortie",
-    "axe1": "axe1",
     "axe2": "axe2"
   };
 
@@ -170,6 +145,8 @@ document.getElementById("designation").addEventListener("change", () => {
       document.getElementById(id).value = match[key];
     }
   }
+  
+  // Ne pas modifier axe1 car il est déterminé par le compte
 });
 
 // === Gestion Photos ===
@@ -314,9 +291,8 @@ function resetForm() {
   // Réinitialiser la liste d'autocomplétion
   document.getElementById("designation").value = "";
   
-  // Remettre le compte actuel et la section employeur
+  // Remettre le compte actuel
   document.getElementById("axe1").value = currentAccount;
-  document.getElementById("section_employeur").value = sectionEmployeur;
 }
 
 // === Bouton de réinitialisation ===
