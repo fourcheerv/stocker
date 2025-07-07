@@ -1,0 +1,249 @@
+/* Style global */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* En-tête */
+.header {
+    background: linear-gradient(135deg, #003d66, #0c81b4);
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.logo-container h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+/* Barre d'outils */
+.toolbar {
+    background-color: white;
+    padding: 15px;
+    margin: 20px auto;
+    max-width: 1200px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#searchInput {
+    width: 90%;
+    max-width: 500px;
+    padding: 10px;
+    margin: 0 auto 15px;
+    display: block;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.toolbar-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.btn-search {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.btn-export-excel {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-export-zip {
+    background-color: #9b59b6;
+    color: white;
+}
+
+.btn-delete {
+    background-color: #e74c3c;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* Tableau */
+.table-container {
+    width: 95%;
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #003d66;
+    color: white;
+    position: sticky;
+    top: 0;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
+
+.table-img {
+    max-width: 50px;
+    max-height: 50px;
+    cursor: pointer;
+    margin-right: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: transform 0.3s;
+}
+
+.table-img:hover {
+    transform: scale(1.1);
+}
+
+/* Pagination */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    gap: 10px;
+}
+
+.pagination-controls button {
+    padding: 8px 12px;
+    min-width: 40px;
+}
+
+.pagination-controls span {
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+}
+
+/* Popup image */
+.popup {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+}
+
+#popupImage {
+    max-width: 100%;
+    max-height: 80vh;
+    border: 5px solid white;
+    border-radius: 5px;
+}
+
+.popup-close {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    background-color: #e74c3c;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #f1f1f1;
+    margin-top: 30px;
+    color: #777;
+}
+
+.footer a {
+    color: #003d66;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .toolbar-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    button {
+        width: 90%;
+        max-width: 300px;
+    }
+    
+    th, td {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+    
+    .table-img {
+        max-width: 40px;
+        max-height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.5rem;
+    }
+    
+    #searchInput {
+        font-size: 14px;
+    }
+    
+    .pagination-controls {
+        flex-wrap: wrap;
+    }
+}

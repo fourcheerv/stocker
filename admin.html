@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Gestion des Stocks</title>
+    <link rel="stylesheet" href="admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="logo-container">
+            <h1>📦 Gestion des Stocks</h1>
+        </div>
+    </header>
+
+    <section class="toolbar">
+        <input type="text" id="searchInput" placeholder="Rechercher par code produit, désignation..." />
+        <div class="toolbar-buttons">
+            <button id="searchBtn" class="btn-search">Rechercher</button>
+            <button id="exportBtn" class="btn-export-excel">Exporter vers Excel</button>
+            <button id="exportZipBtn" class="btn-export-zip">Exporter sous forme de ZIP</button>
+            <button id="deleteSelectedBtn" class="btn-delete">Supprimer les éléments sélectionnés</button>
+        </div>
+    </section>
+    
+    <main>
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>ID</th>
+                        <th>Code Produit</th>
+                        <th>Désignation</th>
+                        <th>Quantité Consommée</th>
+                        <th>Unité(s)</th>
+                        <th id="sortDate" style="cursor:pointer;">Date d'enregistrement &#8595;</th>
+                        <th>À Commander</th>
+                        <th>Magasin</th>
+                        <th>Photos</th>
+                        <th>Compte</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="paginationControls" class="pagination-controls"></div>
+
+    <footer class="footer">
+        <a href="index.html">Retour à l'application</a>
+        <p>&copy; 2025 - Gestion des Stocks - Interface d'administration</p>
+    </footer>
+
+    <div id="imagePopup" class="popup">
+        <div class="popup-content">
+            <span id="closePopup" class="popup-close">&times;</span>
+            <img id="popupImage" src="" alt="Aperçu de l'image">
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
