@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('resetLocalDB').addEventListener('click', resetLocalDB);
 });
 
+
+
 // Réinitialisation de la base locale
 async function resetLocalDB() {
     if (confirm("Voulez-vous vraiment réinitialiser le cache local ?")) {
