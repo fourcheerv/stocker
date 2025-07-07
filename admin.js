@@ -133,7 +133,7 @@ function updateTable() {
     const pageRows = allSortedRows.slice(start, end);
     
     pageRows.forEach(row => {
-        const { _id, code_produit, designation, quantité_consommee, unites, a_commander, magasin, photos, axe1 } = row.doc;
+        const { _id, code_produit, designation, quantité_consommee, unites, a_commander, magasin, photos, axe1,axe2 } = row.doc;
         
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -152,6 +152,7 @@ function updateTable() {
                 ).join('') || "Aucune"}
             </td>
             <td>${axe1 === "SCT=E382329" ? "Rotatives" : "Expédition"}</td>
+             <td>${axe2 || "N/A"}</td>
         `;
         tbody.appendChild(tr);
     });
