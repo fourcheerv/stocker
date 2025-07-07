@@ -393,9 +393,8 @@ function exportToCSV() {
     return;
   }
 
-  // Définir les en-têtes CSV avec tous les champs disponibles
+  // Définir les en-têtes CSV sans la date
   const headers = [
-    "Date", 
     "Code Produit", 
     "Quantité Consommée",
     "Axe 1",
@@ -406,11 +405,9 @@ function exportToCSV() {
   const csvContent = [
     headers.join(";"), // En-têtes
     ...filteredDocs.map(doc => [
-      formatDate(doc._id),
       doc.code_produit || '',
       doc.quantité_consommee || '',
-      doc.date_sortie ? formatDate(doc.date_sortie) : '',
-      doc.axe1,
+      doc.axe1 || '',
       doc.axe2 || ''
     ].map(field => 
       // Gérer les champs contenant des point-virgules en les entourant de guillemets
@@ -428,8 +425,6 @@ function exportToCSV() {
   link.click();
   document.body.removeChild(link);
 }
-
-
 
 
 
