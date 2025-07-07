@@ -53,22 +53,30 @@ function loadExcelData() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
       
-      // Initialiser la liste des désignations (sans filtre par compte)
-      const list = document.getElementById("designationList");
-      list.innerHTML = ''; // Vider la liste
-      
-      excelData.forEach((row) => {
-        if (row["Désignation:"]) {
-          const opt = document.createElement("option");
-          opt.value = row["Désignation:"];
-          list.appendChild(opt);
-        }
-      });
+      // Filtrer les désignations selon le compte
+      filterDesignationsByAccount();
       
       // Initialiser le scanner QR
       initQRScanner();
     })
     .catch((e) => console.error("Erreur chargement Excel :", e));
+}
+
+// Filtrer les désignations selon le compte sélectionné
+function filterDesignationsByAccount() {
+  if (!currentAccount) return;
+  
+  const list = document.getElementById("designationList");
+  list.innerHTML = ''; // Vider la liste
+  
+  excelData.forEach((row) => {
+    // Vérifier si la ligne correspond au compte sélectionné
+    if (row["Désignation:"] && row["axe1"] === currentAccount) {
+      const opt = document.createElement("option");
+      opt.value = row["Désignation:"];
+      list.appendChild(opt);
+    }
+  });
 }
 
 // === Initialisation du scanner QR ===
@@ -153,8 +161,7 @@ document.getElementById("designation").addEventListener("change", () => {
     }
   }
   
-  // Mettre à jour axe1 avec la valeur du compte courant
-  document.getElementById("axe1").value = currentAccount;
+  // Ne pas modifier axe1 car il est déterminé par le compte
 });
 
 // === Gestion Photos ===
