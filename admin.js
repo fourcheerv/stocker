@@ -397,20 +397,7 @@ function exportToCSV() {
   const headers = [
     "Date", 
     "Code Produit", 
-    "Désignation",
     "Quantité Consommée",
-    "Unités",
-    "À Commander",
-    "Remarques",
-    "Magasin",
-    "Stock Initial",
-    "Stock Final",
-    "Seuil de Commande",
-    "Section Employeur",
-    "Emplacement de Stockage",
-    "Quantité en Stock",
-    "Quantité Théorique",
-    "Date de Sortie",
     "Axe 1",
     "Axe 2"
   ];
@@ -421,21 +408,9 @@ function exportToCSV() {
     ...filteredDocs.map(doc => [
       formatDate(doc._id),
       doc.code_produit || '',
-      doc.designation || '',
       doc.quantité_consommee || '',
-      doc.unites || '',
-      doc.a_commander || '',
-      doc.remarques || '',
-      doc.magasin || '',
-      doc.stock_initial || '',
-      doc.stock_final || '',
-      doc.seuil_de_commande || '',
-      doc.section_employeur || '',
-      doc.emplacement_de_stockage || '',
-      doc.quantite_en_stock || '',
-      doc.quantite_theorique || '',
       doc.date_sortie ? formatDate(doc.date_sortie) : '',
-      getAxe1Label(doc.axe1),
+      doc.axe1,
       doc.axe2 || ''
     ].map(field => 
       // Gérer les champs contenant des point-virgules en les entourant de guillemets
