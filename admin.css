@@ -148,6 +148,16 @@ main {
   width: 100%;
 }
 
+/* Style pour le bouton de réinitialisation */
+#resetFiltersBtn {
+  background-color: var(--color-warning);
+  color: var(--color-white);
+}
+
+#resetFiltersBtn:hover {
+  background-color: #e67e22;
+}
+
 /* Pour aligner les filtres sur la même ligne */
 .search-filter-container {
   display: flex;

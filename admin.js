@@ -39,6 +39,15 @@ function setupEventListeners() {
   document.getElementById('filterSelect').addEventListener('change', filterData);
   document.getElementById('dateFilter').addEventListener('change', filterData);
   document.getElementById('commandeFilter').addEventListener('change', filterData);
+  document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+
+  function resetFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterSelect').value = '';
+  document.getElementById('dateFilter').value = '';
+  document.getElementById('commandeFilter').value = '';
+  filterData();
+  }
   
   // Pagination
   document.getElementById('firstPageBtn').addEventListener('click', () => goToPage(1));
@@ -52,6 +61,8 @@ function setupEventListeners() {
   // Modal
   document.querySelector('.close-btn').addEventListener('click', closeModal);
 }
+
+
 
 async function loadData() {
   try {
