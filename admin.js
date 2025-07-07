@@ -32,6 +32,13 @@ function setupEventListeners() {
   document.getElementById('syncBtn').addEventListener('click', syncWithServer);
   document.getElementById('deleteSelectedBtn').addEventListener('click', confirmDeleteSelected);
   document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
+  document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('edit-btn')) {
+    const docId = e.target.dataset.id;
+    const doc = allDocs.find(d => d._id === docId);
+    if (doc) setupEditModal(doc);
+  }
+});
   
   // Recherche/filtre
   document.getElementById('searchInput').addEventListener('input', filterData);
@@ -150,6 +157,7 @@ function filterData() {
       <td>${doc.axe2 || ''}</td>
       <td>
         <button class="view-btn" data-id="${doc._id}">👁️</button>
+        <button class="edit-btn" data-id="${doc._id}">✏️</button>
         <button class="delete-btn" data-id="${doc._id}">🗑️</button>
       </td>
     `;
@@ -258,6 +266,112 @@ async function syncWithServer() {
     alert("Erreur lors de la synchronisation");
   }
 }
+
+// Ajoutez ces nouvelles fonctions :
+
+function setupEditModal(doc) {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.id = 'editModal';
+  modal.innerHTML = `
+    <div class="edit-modal-content">
+      <span class="close-btn">&times;</span>
+      <h2>Modifier l'entrée</h2>
+      <form id="editForm">
+        ${generateEditFields(doc)}
+      </form>
+      <div class="modal-actions">
+        <button id="saveEditBtn" class="btn-primary">Enregistrer</button>
+        <button id="cancelEditBtn" class="btn-secondary">Annuler</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  modal.style.display = 'flex';
+
+  // Gestion de la fermeture
+  modal.querySelector('.close-btn').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  modal.querySelector('#cancelEditBtn').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  // Gestion de la sauvegarde
+  modal.querySelector('#saveEditBtn').addEventListener('click', async () => {
+    await saveEditedDoc(doc._id);
+    modal.remove();
+  });
+}
+// Début édition
+function generateEditFields(doc) {
+  let fields = '';
+  const excludedFields = ['_id', '_rev', 'axe1']; // Champs non modifiables
+  
+  for (const [key, value] of Object.entries(doc)) {
+    if (excludedFields.includes(key) || key.startsWith('_')) continue;
+    
+    fields += `
+      <div class="form-group">
+        <label for="edit_${key}">${formatFieldName(key)}:</label>
+        ${getInputField(key, value)}
+      </div>
+    `;
+  }
+  
+  return fields;
+}
+
+function getInputField(key, value) {
+  if (key === 'a_commander') {
+    return `
+      <select id="edit_${key}" class="form-control">
+        <option value="Oui" ${value === 'Oui' ? 'selected' : ''}>Oui</option>
+        <option value="Non" ${value === 'Non' ? 'selected' : ''}>Non</option>
+      </select>
+    `;
+  } else if (key === 'remarques') {
+    return `<textarea id="edit_${key}" class="form-control">${value || ''}</textarea>`;
+  } else {
+    const type = typeof value === 'number' ? 'number' : 'text';
+    return `<input type="${type}" id="edit_${key}" class="form-control" value="${value || ''}">`;
+  }
+}
+
+async function saveEditedDoc(docId) {
+  try {
+    const doc = await localDB.get(docId);
+    const form = document.getElementById('editForm');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+      const key = input.id.replace('edit_', '');
+      doc[key] = input.type === 'number' ? parseFloat(input.value) : input.value;
+    });
+    
+    await localDB.put(doc);
+    alert('Modifications enregistrées avec succès');
+    loadData(); // Rafraîchit les données
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour:", error);
+    alert("Erreur lors de la mise à jour");
+  }
+}
+
+function formatFieldName(key) {
+  // Convertit les noms de champs en libellés lisibles
+  const names = {
+    code_produit: "Code Produit",
+    quantité_consommee: "Quantité Consommée",
+    a_commander: "À Commander",
+    // Ajoutez d'autres conversions si nécessaire
+  };
+  return names[key] || key.replace(/_/g, ' ');
+}
+
+//fin édition
 
 
 function exportToCSV() {
