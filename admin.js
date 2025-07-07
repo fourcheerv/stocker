@@ -151,7 +151,7 @@ function updateTable() {
                     `<img src="${photo}" alt="Photo ${i + 1}" class="table-img" onclick="showImage('${photo}')">`
                 ).join('') || "Aucune"}
             </td>
-            <td>${axe1 === "SCT=E382329" ? "Rotatives" : "Expédition"}</td>
+            <td>${axe1 || "N/A" }</td>
              <td>${axe2 || "N/A"}</td>
         `;
         tbody.appendChild(tr);
