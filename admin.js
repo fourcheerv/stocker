@@ -24,14 +24,40 @@ let sortOrder = 'desc';
 let isLoading = false;
 
 // Initialisation
+let isAppReady = false;
+
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    console.log("Initialisation en cours...");
     await initializeApplication();
+    isAppReady = true;
+    console.log("Application prête");
+    enableAllButtons(true);
   } catch (error) {
-    console.error("Erreur lors de l'initialisation:", error);
-    showError("Erreur lors de l'initialisation de l'application");
+    console.error("Erreur d'initialisation:", error);
+    showError("L'application n'a pas pu démarrer");
   }
 });
+
+function enableAllButtons(enable) {
+  const buttons = [
+    'searchBtn', 
+    'deleteSelectedBtn',
+    'exportBtn',
+    'exportZipBtn',
+    'exportCsvBtn',
+    'sortDate',
+    'selectAll'
+  ];
+  
+  buttons.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.disabled = !enable;
+      btn.style.opacity = enable ? 1 : 0.5;
+    }
+  });
+}
 
 async function initializeApplication() {
   showLoading(true);
@@ -68,24 +94,29 @@ function setupDatabases() {
 }
 
 function setupEventListeners() {
-  const addListener = (id, event, fn) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener(event, fn);
-    } else {
-      console.warn(`Élément non trouvé: ${id}`);
-    }
+  // Vérification explicite de chaque élément
+  const elements = {
+    'searchBtn': () => searchData(),
+    'deleteSelectedBtn': () => confirmDelete(),
+    'exportBtn': () => exportToExcel(),
+    'exportZipBtn': () => exportToZip(),
+    'exportCsvBtn': () => exportToCsvSimple(),
+    'selectAll': (e) => toggleSelectAll(e),
+    'sortDate': () => toggleSortOrder(),
+    'closePopup': () => closeImagePopup()
   };
 
-  addListener('searchBtn', 'click', debounce(searchData, 300));
-  addListener('deleteSelectedBtn', 'click', deleteSelected);
-  addListener('exportBtn', 'click', exportToExcel);
-  addListener('exportZipBtn', 'click', exportToZip);
-  addListener('selectAll', 'change', toggleSelectAll);
-  addListener('sortDate', 'click', toggleSortOrder);
-  addListener('closePopup', 'click', closeImagePopup);
-  addListener('exportCsvBtn', 'click', exportToCsvSimple);
-  addListener('refreshBtn', 'click', refreshData);
+  Object.entries(elements).forEach(([id, handler]) => {
+    const element = document.getElementById(id);
+    if (!element) {
+      console.error(`Élément ${id} non trouvé`);
+      return;
+    }
+
+    console.log(`Attache événement à ${id}`);
+    element.addEventListener('click', handler);
+    element.style.border = '1px solid green'; // Debug visuel
+  });
 }
 
 async function refreshData() {

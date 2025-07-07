@@ -249,3 +249,12 @@ tr:hover {
         flex-wrap: wrap;
     }
 }
+
+/* Dans admin.css */
+[disabled] {
+  cursor: not-allowed !important;
+}
+
+.debug-border {
+  border: 2px solid red !important;
+}
