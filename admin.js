@@ -25,10 +25,29 @@ document.addEventListener('DOMContentLoaded', () => {
 // Initialisation de la base de données
 async function initDB() {
     try {
-        await localDB.sync(remoteDB, { live: true, retry: true });
-        console.log('Synchronisation avec CouchDB activée');
+        // Vérifie d'abord si on peut accéder à CouchDB
+        const remoteInfo = await remoteDB.info();
+        console.log("Info CouchDB:", remoteInfo);
+
+        // Configure la synchronisation
+        const sync = localDB.sync(remoteDB, {
+            live: true,
+            retry: true,
+            heartbeat: 10000,
+            timeout: 5000
+        });
+
+        sync.on('change', function(change) {
+            console.log('Changement synchronisé:', change);
+        }).on('error', function(err) {
+            console.error('Erreur de synchronisation:', err);
+        });
+
+        console.log('Synchronisation activée');
+        return sync;
     } catch (error) {
-        console.error('Erreur de synchronisation:', error);
+        console.error('Erreur initialisation DB:', error);
+        throw error;
     }
 }
 
@@ -36,25 +55,41 @@ async function initDB() {
 async function loadData() {
     console.log("Tentative de chargement des données...");
     try {
-        const result = await localDB.allDocs({ include_docs: true });
-        console.log("Résultat brut de CouchDB:", result);
-        
+        // Option 1: Essayer d'abord la base locale
+        let result = await localDB.allDocs({ include_docs: true });
+        console.log("Résultat local:", result);
+
+        // Si la base locale est vide, essayer directement CouchDB
         if (!result.rows || result.rows.length === 0) {
-            console.warn("Aucune donnée trouvée dans la base locale");
-            // Vérifiez directement dans CouchDB
+            console.warn("Base locale vide, tentative directe avec CouchDB...");
             try {
-                const remoteResult = await remoteDB.allDocs({ include_docs: true });
-                console.log("Résultat direct de CouchDB:", remoteResult);
-                if (remoteResult.rows.length > 0) {
-                    console.error("Données présentes sur CouchDB mais pas en local - Problème de synchronisation");
+                result = await remoteDB.allDocs({ include_docs: true });
+                console.log("Résultat direct CouchDB:", result);
+                
+                if (!result.rows || result.rows.length === 0) {
+                    console.warn("La base CouchDB est également vide");
+                    alert("Aucune donnée trouvée dans la base de données");
+                    return;
                 }
             } catch (remoteError) {
                 console.error("Erreur d'accès direct à CouchDB:", remoteError);
+                alert("Erreur de connexion à la base de données. Voir la console (F12)");
+                return;
             }
-            return;
         }
 
-        // ... reste du code existant ...
+        // Tri des données
+        allSortedRows = result.rows.sort((a, b) => {
+            const dateA = new Date(a.doc._id);
+            const dateB = new Date(b.doc._id);
+            return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        });
+
+        console.log("Données triées:", allSortedRows);
+        updateTable();
+        updatePaginationControls();
+        updateSortIndicator();
+
     } catch (error) {
         console.error("Erreur complète:", error);
         alert("Erreur technique - Voir la console (F12)");
