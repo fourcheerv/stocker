@@ -169,24 +169,27 @@ main {
   opacity: 0.8;
 }
 
-/* Tableau */
+/* Tableau - Mises à jour importantes */
 .table-responsive {
   overflow-x: auto;
   background: var(--color-white);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   margin-bottom: 1.5rem;
+  width: 100%;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 th, td {
-  padding: 1rem;
+  padding: 0.75rem;
   text-align: left;
   border-bottom: 1px solid var(--color-gray);
+  vertical-align: top;
 }
 
 th {
@@ -195,6 +198,7 @@ th {
   position: sticky;
   top: 0;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 tr:nth-child(even) {
@@ -205,6 +209,14 @@ tr:hover {
   background-color: #e9f7fe;
 }
 
+/* Colonnes compactes */
+.compact-column {
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Cases à cocher */
 input[type="checkbox"] {
   width: 18px;
@@ -212,20 +224,25 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* Boutons d'action */
+/* Boutons d'action - Mis à jour */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
 .view-btn, .delete-btn {
-  padding: 0.5rem 0.75rem;
+  padding: 0.35rem 0.5rem;
   border: none;
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: var(--transition);
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .view-btn {
   background-color: var(--color-secondary);
   color: white;
-  margin-right: 0.5rem;
 }
 
 .view-btn:hover {
@@ -297,7 +314,7 @@ input[type="checkbox"] {
   border-color: var(--color-primary);
 }
 
-/* Modal */
+/* Modal - Mises à jour importantes */
 .modal {
   display: none;
   position: fixed;
@@ -316,7 +333,7 @@ input[type="checkbox"] {
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   width: 90%;
-  max-width: 800px;
+  max-width: 900px;
   max-height: 90vh;
   overflow-y: auto;
   padding: 2rem;
@@ -330,36 +347,54 @@ input[type="checkbox"] {
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--color-error);
+  background: none;
+  border: none;
 }
 
+/* Grille de détails améliorée */
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
 .detail-item {
-  margin-bottom: 0.5rem;
+  background-color: var(--color-light);
+  padding: 0.75rem;
+  border-radius: var(--border-radius);
+}
+
+.detail-item strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--color-primary);
 }
 
 .detail-full-width {
-  grid-column: span 2;
+  grid-column: 1 / -1;
 }
 
+/* Galerie photo améliorée */
 .photo-gallery {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
 }
 
 .detail-photo {
-  max-width: 150px;
-  max-height: 150px;
+  width: 100%;
+  height: auto;
+  max-height: 200px;
   border-radius: var(--border-radius);
-  border: 1px solid var(--color-gray);
   object-fit: cover;
+  box-shadow: var(--box-shadow);
+  transition: transform 0.3s ease;
+}
+
+.detail-photo:hover {
+  transform: scale(1.05);
 }
 
 /* Footer */
@@ -368,9 +403,10 @@ footer {
   padding: 1.5rem;
   color: #777;
   margin-top: 2rem;
+  border-top: 1px solid var(--color-gray);
 }
 
-/* Responsive */
+/* Responsive - Mises à jour importantes */
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -386,15 +422,47 @@ footer {
     flex-direction: column;
   }
   
+  /* Table responsive */
+  .hide-on-mobile {
+    display: none;
+  }
+  
+  th, td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Modal en pleine largeur */
+  .modal-content {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    padding: 1.5rem;
+  }
+  
   .detail-grid {
     grid-template-columns: 1fr;
   }
   
-  .detail-full-width {
-    grid-column: span 1;
-  }
-  
   .pagination-container {
     flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .pagination-controls {
+    justify-content: center;
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-card {
+    min-width: 100%;
+  }
+  
+  .photo-gallery {
+    grid-template-columns: 1fr;
   }
 }
