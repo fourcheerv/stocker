@@ -136,6 +136,7 @@ tr:hover {
     justify-content: center;
     margin: 20px 0;
     gap: 10px;
+    min-height: 40px;
 }
 
 .pagination-controls button {
@@ -148,6 +149,7 @@ tr:hover {
     align-items: center;
     padding: 0 15px;
 }
+
 
 /* Popup image */
 .popup {

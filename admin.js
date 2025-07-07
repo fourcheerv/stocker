@@ -25,11 +25,19 @@ document.addEventListener('DOMContentLoaded', () => {
 // Initialisation de la base de données
 async function initDB() {
     try {
-        // Vérifie d'abord si on peut accéder à CouchDB
-        const remoteInfo = await remoteDB.info();
-        console.log("Info CouchDB:", remoteInfo);
+        // Encoder le mot de passe pour l'URL
+        const encodedPassword = encodeURIComponent('M,jvcmHSdl54!');
+        const remoteDB = new PouchDB(`https://admin:${encodedPassword}@couchdb.monproprecloud.fr/stocks`);
+        
+        // Vérifier la connexion
+        const remoteInfo = await remoteDB.info().catch(() => null);
+        
+        if (!remoteInfo) {
+            console.warn("Impossible de se connecter à CouchDB, utilisation en mode local uniquement");
+            return { localDB, remoteDB: null };
+        }
 
-        // Configure la synchronisation
+        // Configurer la synchronisation
         const sync = localDB.sync(remoteDB, {
             live: true,
             retry: true,
@@ -43,7 +51,6 @@ async function initDB() {
             console.error('Erreur de synchronisation:', err);
         });
 
-        console.log('Synchronisation activée');
         return sync;
     } catch (error) {
         console.error('Erreur initialisation DB:', error);
@@ -136,8 +143,6 @@ function updatePaginationControls() {
     const container = document.getElementById('paginationControls');
     container.innerHTML = '';
     
-    if (totalPages <= 1) return;
-    
     // Bouton Précédent
     const prevBtn = document.createElement('button');
     prevBtn.textContent = '◀';
@@ -145,24 +150,24 @@ function updatePaginationControls() {
     prevBtn.addEventListener('click', () => {
         if (currentPage > 1) {
             currentPage--;
-            loadData();
+            updateTable();
         }
     });
     container.appendChild(prevBtn);
     
     // Info de page
     const pageInfo = document.createElement('span');
-    pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+    pageInfo.textContent = `Page ${currentPage} / ${Math.max(1, totalPages)}`;
     container.appendChild(pageInfo);
     
     // Bouton Suivant
     const nextBtn = document.createElement('button');
     nextBtn.textContent = '▶';
-    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.disabled = currentPage >= Math.max(1, totalPages);
     nextBtn.addEventListener('click', () => {
         if (currentPage < totalPages) {
             currentPage++;
-            loadData();
+            updateTable();
         }
     });
     container.appendChild(nextBtn);
