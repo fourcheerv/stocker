@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
     document.getElementById('sortDate').addEventListener('click', toggleSortOrder);
     document.getElementById('closePopup').addEventListener('click', closeImagePopup);
+    document.getElementById('exportCsvBtn').addEventListener('click', exportToCsvSimple);
+
 });
 
 
@@ -299,6 +301,35 @@ async function exportToZip() {
     }
 }
 
+// Export CSV
+function exportToCsvSimple() {
+    try {
+        const selectedFields = allSortedRows.map(row => {
+            return {
+                code_produit: row.doc.code_produit || '',
+                a_commander: row.doc.a_commander || '',
+                axe1: row.doc.axe1 || '',
+                axe2: row.doc.axe2 || ''
+            };
+        });
+
+        const csvContent = [
+            'code_produit;a_commander;axe1;axe2',
+            ...selectedFields.map(row =>
+                `${row.code_produit};${row.a_commander};${row.axe1};${row.axe2}`
+            )
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        saveAs(blob, 'Export_Stocks_Simple.csv');
+    } catch (error) {
+        console.error('Erreur export CSV simple :', error);
+        alert('Erreur lors de l\'export CSV simple');
+    }
+}
+
+
+
 // Gestion des images
 function showImage(src) {
     document.getElementById('popupImage').src = src;
@@ -316,10 +347,11 @@ function toggleSelectAll(e) {
     });
 }
 
-function toggleSortOrder() {
+async function toggleSortOrder() {
     sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    loadData();
+    await loadData();
 }
+
 
 function updateSortIndicator() {
     const sortElement = document.getElementById('sortDate');
