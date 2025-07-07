@@ -229,8 +229,8 @@ function exportToCSV() {
   }
 
   const headers = [
-    "Code Produit", "Quantité Consommée", "Unité", 
-    "A Commander", "Axe 1", "Axe 2", "Date"
+    "Code Produit", "Quantité Consommée", 
+    "Axe 1", "Axe 2", "Date"
   ];
   
   const csvContent = [
@@ -238,8 +238,6 @@ function exportToCSV() {
     ...filteredDocs.map(doc => [
       doc.code_produit || '',
       doc.quantité_consommee || '',
-      doc.unites || '',
-      doc.a_commander || '',
       doc.axe1,
       doc.axe2 || '',
       formatDate(doc._id)
