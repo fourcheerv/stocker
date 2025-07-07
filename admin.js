@@ -536,13 +536,23 @@ function showDetails(docId) {
       <div class="detail-item"><strong>Axe 2:</strong> ${doc.axe2 || '-'}</div>
   `;
 
-  if (doc.photos?.length > 0) {
-    detailsHtml += `<div class="detail-full-width"><strong>Photos:</strong></div>
-      <div class="photo-gallery">`;
-    doc.photos.forEach(photo => {
-      detailsHtml += `<img src="${photo}" alt="Photo stock" class="detail-photo">`;
-    });
-    detailsHtml += `</div>`;
+// Gestion sécurisée des photos
+  if (doc.photos) {
+    // Vérifie si c'est un tableau ou une chaîne unique
+    const photosArray = Array.isArray(doc.photos) ? doc.photos : [doc.photos];
+    
+    if (photosArray.length > 0 && photosArray[0]) { // Vérifie qu'il y a au moins une photo non vide
+      detailsHtml += `<div class="detail-full-width"><strong>Photos:</strong></div>
+        <div class="photo-gallery">`;
+      
+      photosArray.forEach(photo => {
+        if (photo) { // Vérifie que la photo existe
+          detailsHtml += `<img src="${photo}" alt="Photo stock" class="detail-photo">`;
+        }
+      });
+      
+      detailsHtml += `</div>`;
+    }
   }
 
   document.getElementById('modalContent').innerHTML = detailsHtml;
