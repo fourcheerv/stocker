@@ -1,3 +1,4 @@
+console.log("Script admin.js chargé");
 // Configuration de la base de données
 let localDB = new PouchDB('stocks');
 const password = encodeURIComponent('M,jvcmHSdl54!');
@@ -12,21 +13,31 @@ let sortOrder = 'desc';
 // Initialisation
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await resetLocalDB(true);  // suppression silencieuse sans confirmation
+    await resetLocalDB(true);  // Réinitialiser la base locale
     await initDB();
     setTimeout(loadData, 2000);
-    
-    // Événements
-    document.getElementById('searchBtn').addEventListener('click', searchData);
-    document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelected);
-    document.getElementById('exportBtn').addEventListener('click', exportToExcel);
-    document.getElementById('exportZipBtn').addEventListener('click', exportToZip);
-    document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
-    document.getElementById('sortDate').addEventListener('click', toggleSortOrder);
-    document.getElementById('closePopup').addEventListener('click', closeImagePopup);
-    document.getElementById('exportCsvBtn').addEventListener('click', exportToCsvSimple);
 
+    // Sécuriser l'ajout des écouteurs d'événements
+    const addListener = (id, event, fn) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener(event, fn);
+        } else {
+            console.warn(`L'élément avec l'id "${id}" n'a pas été trouvé.`);
+        }
+    };
+
+    // Attacher les événements aux boutons
+    addListener('searchBtn', 'click', searchData);
+    addListener('deleteSelectedBtn', 'click', deleteSelected);
+    addListener('exportBtn', 'click', exportToExcel);
+    addListener('exportZipBtn', 'click', exportToZip);
+    addListener('selectAll', 'change', toggleSelectAll);
+    addListener('sortDate', 'click', toggleSortOrder);
+    addListener('closePopup', 'click', closeImagePopup);
+    addListener('exportCsvBtn', 'click', exportToCsvSimple);
 });
+
 
 
 
