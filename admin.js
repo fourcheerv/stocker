@@ -152,7 +152,7 @@ function updateTable() {
                 ).join('') || "Aucune"}
             </td>
             <td>${axe1 || "N/A" }</td>
-             <td>${axe2 || "N/A"}</td>
+            <td>${axe2 || "N/A"}</td>
         `;
         tbody.appendChild(tr);
     });
