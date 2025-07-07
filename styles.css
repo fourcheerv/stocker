@@ -104,7 +104,7 @@ main {
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 15px;
-}
+}f
 
 .photo-count {
   font-weight: bold;
@@ -245,6 +245,16 @@ button:hover {
 
 .full-width {
   grid-column: span 1;
+}
+
+.commande-select {
+  background-color: #f8f9fa;
+  border: 2px solid var(--color-primary);
+  font-weight: bold;
+}
+
+.commande-select:focus {
+  border-color: var(--color-secondary);
 }
 
 footer {
