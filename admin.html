@@ -25,7 +25,7 @@
             <button id="exportZipBtn" class="btn-export-zip">Exporter sous forme de ZIP</button>
             <button id="deleteSelectedBtn" class="btn-delete">Supprimer les éléments sélectionnés</button>
             <button id="exportCsvBtn" class="btn-export-csv">Exporter CSV Simple</button>
-
+            <button id="refreshBtn" class="btn-refresh">🔄 Rafraîchir</button>
         </div>
     </section>
     
@@ -53,7 +53,11 @@
             </table>
         </div>
     </main>
-
+    <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p id="loadingText">Chargement...</p>
+    </div>
+    <div id="notificationsContainer" class="notifications-container"></div>
     <div id="paginationControls" class="pagination-controls"></div>
 
     <footer class="footer">
