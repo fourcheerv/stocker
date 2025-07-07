@@ -1,77 +1,104 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Gestion des Stocks</title>
-    <link rel="stylesheet" href="admin.css">
-    <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Administration Stocks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
 </head>
 <body>
-    <header class="header">
-        <div class="logo-container">
-            <h1>📦 Gestion des Stocks</h1>
-        </div>
-    </header>
-
-    <section class="toolbar">
-        <input type="text" id="searchInput" placeholder="Rechercher par code produit, désignation..." />
-        <div class="toolbar-buttons">
-            <button id="searchBtn" class="btn-search">Rechercher</button>
-            <button id="exportBtn" class="btn-export-excel">Exporter vers Excel</button>
-            <button id="exportZipBtn" class="btn-export-zip">Exporter sous forme de ZIP</button>
-            <button id="deleteSelectedBtn" class="btn-delete">Supprimer les éléments sélectionnés</button>
-            <button id="exportCsvBtn" class="btn-export-csv">Exporter CSV Simple</button>
-            <button id="refreshBtn" class="btn-refresh">🔄 Rafraîchir</button>
-        </div>
-    </section>
-    
-    <main>
-        <div class="table-container">
-            <table id="dataTable">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="selectAll"></th>
-                        <th>ID</th>
-                        <th>Code Produit</th>
-                        <th>Désignation</th>
-                        <th>Quantité Consommée</th>
-                        <th>Unité(s)</th>
-                        <th id="sortDate" style="cursor:pointer;">Date d'enregistrement &#8595;</th>
-                        <th>À Commander</th>
-                        <th>Magasin</th>
-                        <th>Photos</th>
-                        <th>Axe1</th>
-                        <th>Axe2</th>
-                        
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </main>
-    <div id="loadingOverlay" class="loading-overlay">
-    <div class="loading-spinner"></div>
-    <p id="loadingText">Chargement...</p>
+  <header>
+    <div class="header-content">
+      <h1>Administration des Stocks</h1>
+      <div>
+        <button class="logout-btn" id="logoutBtn">Déconnexion</button>
+      </div>
     </div>
-    <div id="notificationsContainer" class="notifications-container"></div>
-    <div id="paginationControls" class="pagination-controls"></div>
+  </header>
 
-    <footer class="footer">
-        <a href="index.html">Retour à l'application</a>
-        <p>&copy; 2025 - Gestion des Stocks - Interface d'administration</p>
-    </footer>
-
-    <div id="imagePopup" class="popup">
-        <div class="popup-content">
-            <span id="closePopup" class="popup-close">&times;</span>
-            <img id="popupImage" src="" alt="Aperçu de l'image">
-        </div>
+  <main>
+    <div class="admin-controls">
+      <button id="exportBtn">Exporter en CSV</button>
+      <button id="syncBtn">Synchroniser avec le serveur</button>
+      <button id="deleteSelectedBtn" class="danger">Supprimer la sélection</button>
+      <button id="deleteAllBtn" class="danger">Tout supprimer</button>
     </div>
 
-    <script src="admin.js"></script>
+    <div class="search-filter-container">
+      <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Rechercher...">
+        <button id="searchBtn">🔍</button>
+      </div>
+      <div class="filter-container">
+        <select id="filterSelect">
+          <option value="">Tous les comptes</option>
+          <option value="SCT=E382329">Compte Rotatives</option>
+          <option value="autre">Compte Expédition</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="stats-container">
+      <div class="stat-card">
+        <span class="stat-value" id="totalCount">0</span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="rotativesCount">0</span>
+        <span class="stat-label">Rotatives</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="expeditionCount">0</span>
+        <span class="stat-label">Expédition</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="selectedCount">0</span>
+        <span class="stat-label">Sélectionnés</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th width="40px"><input type="checkbox" id="selectAll"></th>
+            <th>Date</th>
+            <th>Code Produit</th>
+            <th>Désignation</th>
+            <th>Quantité</th>
+            <th>Axe 1</th>
+            <th>Axe 2</th>
+            <th width="100px">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="pagination-container">
+      <div class="pagination-info" id="paginationInfo"></div>
+      <div class="pagination-controls">
+        <button id="firstPageBtn">⏮️ Première</button>
+        <button id="prevPageBtn">◀️ Précédente</button>
+        <div class="page-numbers" id="pageNumbers"></div>
+        <button id="nextPageBtn">Suivante ▶️</button>
+        <button id="lastPageBtn">Dernière ⏭️</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="detailsModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 - Gestion de Stocks</p>
+  </footer>
+
+  <script src="admin.js"></script>
 </body>
 </html>
