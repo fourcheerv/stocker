@@ -1,19 +1,19 @@
-/* ================================
-   VARIABLES
-================================== */
 :root {
   --color-primary: #003d66;
   --color-secondary: #0c81b4;
-  --color-error: red;
+  --color-rotatives: #3498db;
+  --color-expedition: #2ecc71;
+  --color-error: #e74c3c;
+  --color-success: #27ae60;
   --color-white: #fff;
   --color-gray: #ccc;
+  --color-light-gray: #f8f9fa;
   --color-text: #333;
   --color-bg: #f4f4f4;
+  --border-radius: 8px;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* ================================
-   GLOBAL STYLES
-================================== */
 * {
   margin: 0;
   padding: 0;
@@ -28,27 +28,95 @@ body {
   padding: 20px;
 }
 
-/* ================================
-   HEADER
-================================== */
-h1 {
+header {
   text-align: center;
-  color: var(--color-primary);
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  padding: 20px 0;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: var(--color-white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
 }
 
-/* ================================
-   FORMULAIRE
-================================== */
-form {
-  max-width: 700px;
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.account-info {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.logout-btn {
+  background: none;
+  border: 1px solid var(--color-white);
+  color: var(--color-white);
+  padding: 5px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+h1 {
+  font-size: 2.2rem;
+  margin-bottom: 0;
+}
+
+main {
+  max-width: 800px;
   margin: 0 auto;
   background: var(--color-white);
   padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+#qr-reader {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto 25px;
+  border: 2px solid var(--color-primary);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.photo-section {
+  background: var(--color-light-gray);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  border: 1px dashed var(--color-primary);
+}
+
+.photo-buttons {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.photo-count {
+  font-weight: bold;
+  color: var(--color-primary);
+  margin-top: 5px;
+  display: block;
+  text-align: center;
+}
+
+#stockForm {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 15px;
 }
 
@@ -56,15 +124,23 @@ label {
   font-weight: bold;
   margin-bottom: 5px;
   display: block;
+  color: var(--color-primary);
 }
 
 input, textarea, select {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   font-size: 15px;
   border: 1px solid var(--color-gray);
-  border-radius: 6px;
+  border-radius: var(--border-radius);
   resize: vertical;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 61, 102, 0.2);
 }
 
 textarea {
@@ -79,26 +155,6 @@ input[type="file"] {
   display: none;
 }
 
-/* ================================
-   PHOTO & SCAN
-================================== */
-.photo-buttons {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-
-#qr-reader {
-  margin: 0 auto 20px auto;
-  border: 1px solid var(--color-gray);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-/* ================================
-   PREVIEW IMAGES
-================================== */
 .preview-container {
   display: flex;
   gap: 10px;
@@ -109,94 +165,128 @@ input[type="file"] {
 .preview-image {
   position: relative;
   border: 1px solid var(--color-gray);
-  border-radius: 8px;
-  max-width: 120px;
+  border-radius: var(--border-radius);
+  width: 120px;
+  height: 120px;
   overflow: hidden;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .preview-image img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
 }
 
 .remove-button {
   position: absolute;
   top: 4px;
   right: 4px;
-  background-color: rgba(255, 0, 0, 0.85);
-  color: white;
+  background-color: var(--color-error);
+  color: var(--color-white);
   border: none;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   font-weight: bold;
   cursor: pointer;
   font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.2s;
 }
 
-/* ================================
-   BUTTONS
-================================== */
+.remove-button:hover {
+  background-color: #c0392b;
+}
+
 button {
   background-color: var(--color-primary);
   color: var(--color-white);
   border: none;
-  border-radius: 5px;
+  border-radius: var(--border-radius);
   padding: 12px;
   font-size: 15px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  width: 100%;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
 }
 
 button:hover {
   background-color: var(--color-secondary);
+  transform: translateY(-2px);
 }
 
-#clearForm {
+#submitBtn {
+  background-color: var(--color-success);
+  padding: 14px;
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+#submitBtn:hover {
+  background-color: #219653;
+}
+
+#resetBtn {
   background-color: var(--color-error);
+  margin-top: 0;
 }
 
-#clearForm:hover {
-  background-color: orangered;
+#resetBtn:hover {
+  background-color: #c0392b;
 }
 
-.form-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 15px;
+.full-width {
+  grid-column: span 1;
 }
 
-/* ================================
-   RESPONSIVE DESIGN
-================================== */
-@media (max-width: 768px) {
+footer {
+  text-align: center;
+  margin-top: 30px;
+  padding: 20px;
+  color: #7f8c8d;
+}
+
+@media (min-width: 768px) {
+  #stockForm {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .full-width {
+    grid-column: span 2;
+  }
+  
+  .form-actions {
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 767px) {
   body {
     padding: 10px;
   }
 
   h1 {
-    font-size: 1.4em;
+    font-size: 1.8rem;
   }
 
-  form {
+  main {
     padding: 15px;
   }
-
-  input, textarea, button {
-    font-size: 14px;
-  }
-
+  
   .photo-buttons {
     flex-direction: column;
   }
-
-  .form-actions {
+  
+  .header-content {
     flex-direction: column;
+    gap: 10px;
   }
 }
