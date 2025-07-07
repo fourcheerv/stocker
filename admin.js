@@ -259,28 +259,65 @@ async function syncWithServer() {
   }
 }
 
+
 function exportToCSV() {
+  // Utilise filteredDocs qui contient déjà les documents filtrés
   if (filteredDocs.length === 0) {
     alert("Aucune donnée à exporter");
     return;
   }
 
+  // Définir les en-têtes CSV avec tous les champs disponibles
   const headers = [
-    "Code Produit", "Quantité Consommée", 
-    "Axe 1", "Axe 2", "Date"
+    "Date", 
+    "Code Produit", 
+    "Désignation",
+    "Quantité Consommée",
+    "Unités",
+    "À Commander",
+    "Remarques",
+    "Magasin",
+    "Stock Initial",
+    "Stock Final",
+    "Seuil de Commande",
+    "Section Employeur",
+    "Emplacement de Stockage",
+    "Quantité en Stock",
+    "Quantité Théorique",
+    "Date de Sortie",
+    "Axe 1",
+    "Axe 2"
   ];
-  
+
+  // Préparer les lignes de données
   const csvContent = [
-    headers.join(";"),
+    headers.join(";"), // En-têtes
     ...filteredDocs.map(doc => [
+      formatDate(doc._id),
       doc.code_produit || '',
+      doc.designation || '',
       doc.quantité_consommee || '',
-      doc.axe1,
-      doc.axe2 || '',
-      formatDate(doc._id)
-    ].join(";"))
+      doc.unites || '',
+      doc.a_commander || '',
+      doc.remarques || '',
+      doc.magasin || '',
+      doc.stock_initial || '',
+      doc.stock_final || '',
+      doc.seuil_de_commande || '',
+      doc.section_employeur || '',
+      doc.emplacement_de_stockage || '',
+      doc.quantite_en_stock || '',
+      doc.quantite_theorique || '',
+      doc.date_sortie ? formatDate(doc.date_sortie) : '',
+      getAxe1Label(doc.axe1),
+      doc.axe2 || ''
+    ].map(field => 
+      // Gérer les champs contenant des point-virgules en les entourant de guillemets
+      typeof field === 'string' && field.includes(';') ? `"${field}"` : field
+    ).join(";"))
   ].join("\n");
 
+  // Créer et télécharger le fichier CSV
   const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -290,6 +327,10 @@ function exportToCSV() {
   link.click();
   document.body.removeChild(link);
 }
+
+
+
+
 
 async function confirmDeleteSelected() {
   if (selectedDocs.size === 0) {
