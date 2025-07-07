@@ -122,7 +122,6 @@ async function loadData() {
     }
 }
 
-// ... (les autres fonctions restent identiques à votre version originale)
 
 // Mise à jour du tableau
 function updateTable() {
