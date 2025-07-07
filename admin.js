@@ -240,7 +240,7 @@ function exportToCSV() {
       doc.quantité_consommee || '',
       doc.unites || '',
       doc.a_commander || '',
-      getAxe1Label(doc.axe1),
+      doc.axe1,
       doc.axe2 || '',
       formatDate(doc._id)
     ].join(";"))
