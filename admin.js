@@ -37,6 +37,8 @@ function setupEventListeners() {
   document.getElementById('searchInput').addEventListener('input', filterData);
   document.getElementById('searchBtn').addEventListener('click', filterData);
   document.getElementById('filterSelect').addEventListener('change', filterData);
+  document.getElementById('dateFilter').addEventListener('change', filterData);
+  document.getElementById('commandeFilter').addEventListener('change', filterData);
   
   // Pagination
   document.getElementById('firstPageBtn').addEventListener('click', () => goToPage(1));
@@ -69,19 +71,38 @@ async function loadData() {
 function filterData() {
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   const filterValue = document.getElementById('filterSelect').value;
+  const dateFilter = document.getElementById('dateFilter').value;
+  const commandeFilter = document.getElementById('commandeFilter').value;
 
   filteredDocs = allDocs.filter(doc => {
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
+    // Filtre par date
+    if (dateFilter) {
+      const docDate = new Date(doc._id).toISOString().split('T')[0];
+      if (docDate !== dateFilter) return false;
+    }
+    
+    // Filtre "À commander"
+    if (commandeFilter) {
+      const aCommander = doc.a_commander ? doc.a_commander.toLowerCase() : '';
+      if (commandeFilter === 'oui' && !aCommander.includes('oui')) return false;
+      if (commandeFilter === 'non' && aCommander.includes('oui')) return false;
+    }
+    
     // Filtre par recherche
     if (searchTerm) {
-      return (
-        (doc.code_produit && doc.code_produit.toLowerCase().includes(searchTerm)) ||
-        (doc.designation && doc.designation.toLowerCase().includes(searchTerm)) ||
-        (doc.axe2 && doc.axe2.toLowerCase().includes(searchTerm))
-      );
+      const matchesCode = doc.code_produit && doc.code_produit.toLowerCase().includes(searchTerm);
+      const matchesDesignation = doc.designation && doc.designation.toLowerCase().includes(searchTerm);
+      const matchesAxe2 = doc.axe2 && doc.axe2.toLowerCase().includes(searchTerm);
+      const matchesRemarques = doc.remarques && doc.remarques.toLowerCase().includes(searchTerm);
+      
+      if (!(matchesCode || matchesDesignation || matchesAxe2 || matchesRemarques)) {
+        return false;
+      }
     }
+    
     return true;
   });
 

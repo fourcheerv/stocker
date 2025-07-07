@@ -137,6 +137,31 @@ main {
   min-width: 200px;
 }
 
+.filter-container {
+  min-width: 180px;
+}
+
+.filter-input {
+  padding: 0.75rem;
+  border: 1px solid var(--color-gray);
+  border-radius: var(--border-radius);
+  width: 100%;
+}
+
+/* Pour aligner les filtres sur la même ligne */
+.search-filter-container {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .filter-container {
+    min-width: 100%;
+  }
+}
+
 /* Statistiques */
 .stats-container {
   display: flex;
