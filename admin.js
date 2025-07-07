@@ -10,11 +10,11 @@ let allSortedRows = [];
 let sortOrder = 'desc';
 
 // Initialisation
-document.addEventListener('DOMContentLoaded', () => {
-    initDB().then(() => {
-        // Attendre 2 secondes pour laisser la synchronisation se faire
-        setTimeout(loadData, 2000);
-    });
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await resetLocalDB(true);  // suppression silencieuse sans confirmation
+    await initDB();
+    setTimeout(loadData, 2000);
     
     // Événements
     document.getElementById('searchBtn').addEventListener('click', searchData);
@@ -24,18 +24,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
     document.getElementById('sortDate').addEventListener('click', toggleSortOrder);
     document.getElementById('closePopup').addEventListener('click', closeImagePopup);
-    document.getElementById('resetLocalDB').addEventListener('click', resetLocalDB);
 });
 
 
 
 // Réinitialisation de la base locale
-async function resetLocalDB() {
-    if (confirm("Voulez-vous vraiment réinitialiser le cache local ?")) {
-        await localDB.destroy();
+async function resetLocalDB(silent = false) {
+    if (silent || confirm("Voulez-vous vraiment réinitialiser le cache local ?")) {
+        try {
+            await localDB.destroy();
+        } catch (err) {
+            console.warn("Erreur lors de la destruction de la base locale :", err);
+        }
         localDB = new PouchDB('stocks');
-        alert("Cache local réinitialisé. La page va se recharger.");
-        location.reload();
+        if (!silent) {
+            alert("Cache local réinitialisé. La page va se recharger.");
+            location.reload();
+        }
     }
 }
 
