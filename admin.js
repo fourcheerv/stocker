@@ -89,7 +89,7 @@ function filterData() {
   renderTable();
 }
 
-function renderTable() {
+  function renderTable() {
   const tableBody = document.getElementById('dataTable').querySelector('tbody');
   tableBody.innerHTML = '';
 
@@ -108,7 +108,12 @@ function renderTable() {
       <td>${formatDate(doc._id)}</td>
       <td>${doc.code_produit || ''}</td>
       <td>${doc.designation || ''}</td>
-      <td>${doc.quantité_consommee || ''} ${doc.unites || ''}</td>
+      <td>${doc.quantité_consommee || ''}</td>
+      <td>${doc.unites || ''}</td>
+      <td>${doc.a_commander || ''}</td>
+      <td>${doc.magasin || ''}</td>
+      <td>${doc.stock_initial || ''}</td>
+      <td>${doc.stock_final || ''}</td>
       <td>${getAxe1Label(doc.axe1)}</td>
       <td>${doc.axe2 || ''}</td>
       <td>
@@ -301,6 +306,7 @@ async function deleteDocs(docIds) {
 }
 
 // Fonctions d'affichage
+
 function showDetails(docId) {
   const doc = allDocs.find(d => d._id === docId);
   if (!doc) return;
@@ -311,12 +317,19 @@ function showDetails(docId) {
       <div class="detail-item"><strong>Date:</strong> ${formatDate(doc._id)}</div>
       <div class="detail-item"><strong>Code Produit:</strong> ${doc.code_produit || '-'}</div>
       <div class="detail-item"><strong>Désignation:</strong> ${doc.designation || '-'}</div>
-      <div class="detail-item"><strong>Quantité consommée:</strong> ${doc.quantité_consommee || '-'} ${doc.unites || ''}</div>
+      <div class="detail-item"><strong>Quantité consommée:</strong> ${doc.quantité_consommee || '-'}</div>
+      <div class="detail-item"><strong>Unités:</strong> ${doc.unites || '-'}</div>
       <div class="detail-item"><strong>À commander:</strong> ${doc.a_commander || '-'}</div>
       <div class="detail-item"><strong>Remarques:</strong> ${doc.remarques || '-'}</div>
       <div class="detail-item"><strong>Magasin:</strong> ${doc.magasin || '-'}</div>
       <div class="detail-item"><strong>Stock initial:</strong> ${doc.stock_initial || '-'}</div>
       <div class="detail-item"><strong>Stock final:</strong> ${doc.stock_final || '-'}</div>
+      <div class="detail-item"><strong>Seuil de commande:</strong> ${doc.seuil_de_commande || '-'}</div>
+      <div class="detail-item"><strong>Section employeur:</strong> ${doc.section_employeur || '-'}</div>
+      <div class="detail-item"><strong>Emplacement de stockage:</strong> ${doc.emplacement_de_stockage || '-'}</div>
+      <div class="detail-item"><strong>Quantité en stock:</strong> ${doc.quantite_en_stock || '-'}</div>
+      <div class="detail-item"><strong>Quantité théorique:</strong> ${doc.quantite_theorique || '-'}</div>
+      <div class="detail-item"><strong>Date de sortie:</strong> ${doc.date_sortie ? formatDate(doc.date_sortie) : '-'}</div>
       <div class="detail-item"><strong>Axe 1:</strong> ${getAxe1Label(doc.axe1)}</div>
       <div class="detail-item"><strong>Axe 2:</strong> ${doc.axe2 || '-'}</div>
   `;
@@ -334,9 +347,14 @@ function showDetails(docId) {
   document.getElementById('detailsModal').style.display = 'flex';
 }
 
+
+
 function closeModal() {
   document.getElementById('detailsModal').style.display = 'none';
 }
+
+
+
 
 // Fonctions utilitaires
 function formatDate(isoString) {
