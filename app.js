@@ -45,13 +45,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // === Déconnexion ===
 document.getElementById('logoutBtn').addEventListener('click', () => {
-  // Réinitialiser l'application
   resetForm();
-  
-  // Supprimer le compte de sessionStorage
   sessionStorage.removeItem('currentAccount');
-  
-  // Rediriger vers la page de login
   window.location.href = 'login.html';
 });
 
@@ -64,9 +59,8 @@ function loadExcelData() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
       
-      // Initialiser la liste des désignations (sans filtre par compte)
       const list = document.getElementById("designationList");
-      list.innerHTML = ''; // Vider la liste
+      list.innerHTML = '';
       
       excelData.forEach((row) => {
         if (row["Désignation:"]) {
@@ -76,7 +70,6 @@ function loadExcelData() {
         }
       });
       
-      // Initialiser le scanner QR
       initQRScanner();
     })
     .catch((e) => console.error("Erreur chargement Excel :", e));
@@ -107,12 +100,9 @@ function initQRScanner() {
   }
 }
 
-// === Fonction pour arrêter le scanner QR ===
 function stopQRScanner() {
   if (qrReader) {
-    qrReader.stop().then(() => {
-      console.log("QR Scanner stopped");
-    }).catch(err => console.error("Failed to stop QR scanner", err));
+    qrReader.stop().catch(err => console.error("Failed to stop QR scanner", err));
   }
 }
 
@@ -143,24 +133,18 @@ document.getElementById("designation").addEventListener("change", () => {
     "axe2": "axe2"
   };
 
- console.log("Match trouvé:", match); // Vérifiez que match contient bien axe2
-    console.log("Élément axe2 existe:", document.getElementById("axe2"));
-
-
   for (const [key, id] of Object.entries(map)) {
     if (match[key] !== undefined) {
       if (key === "Date de sortie") {
-        // Formater la date au format fr-FR
         const date = new Date(match[key]);
         if (!isNaN(date.getTime())) {
-          const formattedDate = date.toLocaleString('fr-FR', {
+          document.getElementById(id).value = date.toLocaleString('fr-FR', {
             year: 'numeric', 
             month: '2-digit', 
             day: '2-digit',
             hour: '2-digit', 
             minute: '2-digit'
           });
-          document.getElementById(id).value = formattedDate;
         }
       } else {
         document.getElementById(id).value = match[key];
@@ -168,7 +152,11 @@ document.getElementById("designation").addEventListener("change", () => {
     }
   }
   
-  // Mettre à jour axe1 avec la valeur du compte courant
+  // Valeur par défaut pour axe2 si vide
+  if (!match["axe2"] || match["axe2"].trim() === "") {
+    document.getElementById("axe2").value = "SUP=SEMPQRLER";
+  }
+  
   document.getElementById("axe1").value = currentAccount;
 });
 
@@ -259,22 +247,13 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   
   if (isSubmitting) return;
   isSubmitting = true;
-  
-  if (imageFiles.length === 0) {
-    alert("Ajoutez au moins une photo.");
-    isSubmitting = false;
-    return;
-  }
 
-  // Arrêter le scanner QR pendant le traitement
   stopQRScanner();
 
   const form = new FormData(e.target);
   const record = { _id: new Date().toISOString(), photos: [] };
 
-  // Traiter chaque champ du formulaire
   form.forEach((val, key) => {
-    // Formater spécifiquement la date de sortie
     if (key === "date_sortie") {
       const date = new Date(val);
       if (!isNaN(date.getTime())) {
@@ -286,36 +265,34 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
           minute: '2-digit'
         });
       } else {
-        record[key] = val; // Garder la valeur originale si ce n'est pas une date valide
+        record[key] = val;
       }
     } else {
       record[key] = val;
     }
   });
 
-  // Traitement images (converties en base64)
-  for (const file of imageFiles) {
-    const base64 = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(file);
-    });
-    record.photos.push(base64);
+  // Traitement images seulement si elles existent
+  if (imageFiles.length > 0) {
+    for (const file of imageFiles) {
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+      record.photos.push(base64);
+    }
   }
 
   try {
     await localDB.put(record);
     alert("Stock enregistré !");
-    
-    // Réinitialisation complète
     resetForm();
-    
   } catch (err) {
     console.error("Erreur sauvegarde :", err);
     alert("Erreur lors de l'enregistrement.");
   } finally {
     isSubmitting = false;
-    // Redémarrer le scanner après traitement
     initQRScanner();
   }
 });
@@ -326,14 +303,8 @@ function resetForm() {
   imageFiles = [];
   document.getElementById("previewContainer").innerHTML = "";
   updatePhotoCount();
-  
-  // Réinitialiser le code produit
   document.getElementById("code_produit").value = "";
-  
-  // Réinitialiser la liste d'autocomplétion
   document.getElementById("designation").value = "";
-  
-  // Remettre le compte actuel
   document.getElementById("axe1").value = currentAccount;
 }
 
