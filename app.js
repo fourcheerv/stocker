@@ -154,7 +154,7 @@ document.getElementById("designation").addEventListener("change", () => {
   
   // Valeur par défaut pour axe2 si vide
   if (!match["axe2"] || match["axe2"].trim() === "") {
-    document.getElementById("axe2").value = "SUP=SEMPQRLER";
+    document.getElementById("axe2).value = "SUP=SEMPQRLER";
   }
   
   document.getElementById("axe1").value = currentAccount;
