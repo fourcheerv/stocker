@@ -143,6 +143,10 @@ document.getElementById("designation").addEventListener("change", () => {
     "axe2": "axe2"
   };
 
+ console.log("Match trouvé:", match); // Vérifiez que match contient bien axe2
+    console.log("Élément axe2 existe:", document.getElementById("axe2"));
+
+
   for (const [key, id] of Object.entries(map)) {
     if (match[key] !== undefined) {
       if (key === "Date de sortie") {
