@@ -62,17 +62,30 @@ function loadExcelData() {
       const list = document.getElementById("designationList");
       list.innerHTML = '';
       
+      // Nouvelle méthode optimisée pour remplir le datalist
+      const designations = new Set();
+      
       excelData.forEach((row) => {
-        if (row["Désignation:"]) {
-          const opt = document.createElement("option");
-          opt.value = row["Désignation:"];
-          list.appendChild(opt);
+        // Gère les deux formats possibles de nom de colonne
+        const designation = row["Désignation:"] || row["Désignation"];
+        if (designation && designation.trim() !== "") {
+          designations.add(designation.trim());
         }
+      });
+      
+      // Ajoute les options au datalist
+      designations.forEach(designation => {
+        const option = document.createElement("option");
+        option.value = designation;
+        list.appendChild(option);
       });
       
       initQRScanner();
     })
-    .catch((e) => console.error("Erreur chargement Excel :", e));
+    .catch((e) => {
+      console.error("Erreur chargement Excel :", e);
+      alert("Erreur lors du chargement du fichier Excel");
+    });
 }
 
 // === Initialisation du scanner QR ===
@@ -88,6 +101,13 @@ function initQRScanner() {
             (text) => {
               if (!isSubmitting) {
                 document.getElementById("code_produit").value = text;
+                // Trouve automatiquement la désignation correspondante
+                const product = excelData.find(item => item["Code_Produit"] === text);
+                if (product) {
+                  document.getElementById("designation").value = product["Désignation:"] || product["Désignation"];
+                  // Déclenche l'événement change pour remplir les autres champs
+                  document.getElementById("designation").dispatchEvent(new Event('change'));
+                }
               }
             },
             (err) => console.warn("QR error", err)
@@ -110,7 +130,7 @@ function stopQRScanner() {
 document.getElementById("designation").addEventListener("change", () => {
   const val = document.getElementById("designation").value.trim().toLowerCase();
   const match = excelData.find(
-    (row) => (row["Désignation:"] || "").toLowerCase() === val
+    (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
   );
 
   if (!match) return;
@@ -306,6 +326,7 @@ function resetForm() {
   document.getElementById("code_produit").value = "";
   document.getElementById("designation").value = "";
   document.getElementById("axe1").value = currentAccount;
+  document.getElementById("axe2").value = "SUP=SEMPQRLER";
 }
 
 // === Bouton de réinitialisation ===

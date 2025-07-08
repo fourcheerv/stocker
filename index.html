@@ -48,8 +48,10 @@
 
       <div class="full-width">
         <label for="designation">Désignation</label>
-        <input list="designationList" id="designation" name="designation" required>
-        <datalist id="designationList"></datalist>
+        <input list="designationList" id="designation" name="designation" autocomplete="off" required>
+        <datalist id="designationList">
+          <!-- Les options seront ajoutées dynamiquement -->
+        </datalist>
       </div>
 
       <div>
@@ -63,12 +65,12 @@
       </div>
 
       <div>
-      <label for="a_commander">À Commander</label>
-      <select id="a_commander" name="a_commander" class="commande-select" required>
-        <option value="">-- Sélectionnez --</option>
-        <option value="Oui">Oui</option>
-        <option value="Non" selected>Non</option>
-      </select>
+        <label for="a_commander">À Commander</label>
+        <select id="a_commander" name="a_commander" class="commande-select" required>
+          <option value="">-- Sélectionnez --</option>
+          <option value="Oui">Oui</option>
+          <option value="Non" selected>Non</option>
+        </select>
       </div>
 
       <div class="full-width">
@@ -108,7 +110,7 @@
 
       <div>
         <label for="quantite_en_stock">Quantité en stock</label>
-        <input type="text" id="quantite_theorique" inputmode="numeric" pattern="\d*">
+        <input type="number" id="quantite_en_stock" name="quantite_en_stock" required>
       </div>
 
       <div>
@@ -118,17 +120,17 @@
 
       <div class="full-width">
         <label for="date_sortie">Date de sortie</label>
-        <input type="datetime-local" id="date_sortie" name="date_sortie" required>
+        <input type="datetime-local" id="date_sortie" name="date_sortie">
       </div>
 
-          <div class="full-width">
+      <div class="full-width">
         <label for="axe1">Axe 1 (Compte)</label>
         <input type="text" id="axe1" name="axe1" readonly>
       </div>
 
       <div>
         <label for="axe2">Axe 2</label>
-        <input type="text" id="axe2" name="axe2" required>
+        <input type="text" id="axe2" name="axe2" value="SUP=SEMPQRLER" required>
       </div>
 
       <div class="full-width" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
