@@ -158,13 +158,10 @@ document.getElementById("designation").addEventListener("change", () => {
       if (key === "Date de sortie") {
         const date = new Date(match[key]);
         if (!isNaN(date.getTime())) {
-          document.getElementById(id).value = date.toLocaleString('fr-FR', {
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit',
-            hour: '2-digit', 
-            minute: '2-digit'
-          });
+          document.getElementById(id).value = date.toISOString().slice(0, 16); // Format pour datetime-local
+        } else {
+          // Date du jour si date manquante ou invalide
+          document.getElementById(id).value = new Date().toISOString().slice(0, 16);
         }
       } else {
         document.getElementById(id).value = match[key];
@@ -327,6 +324,8 @@ function resetForm() {
   document.getElementById("designation").value = "";
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("axe2").value = "SUP=SEMPQRLER";
+   // Date du jour par défaut
+  document.getElementById("date_sortie").value = new Date().toISOString().slice(0, 16);
 }
 
 // === Bouton de réinitialisation ===
