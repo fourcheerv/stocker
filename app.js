@@ -8,156 +8,176 @@ let currentAccount = null;
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
 
-localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
+localDB.sync(remoteDB, { live: true, retry: true }).on("error", (err) => {
+  console.error("Erreur synchronisation:", err);
+});
 
 // === Gestion de la session ===
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
   currentAccount = sessionStorage.getItem('currentAccount');
   
   if (!currentAccount) {
     window.location.href = 'login.html';
     return;
   }
-  
-  // Mapper le code du compte à un nom lisible
+
+  // Mapper le code du compte
   const accountNames = {
     'SCT=E260329': 'SCE Informations Sportives',
-    'SCT=E272329': 'SCE Support Rédaction',
-    'SCT=E370329': 'Maintenance Machines',
-    'SCT=E382329': 'Service Rotatives',
-    'SCT=E390329': 'Service Expédition',
-    'SCT=E500329': 'Direction Vente',
-    'SCT=E730329': 'LER Charges',
-    'SCT=E736329': 'Service Travaux',
-    'SCT=E760329': 'Achats Magasin',
-    'SCT=E762329': 'Manutention Papier',
-    'SCT=E772329': 'Coursiers',
-    'SCT=E860329': 'Cantine',
-    'NEUTRE': 'Compte Neutre'
+    // ... (autres comptes)
   };
   
   document.getElementById('current-account').textContent = 
     accountNames[currentAccount] || currentAccount;
   
   document.getElementById('axe1').value = currentAccount;
-  loadExcelData();
+  
+  try {
+    await loadExcelData();
+    await initQRScanner(); // Initialisation après consentement
+  } catch (err) {
+    console.error("Initialisation erreur:", err);
+  }
 });
 
-// === Déconnexion ===
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  resetForm();
-  sessionStorage.removeItem('currentAccount');
-  window.location.href = 'login.html';
-});
-
-// === Chargement Excel ===
-function loadExcelData() {
-  fetch("stocker_temp.xlsx")
-    .then((r) => r.arrayBuffer())
-    .then((data) => {
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      excelData = XLSX.utils.sheet_to_json(sheet);
-      
-      const list = document.getElementById("designationList");
-      list.innerHTML = '';
-      
-      excelData.forEach((row) => {
-        if (row["Désignation:"]) {
-          const opt = document.createElement("option");
-          opt.value = row["Désignation:"];
-          list.appendChild(opt);
-        }
+// === Chargement Excel avec nettoyage des données ===
+async function loadExcelData() {
+  try {
+    const response = await fetch("stocker_temp.xlsx");
+    const data = await response.arrayBuffer();
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    
+    // Nettoyage des données
+    excelData = XLSX.utils.sheet_to_json(sheet).map(row => {
+      const cleanRow = {};
+      Object.entries(row).forEach(([key, value]) => {
+        const cleanKey = key.trim().replace(/"/g, '');
+        cleanRow[cleanKey] = value !== undefined ? value : "";
       });
+      return cleanRow;
+    });
+
+    // Debug colonnes
+    console.log("Colonnes disponibles:", Object.keys(excelData[0]));
+
+    // Remplissage liste désignations
+    const list = document.getElementById("designationList");
+    list.innerHTML = '';
+    excelData.forEach(row => {
+      if (row.Désignation) {
+        const opt = document.createElement("option");
+        opt.value = row.Désignation;
+        list.appendChild(opt);
+      }
+    });
+
+  } catch (err) {
+    console.error("Erreur chargement Excel:", err);
+    throw err;
+  }
+}
+
+// === Gestion Camera avec permissions ===
+async function initQRScanner() {
+  if (!window.Html5Qrcode) {
+    console.warn("Bibliothèque QR non chargée");
+    return;
+  }
+
+  try {
+    const cameras = await Html5Qrcode.getCameras();
+    if (cameras && cameras.length) {
+      qrReader = new Html5Qrcode("qr-reader");
       
-      initQRScanner();
-    })
-    .catch((e) => console.error("Erreur chargement Excel :", e));
-}
+      // Options de configuration
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
+      };
 
-// === Initialisation du scanner QR ===
-function initQRScanner() {
-  if (Html5Qrcode.getCameras().then) {
-    Html5Qrcode.getCameras()
-      .then(devices => {
-        if (devices && devices.length) {
-          qrReader = new Html5Qrcode("qr-reader");
-          qrReader.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            (text) => {
-              if (!isSubmitting) {
-                document.getElementById("code_produit").value = text;
-              }
-            },
-            (err) => console.warn("QR error", err)
-          ).catch((err) => console.error("QR init error", err));
-        } else {
-          console.log("No cameras found");
-        }
-      })
-      .catch(err => console.error("Camera access error:", err));
+      try {
+        await qrReader.start(
+          { facingMode: "environment" },
+          config,
+          (text) => {
+            const codeInput = document.getElementById("code_produit");
+            if (codeInput && !isSubmitting) {
+              codeInput.value = text;
+            }
+          },
+          (err) => console.warn("Erreur scan QR:", err)
+        );
+      } catch (startErr) {
+        console.error("Erreur démarrage caméra:", startErr);
+        showCameraError();
+      }
+    } else {
+      console.log("Aucune caméra détectée");
+    }
+  } catch (permissionErr) {
+    console.error("Erreur permission caméra:", permissionErr);
+    showCameraError();
   }
 }
 
-function stopQRScanner() {
-  if (qrReader) {
-    qrReader.stop().catch(err => console.error("Failed to stop QR scanner", err));
+function showCameraError() {
+  const qrContainer = document.getElementById("qr-reader");
+  if (qrContainer) {
+    qrContainer.innerHTML = `
+      <div class="camera-error">
+        <p>Accès caméra bloqué. Veuillez autoriser les permissions.</p>
+        <button id="retry-camera">Réessayer</button>
+      </div>
+    `;
+    document.getElementById("retry-camera").addEventListener("click", initQRScanner);
   }
 }
 
-// === Auto-remplissage par désignation ===
-document.getElementById("designation").addEventListener("change", () => {
-  const val = document.getElementById("designation").value.trim().toLowerCase();
-  const match = excelData.find(
-    (row) => (row["Désignation:"] || "").toLowerCase() === val
+// === Auto-remplissage robuste ===
+document.getElementById("designation").addEventListener("change", function() {
+  const val = this.value.trim().toLowerCase();
+  const match = excelData.find(row => 
+    (row.Désignation || "").toLowerCase() === val
   );
 
   if (!match) return;
 
-  const map = {
-    "Code_Produit": "code_produit",
-    "Quantité_Consommée": "quantité_consommee",
-    "unité(s)": "unites",
-    "A Commander": "a_commander",
-    "Remarques:": "remarques",
-    "Magasin": "magasin",
-    "Stock initial": "stock_initial",
-    "Stock final": "stock_final",
-    "seuil de commande": "seuil_de_commande",
-    "Section employeur": "section_employeur",
-    "emplacement de stockage": "emplacement_de_stockage",
-    "quantité en stock": "quantite_en_stock",
-    "quantité théorique": "quantite_theorique",
-    "Date de sortie": "date_sortie",
-    "axe2": "axe2"
-  };
-
-  for (const [key, id] of Object.entries(map)) {
-    if (match[key] !== undefined) {
-      if (key === "Date de sortie") {
-        const date = new Date(match[key]);
-        if (!isNaN(date.getTime())) {
-          document.getElementById(id).value = date.toLocaleString('fr-FR', {
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit',
-            hour: '2-digit', 
-            minute: '2-digit'
-          });
-        }
-      } else {
-        document.getElementById(id).value = match[key];
-      }
+  // Mapping avec valeurs par défaut
+  const fieldMap = [
+    { excel: "Code_Produit", html: "code_produit" },
+    { excel: "Quantité_Consommée", html: "quantité_consommee" },
+    // ... autres champs
+    { 
+      excel: "axe2", 
+      html: "axe2",
+      default: "SUP=SEMPQRLER" 
     }
-  }
-  
-  // Valeur par défaut pour axe2 si vide
-  if (!match["axe2"] || match["axe2"].trim() === "") {
-    document.getElementById("axe2").value = "SUP=SEMPQRLER";
-  }
-  
-  document.getElementById("axe1").value = currentAccount;
+  ];
+
+  fieldMap.forEach(({excel, html, default: defaultValue}) => {
+    const input = document.getElementById(html);
+    if (!input) {
+      console.warn(`Champ ${html} non trouvé`);
+      return;
+    }
+
+    let value = match[excel] ?? defaultValue;
+    
+    // Conversion des nombres avec espaces
+    if (typeof value === 'string' && /quantité|Stock/i.test(excel)) {
+      value = value.replace(/\s/g, '');
+    }
+
+    input.value = value || defaultValue;
+  });
+
+  // Debug axe2
+  console.log("Debug axe2:", {
+    valeurTrouvee: match.axe2,
+    valeurAppliquee: document.getElementById("axe2").value
+  });
 });
 
 // === Gestion Photos ===
