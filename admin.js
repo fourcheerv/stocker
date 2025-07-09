@@ -52,15 +52,14 @@ function initAdmin() {
   checkAuth();
   setupEventListeners();
   
-  // Afficher le nom de l'utilisateur connecté
   const currentAccount = sessionStorage.getItem('currentAccount');
   if (currentAccount) {
     document.getElementById('currentUserLabel').textContent = getAxe1Label(currentAccount);
+  } else {
+    window.location.href = 'login.html';
   }
   
-  // Initialiser avec la date du jour
   document.getElementById('dateFilter').value = getTodayDate();
-  
   loadData();
 }
 
@@ -71,7 +70,6 @@ function checkAuth() {
 }
 
 function setupEventListeners() {
-  // Boutons
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('exportBtn').addEventListener('click', exportToCSV);
   document.getElementById('syncBtn').addEventListener('click', syncWithServer);
@@ -79,7 +77,6 @@ function setupEventListeners() {
   document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
   document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
-  // Recherche/filtres
   document.getElementById('searchInput').addEventListener('input', function() {
     currentPage = 1;
     filterData();
@@ -100,16 +97,12 @@ function setupEventListeners() {
     filterData();
   });
 
-  // Pagination
   document.getElementById('firstPageBtn').addEventListener('click', () => goToPage(1));
   document.getElementById('prevPageBtn').addEventListener('click', () => goToPage(currentPage - 1));
   document.getElementById('nextPageBtn').addEventListener('click', () => goToPage(currentPage + 1));
   document.getElementById('lastPageBtn').addEventListener('click', () => goToPage(totalPages));
   
-  // Sélection
   document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
-
-  // Délégation d'événements pour le tableau
   document.getElementById('dataTable').addEventListener('click', handleTableClick);
 }
 
@@ -168,24 +161,20 @@ function filterData() {
   const commandeFilter = document.getElementById('commandeFilter').value;
 
   filteredDocs = allDocs.filter(doc => {
-    // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date
     if (dateFilter) {
       const docDate = new Date(doc._id).toISOString().split('T')[0];
       const selectedDate = new Date(dateFilter).toISOString().split('T')[0];
       if (docDate !== selectedDate) return false;
     }
     
-    // Filtre "À commander"
     if (commandeFilter) {
       const aCommander = doc.a_commander ? doc.a_commander.toLowerCase() : '';
       if (commandeFilter === 'oui' && !aCommander.includes('oui')) return false;
       if (commandeFilter === 'non' && aCommander.includes('oui')) return false;
     }
     
-    // Filtre par recherche
     if (searchTerm) {
       const matchesCode = doc.code_produit && doc.code_produit.toLowerCase().includes(searchTerm);
       const matchesDesignation = doc.designation && doc.designation.toLowerCase().includes(searchTerm);
@@ -222,7 +211,7 @@ function renderTable() {
       <td><input type="checkbox" class="row-checkbox" data-id="${doc._id}" ${isSelected ? 'checked' : ''}></td>
       <td>${formatDate(doc._id)}</td>
       <td>${doc.code_produit || ''}</td>
-      <td class="designation-cell" title="${doc.designation || ''}">${doc.designation || ''}</td>
+      <td class="designation-cell">${doc.designation || ''}</td>
       <td>${doc.quantité_consommee || ''}</td>
       <td>${doc.unites || ''}</td>
       <td>${doc.a_commander || ''}</td>
@@ -243,7 +232,6 @@ function renderTable() {
     tableBody.appendChild(row);
   });
 
-  // Mise en évidence de la date active
   const dateFilter = document.getElementById('dateFilter').value;
   if (dateFilter) {
     document.getElementById('dateFilter').classList.add('active-filter');
@@ -254,336 +242,25 @@ function renderTable() {
   updatePagination();
 }
 
-function updateStats() {
-  document.getElementById('totalCount').textContent = allDocs.length;
-  document.getElementById('rotativesCount').textContent = allDocs.filter(d => d.axe1 === 'SCT=E382329').length;
-  document.getElementById('expeditionCount').textContent = allDocs.filter(d => d.axe1 !== 'SCT=E382329').length;
-  updateSelectedCount();
-}
-
-function updateSelectedCount() {
-  document.getElementById('selectedCount').textContent = selectedDocs.size;
-}
-
-function updateSelectAllCheckbox() {
-  const allChecked = filteredDocs.every(doc => selectedDocs.has(doc._id));
-  document.getElementById('selectAll').checked = allChecked && filteredDocs.length > 0;
-  document.getElementById('selectAll').indeterminate = 
-    !allChecked && filteredDocs.some(doc => selectedDocs.has(doc._id));
-}
-
-function toggleSelectAll(e) {
-  const checkboxes = document.querySelectorAll('.row-checkbox');
-  checkboxes.forEach(checkbox => {
-    checkbox.checked = e.target.checked;
-    const docId = checkbox.dataset.id;
-    if (e.target.checked) {
-      selectedDocs.add(docId);
-    } else {
-      selectedDocs.delete(docId);
-    }
-  });
-  updateSelectedCount();
-}
-
-function updatePagination() {
-  const pageInfo = document.getElementById('paginationInfo');
-  const pageNumbers = document.getElementById('pageNumbers');
-  
-  pageInfo.textContent = `Page ${currentPage} sur ${totalPages} - ${filteredDocs.length} éléments`;
-  
-  // Contrôles de pagination
-  document.getElementById('firstPageBtn').disabled = currentPage === 1;
-  document.getElementById('prevPageBtn').disabled = currentPage === 1;
-  document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
-  document.getElementById('lastPageBtn').disabled = currentPage === totalPages;
-  
-  // Numéros de page
-  pageNumbers.innerHTML = '';
-  const startPage = Math.max(1, currentPage - 2);
-  const endPage = Math.min(totalPages, currentPage + 2);
-  
-  for (let i = startPage; i <= endPage; i++) {
-    const pageBtn = document.createElement('button');
-    pageBtn.textContent = i;
-    pageBtn.className = i === currentPage ? 'active' : '';
-    pageBtn.addEventListener('click', () => goToPage(i));
-    pageNumbers.appendChild(pageBtn);
-  }
-}
-
-function goToPage(page) {
-  if (page < 1 || page > totalPages) return;
-  currentPage = page;
-  renderTable();
-}
-
-async function syncWithServer() {
-  try {
-    await localDB.sync(remoteDB);
-    alert("Synchronisation réussie");
-    loadData();
-  } catch (error) {
-    console.error("Erreur de synchronisation:", error);
-    alert("Erreur lors de la synchronisation");
-  }
-}
-
-function setupEditModal(doc) {
-  const modalContent = `
-    <div class="edit-modal-content">
-      <span class="close-btn">&times;</span>
-      <h2>Modifier l'entrée</h2>
-      <form id="editForm">
-        ${generateEditFields(doc)}
-      </form>
-      <div class="modal-actions">
-        <button id="saveEditBtn" class="btn-primary">Enregistrer</button>
-        <button id="cancelEditBtn" class="btn-secondary">Annuler</button>
-      </div>
-    </div>
-  `;
-  
-  const modal = modalManager.openModal(modalContent, true);
-
-  // Gestion de la fermeture
-  modal.querySelector('.close-btn').addEventListener('click', () => {
-    modalManager.closeCurrent();
-  });
-  
-  modal.querySelector('#cancelEditBtn').addEventListener('click', () => {
-    modalManager.closeCurrent();
-  });
-
-  // Gestion de la sauvegarde
-  modal.querySelector('#saveEditBtn').addEventListener('click', async (e) => {
-    e.preventDefault();
-    await saveEditedDoc(doc._id);
-    modalManager.closeCurrent();
-  });
-}
-
-function generateEditFields(doc) {
-  let fields = '';
-  const excludedFields = ['_id', '_rev', 'axe1'];
-  
-  for (const [key, value] of Object.entries(doc)) {
-    if (excludedFields.includes(key) || key.startsWith('_')) continue;
-    
-    fields += `
-      <div class="form-group">
-        <label for="edit_${key}">${formatFieldName(key)}:</label>
-        ${getInputField(key, value)}
-      </div>
-    `;
-  }
-  
-  return fields;
-}
-
-function getInputField(key, value) {
-  if (key === 'a_commander') {
-    return `
-      <select id="edit_${key}" class="form-control">
-        <option value="Oui" ${value === 'Oui' ? 'selected' : ''}>Oui</option>
-        <option value="Non" ${value === 'Non' ? 'selected' : ''}>Non</option>
-      </select>
-    `;
-  } else if (key === 'remarques') {
-    return `<textarea id="edit_${key}" class="form-control">${value || ''}</textarea>`;
-  } else {
-    const type = typeof value === 'number' ? 'number' : 'text';
-    return `<input type="${type}" id="edit_${key}" class="form-control" value="${value || ''}">`;
-  }
-}
-
-async function saveEditedDoc(docId) {
-  try {
-    const doc = await localDB.get(docId);
-    const form = document.getElementById('editForm');
-    const inputs = form.querySelectorAll('input, select, textarea');
-    
-    inputs.forEach(input => {
-      const key = input.id.replace('edit_', '');
-      doc[key] = input.type === 'number' ? parseFloat(input.value) : input.value;
-    });
-    
-    await localDB.put(doc);
-    alert('Modifications enregistrées avec succès');
-    loadData();
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour:", error);
-    alert("Erreur lors de la mise à jour");
-  }
-}
-
-function formatFieldName(key) {
-  const names = {
-    code_produit: "Code Produit",
-    quantité_consommee: "Quantité Consommée",
-    a_commander: "À Commander",
-    unites: "Unités",
-    stock_initial: "Stock Initial",
-    stock_final: "Stock Final",
-    seuil_de_commande: "Seuil de Commande",
-    section_employeur: "Section Employeur",
-    emplacement_de_stockage: "Emplacement de Stockage",
-    quantite_en_stock: "Quantité en Stock",
-    quantite_theorique: "Quantité Théorique",
-    date_sortie: "Date de Sortie"
-  };
-  return names[key] || key.replace(/_/g, ' ');
-}
-
-function exportToCSV() {
-  if (filteredDocs.length === 0) {
-    alert("Aucune donnée à exporter");
-    return;
-  }
-
-  const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
-  let csvContent = "\uFEFF";
-  csvContent += headers.join(";") + "\r\n";
-  
-  filteredDocs.forEach(doc => {
-    const row = [
-      doc.code_produit || '',
-      doc.quantité_consommee || '',
-      doc.axe1 || '',
-      doc.axe2 || ''
-    ].map(field => {
-      field = field.toString().replace(/"/g, '""');
-      return field.includes(';') ? `"${field}"` : field;
-    });
-    
-    csvContent += row.join(";") + "\r\n";
-  });
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const filename = `export_stock_${new Date().toISOString().slice(0,10)}.csv`;
-  
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  
-  setTimeout(() => {
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, 100);
-}
-
-async function confirmDeleteSelected() {
-  if (selectedDocs.size === 0) {
-    alert("Aucun élément sélectionné");
-    return;
-  }
-
-  if (confirm(`Voulez-vous vraiment supprimer ${selectedDocs.size} élément(s) ?`)) {
-    await deleteDocs(Array.from(selectedDocs));
-    selectedDocs.clear();
-    loadData();
-  }
-}
-
-async function confirmDeleteAll() {
-  if (filteredDocs.length === 0) {
-    alert("Aucun élément à supprimer");
-    return;
-  }
-
-  if (confirm(`Voulez-vous vraiment supprimer TOUS les ${filteredDocs.length} éléments ?`)) {
-    await deleteDocs(filteredDocs.map(doc => doc._id));
-    selectedDocs.clear();
-    loadData();
-  }
-}
-
-async function confirmDelete(docId) {
-  if (confirm("Voulez-vous vraiment supprimer cet élément ?")) {
-    await deleteDocs([docId]);
-    selectedDocs.delete(docId);
-    loadData();
-  }
-}
-
-async function deleteDocs(docIds) {
-  try {
-    const docs = await Promise.all(docIds.map(id => localDB.get(id)));
-    const toDelete = docs.map(doc => ({ _id: doc._id, _rev: doc._rev, _deleted: true }));
-    await localDB.bulkDocs(toDelete);
-    alert(`${docIds.length} élément(s) supprimé(s) avec succès`);
-  } catch (error) {
-    console.error("Erreur lors de la suppression:", error);
-    alert("Erreur lors de la suppression");
-  }
-}
-
-function showDetails(docId) {
-  const doc = allDocs.find(d => d._id === docId);
-  if (!doc) return;
-
-  let detailsHtml = `
-    <div class="modal-content">
-      <span class="close-btn">&times;</span>
-      <h3>Détails complet</h3>
-      <div class="detail-grid">
-        <div class="detail-item"><strong>Date:</strong> ${formatDate(doc._id)}</div>
-        <div class="detail-item"><strong>Code Produit:</strong> ${doc.code_produit || '-'}</div>
-        <div class="detail-item"><strong>Désignation:</strong> ${doc.designation || '-'}</div>
-        <div class="detail-item"><strong>Quantité consommée:</strong> ${doc.quantité_consommee || '-'}</div>
-        <div class="detail-item"><strong>Unités:</strong> ${doc.unites || '-'}</div>
-        <div class="detail-item"><strong>À commander:</strong> ${doc.a_commander || '-'}</div>
-        <div class="detail-item"><strong>Remarques:</strong> ${doc.remarques || '-'}</div>
-        <div class="detail-item"><strong>Magasin:</strong> ${doc.magasin || '-'}</div>
-        <div class="detail-item"><strong>Stock initial:</strong> ${doc.stock_initial || '-'}</div>
-        <div class="detail-item"><strong>Stock final:</strong> ${doc.stock_final || '-'}</div>
-        <div class="detail-item"><strong>Seuil de commande:</strong> ${doc.seuil_de_commande || '-'}</div>
-        <div class="detail-item"><strong>Section employeur:</strong> ${doc.section_employeur || '-'}</div>
-        <div class="detail-item"><strong>Emplacement de stockage:</strong> ${doc.emplacement_de_stockage || '-'}</div>
-        <div class="detail-item"><strong>Quantité en stock:</strong> ${doc.quantite_en_stock || '-'}</div>
-        <div class="detail-item"><strong>Quantité théorique:</strong> ${doc.quantite_theorique || '-'}</div>
-        <div class="detail-item"><strong>Date de sortie:</strong> ${doc.date_sortie ? formatDate(doc.date_sortie) : '-'}</div>
-        <div class="detail-item"><strong>Axe 1:</strong> ${getAxe1Label(doc.axe1)}</div>
-        <div class="detail-item"><strong>Axe 2:</strong> ${doc.axe2 || '-'}</div>
-  `;
-
-  if (doc.photos) {
-    const photosArray = Array.isArray(doc.photos) ? doc.photos : [doc.photos];
-    
-    if (photosArray.length > 0 && photosArray[0]) {
-      detailsHtml += `<div class="detail-full-width"><strong>Photos:</strong></div>
-        <div class="photo-gallery">`;
-      
-      photosArray.forEach(photo => {
-        if (photo) {
-          detailsHtml += `<img src="${photo}" alt="Photo stock" class="detail-photo">`;
-        }
-      });
-      
-      detailsHtml += `</div>`;
-    }
-  }
-
-  detailsHtml += `</div></div>`;
-  
-  const modal = modalManager.openModal(detailsHtml);
-  modal.querySelector('.close-btn').addEventListener('click', () => modalManager.closeCurrent());
-}
-
-// Fonctions utilitaires
 function formatDate(isoString) {
-  const date = new Date(isoString);
-  return date.toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  if (!isoString) return '';
+  
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
+    
+    return date.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (e) {
+    return isoString;
+  }
 }
+
 
 function getAxe1Label(axe1) {
   const mappings = {

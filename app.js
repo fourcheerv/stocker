@@ -62,18 +62,15 @@ function loadExcelData() {
       const list = document.getElementById("designationList");
       list.innerHTML = '';
       
-      // Nouvelle méthode optimisée pour remplir le datalist
       const designations = new Set();
       
       excelData.forEach((row) => {
-        // Gère les deux formats possibles de nom de colonne
         const designation = row["Désignation:"] || row["Désignation"];
         if (designation && designation.trim() !== "") {
           designations.add(designation.trim());
         }
       });
       
-      // Ajoute les options au datalist
       designations.forEach(designation => {
         const option = document.createElement("option");
         option.value = designation;
@@ -101,11 +98,9 @@ function initQRScanner() {
             (text) => {
               if (!isSubmitting) {
                 document.getElementById("code_produit").value = text;
-                // Trouve automatiquement la désignation correspondante
                 const product = excelData.find(item => item["Code_Produit"] === text);
                 if (product) {
                   document.getElementById("designation").value = product["Désignation:"] || product["Désignation"];
-                  // Déclenche l'événement change pour remplir les autres champs
                   document.getElementById("designation").dispatchEvent(new Event('change'));
                 }
               }
@@ -158,10 +153,9 @@ document.getElementById("designation").addEventListener("change", () => {
       if (key === "Date de sortie") {
         const date = new Date(match[key]);
         if (!isNaN(date.getTime())) {
-          document.getElementById(id).value = date.toISOString().slice(0, 16); // Format pour datetime-local
+          document.getElementById(id).value = formatDateForInput(date);
         } else {
-          // Date du jour si date manquante ou invalide
-          document.getElementById(id).value = new Date().toISOString().slice(0, 16);
+          document.getElementById(id).value = formatDateForInput(new Date());
         }
       } else {
         document.getElementById(id).value = match[key];
@@ -169,13 +163,22 @@ document.getElementById("designation").addEventListener("change", () => {
     }
   }
   
-  // Valeur par défaut pour axe2 si vide
   if (!match["axe2"] || match["axe2"].trim() === "") {
     document.getElementById("axe2").value = "SUP=SEMPQRLER";
   }
   
   document.getElementById("axe1").value = currentAccount;
 });
+
+function formatDateForInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 
 // === Gestion Photos ===
 function compresserImage(file, callback) {
@@ -268,28 +271,20 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   stopQRScanner();
 
   const form = new FormData(e.target);
-  const record = { _id: new Date().toISOString(), photos: [] };
+  const record = { 
+    _id: new Date().toISOString(), 
+    photos: [],
+    axe1: currentAccount
+  };
 
   form.forEach((val, key) => {
     if (key === "date_sortie") {
-      const date = new Date(val);
-      if (!isNaN(date.getTime())) {
-        record[key] = date.toLocaleString('fr-FR', {
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit',
-          hour: '2-digit', 
-          minute: '2-digit'
-        });
-      } else {
-        record[key] = val;
-      }
+      record[key] = new Date(val).toISOString();
     } else {
       record[key] = val;
     }
   });
 
-  // Traitement images seulement si elles existent
   if (imageFiles.length > 0) {
     for (const file of imageFiles) {
       const base64 = await new Promise((resolve) => {
