@@ -32,10 +32,22 @@
       <button id="searchBtn">🔍</button>
     </div>
 
+
 <div class="filter-container">
-  <label for="dateFilter"> 📅 Date</label>
-  <input type="date" id="dateFilter" class="filter-input">
+  <div class="floating-date">
+    <input 
+      type="date"
+      id="dateFilter"
+      class="date-input"
+      placeholder=" "
+      required
+    >
+    <label for="dateFilter" class="date-label">Date</label>
+    <span class="date-icon">📅</span>
+  </div>
 </div>
+
+
     
     <div class="filter-container">
       <select id="filterSelect">
