@@ -324,8 +324,6 @@ function resetForm() {
   document.getElementById("designation").value = "";
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("axe2").value = "SUP=SEMPQRLER";
-   // Date du jour par défaut
-  document.getElementById("date_sortie").value = new Date().toISOString().slice(0, 16);
 }
 
 // === Bouton de réinitialisation ===
