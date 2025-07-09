@@ -56,6 +56,9 @@ function initAdmin() {
   const currentAccount = sessionStorage.getItem('currentAccount');
   if (currentAccount) {
     document.getElementById('currentUserLabel').textContent = getAxe1Label(currentAccount);
+  } else {
+    // Rediriger si pas de compte en session
+    window.location.href = 'login.html';
   }
   
   // Initialiser avec la date du jour
@@ -171,7 +174,7 @@ function filterData() {
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date
+    // Filtre par date - Correction ici
     if (dateFilter) {
       const docDate = new Date(doc._id).toISOString().split('T')[0];
       const selectedDate = new Date(dateFilter).toISOString().split('T')[0];
