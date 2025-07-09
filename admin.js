@@ -392,49 +392,33 @@ function exportToCSV() {
     return;
   }
 
-  // 1. Génération du CSV
+  // 1. Génération du contenu CSV avec les 4 colonnes
   const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
   let csvContent = headers.join(";") + "\r\n";
   
   filteredDocs.forEach(doc => {
-    csvContent += [
+    const row = [
       doc.code_produit || '',
       doc.quantité_consommee || '',
       doc.axe1 || '',
       doc.axe2 || ''
-    ].join(";") + "\r\n";
+    ].map(field => field.includes(';') ? `"${field}"` : field);
+    
+    csvContent += row.join(";") + "\r\n";
   });
 
-  // 2. Création du fichier
-  const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+  // 2. Création et téléchargement du fichier
+  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const filename = `export_stock_${new Date().toISOString().slice(0,10)}.csv`;
-
-  // 3. Solution pour Android/Chrome
-  if (navigator.userAgent.includes('Android') && navigator.userAgent.includes('Chrome')) {
-    const link = document.createElement('a');
-    link.href = `intent://send?to=spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr&subject=Export des stocks&body=Ci-joint l'export des stocks#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.STREAM=${url};end`;
-    link.click();
-    setTimeout(() => {
-      // Fallback si l'intent échoue
-      downloadFile(url, filename);
-    }, 300);
-    return;
-  }
-
-  // 4. Fallback standard
-  downloadFile(url, filename);
-  setTimeout(() => {
-    window.open(`mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr?subject=Export des stocks&body=Merci de trouver ci-joint l'export des stocks (fichier téléchargé automatiquement)`);
-  }, 500);
-}
-
-function downloadFile(url, filename) {
-  const link = document.createElement('a');
+  
+  const link = document.createElement("a");
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
   link.click();
+  
+  // Nettoyage
   setTimeout(() => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
