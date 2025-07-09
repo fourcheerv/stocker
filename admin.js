@@ -45,10 +45,7 @@ function getTodayDate() {
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
-  const hours = String(today.getHours()).padStart(2, '0');
-  const minutes = String(today.getMinutes()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  return `${year}-${month}-${day}`;
 }
 
 function initAdmin() {
@@ -59,9 +56,6 @@ function initAdmin() {
   const currentAccount = sessionStorage.getItem('currentAccount');
   if (currentAccount) {
     document.getElementById('currentUserLabel').textContent = getAxe1Label(currentAccount);
-  } else {
-    // Rediriger si pas de compte en session
-    window.location.href = 'login.html';
   }
   
   // Initialiser avec la date du jour
@@ -173,25 +167,11 @@ function filterData() {
   const dateFilter = document.getElementById('dateFilter').value;
   const commandeFilter = document.getElementById('commandeFilter').value;
 
-  if (dateFilter) {
-    const docDate = new Date(doc._id);
-    const selectedDate = new Date(dateFilter);
-    
-    // Comparaison jour/mois/année/heure/minute
-    if (docDate.getFullYear() !== selectedDate.getFullYear() || 
-        docDate.getMonth() !== selectedDate.getMonth() || 
-        docDate.getDate() !== selectedDate.getDate() ||
-        docDate.getHours() !== selectedDate.getHours() ||
-        docDate.getMinutes() !== selectedDate.getMinutes()) {
-      return false;
-    }
-  }
-
   filteredDocs = allDocs.filter(doc => {
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date - Correction ici
+    // Filtre par date
     if (dateFilter) {
       const docDate = new Date(doc._id).toISOString().split('T')[0];
       const selectedDate = new Date(dateFilter).toISOString().split('T')[0];
