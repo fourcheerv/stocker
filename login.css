@@ -95,6 +95,8 @@ body {
   justify-content: center;
   overflow-y: auto;
   max-height: 600px;
+  position: relative;
+  padding-bottom: 80px;
 }
 
 @media (min-width: 992px) {
@@ -102,6 +104,7 @@ body {
     flex: 1;
     padding: 60px;
     max-height: none;
+    padding-bottom: 80px;
   }
 }
 
@@ -169,38 +172,40 @@ body {
 }
 
 .login-footer {
-  margin-top: 40px;
-  text-align: center;
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
   color: var(--color-light-text);
   font-size: 0.9rem;
+  padding: 10px;
 }
 
 @media (max-width: 767px) {
   body {
-    padding: 10px; /* Réduire le padding global */
-    display: block; /* Changer de flex à block pour éviter les problèmes de hauteur */
+    padding: 10px;
+    display: block;
     min-height: 100vh;
     height: auto;
   }
 
   .login-container {
     flex-direction: column;
-    min-height: auto; /* Supprimer la hauteur fixe */
+    min-height: auto;
     height: auto;
     max-height: none;
-    overflow: visible; /* Permettre le défilement naturel */
+    overflow: visible;
   }
 
   .login-header {
-    padding: 15px 10px; /* Padding réduit */
-    flex: none; /* Empêcher l'étirement */
+    padding: 15px 10px;
+    flex: none;
     min-height: auto;
   }
 
   .logo {
-    font-size: 2.5rem !important; /* Forcer la taille */
+    font-size: 2.5rem !important;
     margin-bottom: 5px !important;
-    animation: none; /* Désactiver l'animation sur mobile */
+    animation: none;
   }
 
   .login-header h1 {
@@ -218,6 +223,7 @@ body {
     max-height: none !important;
     overflow: visible !important;
     flex: none !important;
+    padding-bottom: 60px !important;
   }
 
   .account-options {
@@ -242,5 +248,12 @@ body {
   .login-form p {
     font-size: 0.9rem !important;
     margin-bottom: 15px !important;
+  }
+
+  .login-footer {
+    position: static;
+    text-align: center;
+    margin-top: 20px;
+    padding: 10px 0;
   }
 }
