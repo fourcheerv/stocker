@@ -186,6 +186,12 @@ main {
   padding: 0 4px;
 }
 
+/* Style pour l'option désactivée (texte grisé) */
+.filter-input option:disabled {
+  color: #999;
+  font-style: italic;
+}
+
 /* Style spécifique pour les selects */
 .floating-filter select.filter-input {
   padding-right: 40px;
@@ -194,6 +200,46 @@ main {
 /* Ajustement pour les icônes des selects */
 .floating-filter select.filter-input + .filter-icon {
   right: 15px;
+}
+
+/* Style pour le placeholder personnalisé du champ date */
+.date-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #999;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  display: none; /* Caché par défaut */
+}
+
+/* Afficher le placeholder quand le champ est vide */
+.filter-input[type="date"]:not(:focus):invalid + .filter-label + .date-placeholder {
+  display: block;
+}
+
+/* Cacher le placeholder quand le champ a une valeur ou est en focus */
+.filter-input[type="date"]:focus + .filter-label + .date-placeholder,
+.filter-input[type="date"]:valid + .filter-label + .date-placeholder {
+  display: none;
+}
+
+/* Ajustement du label pour le champ date */
+.filter-input[type="date"] + .filter-label {
+  pointer-events: none;
+}
+
+/* Animation spéciale pour le champ date */
+.filter-input[type="date"]:focus + .filter-label,
+.filter-input[type="date"]:valid + .filter-label {
+  top: 0;
+  font-size: 12px;
+  color: #0066cc;
+  background: #fff;
+  transform: translateY(-50%);
+  padding: 0 4px;
 }
 
 /* Statistiques */
