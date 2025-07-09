@@ -10,6 +10,33 @@ const itemsPerPage = 10;
 let totalPages = 1;
 let selectedDocs = new Set();
 
+// Gestionnaire de modales
+const modalManager = {
+  currentModal: null,
+
+  openModal: function(content, isEdit = false) {
+    this.closeCurrent();
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = isEdit ? 'editModal' : 'detailsModal';
+    modal.innerHTML = content;
+    
+    document.body.appendChild(modal);
+    this.currentModal = modal;
+    modal.style.display = 'flex';
+
+    return modal;
+  },
+
+  closeCurrent: function() {
+    if (this.currentModal) {
+      this.currentModal.remove();
+      this.currentModal = null;
+    }
+  }
+};
+
 // Initialisation
 document.addEventListener("DOMContentLoaded", initAdmin);
 
@@ -20,7 +47,6 @@ function getTodayDate() {
   const day = String(today.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
-
 
 function initAdmin() {
   checkAuth();
@@ -47,36 +73,12 @@ function setupEventListeners() {
   document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
   document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      closeAllModals();
-      showDetails(e.target.dataset.id);
-    });
-  });
-  
-  document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('edit-btn')) {
-      const docId = e.target.dataset.id;
-      const doc = allDocs.find(d => d._id === docId);
-      if (doc) setupEditModal(doc);
-    }
-  });
- 
-  // Recherche/filtre - MODIFICATION IMPORTANTE
-  // Suppression de l'écouteur pour le bouton de recherche (n'existe plus)
+  // Recherche/filtres
   document.getElementById('searchInput').addEventListener('input', filterData);
   document.getElementById('filterSelect').addEventListener('change', filterData);
   document.getElementById('dateFilter').addEventListener('change', filterData);
   document.getElementById('commandeFilter').addEventListener('change', filterData);
 
-function resetFilters() {
-  document.getElementById('searchInput').value = '';
-  document.getElementById('filterSelect').value = '';
-  document.getElementById('dateFilter').value = getTodayDate(); // Date du jour
-  document.getElementById('commandeFilter').value = '';
-  filterData();
-}
-  
   // Pagination
   document.getElementById('firstPageBtn').addEventListener('click', () => goToPage(1));
   document.getElementById('prevPageBtn').addEventListener('click', () => goToPage(currentPage - 1));
@@ -85,9 +87,41 @@ function resetFilters() {
   
   // Sélection
   document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
-  
-  // Modal
-  document.querySelector('.close-btn').addEventListener('click', closeModal);
+
+  // Délégation d'événements pour le tableau
+  document.getElementById('dataTable').addEventListener('click', handleTableClick);
+}
+
+function handleTableClick(e) {
+  const target = e.target;
+  const docId = target.dataset.id;
+
+  if (!docId) return;
+
+  if (target.classList.contains('view-btn')) {
+    showDetails(docId);
+  } else if (target.classList.contains('edit-btn')) {
+    const doc = allDocs.find(d => d._id === docId);
+    if (doc) setupEditModal(doc);
+  } else if (target.classList.contains('delete-btn')) {
+    confirmDelete(docId);
+  } else if (target.classList.contains('row-checkbox')) {
+    if (target.checked) {
+      selectedDocs.add(docId);
+    } else {
+      selectedDocs.delete(docId);
+    }
+    updateSelectedCount();
+    updateSelectAllCheckbox();
+  }
+}
+
+function resetFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterSelect').value = '';
+  document.getElementById('dateFilter').value = getTodayDate();
+  document.getElementById('commandeFilter').value = '';
+  filterData();
 }
 
 async function loadData() {
@@ -106,14 +140,6 @@ async function loadData() {
 }
 
 function filterData() {
-  // Protection contre les éléments manquants (important après modification HTML)
-  if (!document.getElementById('searchInput') || 
-      !document.getElementById('filterSelect') ||
-      !document.getElementById('dateFilter') ||
-      !document.getElementById('commandeFilter')) {
-    return;
-  }
-  
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   const filterValue = document.getElementById('filterSelect').value;
   const dateFilter = document.getElementById('dateFilter').value;
@@ -190,37 +216,6 @@ function renderTable() {
     `;
 
     tableBody.appendChild(row);
-  });
-
-  // Écouteurs pour les cases à cocher
-  document.querySelectorAll('.row-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('change', (e) => {
-      const docId = e.target.dataset.id;
-      if (e.target.checked) {
-        selectedDocs.add(docId);
-      } else {
-        selectedDocs.delete(docId);
-      }
-      updateSelectedCount();
-      updateSelectAllCheckbox();
-    });
-  });
-
-  // Écouteurs pour les boutons
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => showDetails(e.target.dataset.id));
-  });
-
-  document.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const docId = e.target.dataset.id;
-      const doc = allDocs.find(d => d._id === docId);
-      if (doc) setupEditModal(doc);
-    });
-  });
-
-  document.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => confirmDelete(e.target.dataset.id));
   });
 
   updatePagination();
@@ -303,13 +298,7 @@ async function syncWithServer() {
 }
 
 function setupEditModal(doc) {
-  // Ferme la modal de visualisation si elle est ouverte
-  closeModal();
-  
-  const modal = document.createElement('div');
-  modal.className = 'modal';
-  modal.id = 'editModal';
-  modal.innerHTML = `
+  const modalContent = `
     <div class="edit-modal-content">
       <span class="close-btn">&times;</span>
       <h2>Modifier l'entrée</h2>
@@ -323,29 +312,28 @@ function setupEditModal(doc) {
     </div>
   `;
   
-  document.body.appendChild(modal);
-  modal.style.display = 'flex';
+  const modal = modalManager.openModal(modalContent, true);
 
   // Gestion de la fermeture
   modal.querySelector('.close-btn').addEventListener('click', () => {
-    modal.remove();
+    modalManager.closeCurrent();
   });
   
   modal.querySelector('#cancelEditBtn').addEventListener('click', () => {
-    modal.remove();
+    modalManager.closeCurrent();
   });
 
   // Gestion de la sauvegarde
   modal.querySelector('#saveEditBtn').addEventListener('click', async (e) => {
     e.preventDefault();
     await saveEditedDoc(doc._id);
-    modal.remove();
+    modalManager.closeCurrent();
   });
 }
 
 function generateEditFields(doc) {
   let fields = '';
-  const excludedFields = ['_id', '_rev', 'axe1']; // Champs non modifiables
+  const excludedFields = ['_id', '_rev', 'axe1'];
   
   for (const [key, value] of Object.entries(doc)) {
     if (excludedFields.includes(key) || key.startsWith('_')) continue;
@@ -390,7 +378,7 @@ async function saveEditedDoc(docId) {
     
     await localDB.put(doc);
     alert('Modifications enregistrées avec succès');
-    loadData(); // Rafraîchit les données
+    loadData();
   } catch (error) {
     console.error("Erreur lors de la mise à jour:", error);
     alert("Erreur lors de la mise à jour");
@@ -398,7 +386,6 @@ async function saveEditedDoc(docId) {
 }
 
 function formatFieldName(key) {
-  // Convertit les noms de champs en libellés lisibles
   const names = {
     code_produit: "Code Produit",
     quantité_consommee: "Quantité Consommée",
@@ -422,9 +409,8 @@ function exportToCSV() {
     return;
   }
 
-  // 1. Génération du contenu CSV avec encodage UTF-8 et BOM
   const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
-  let csvContent = "\uFEFF"; // BOM pour UTF-8
+  let csvContent = "\uFEFF";
   csvContent += headers.join(";") + "\r\n";
   
   filteredDocs.forEach(doc => {
@@ -434,7 +420,6 @@ function exportToCSV() {
       doc.axe1 || '',
       doc.axe2 || ''
     ].map(field => {
-      // Échapper les guillemets et point-virgules
       field = field.toString().replace(/"/g, '""');
       return field.includes(';') ? `"${field}"` : field;
     });
@@ -442,7 +427,6 @@ function exportToCSV() {
     csvContent += row.join(";") + "\r\n";
   });
 
-  // 2. Création et téléchargement du fichier
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const filename = `export_stock_${new Date().toISOString().slice(0,10)}.csv`;
@@ -453,7 +437,6 @@ function exportToCSV() {
   document.body.appendChild(link);
   link.click();
   
-  // Nettoyage
   setTimeout(() => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
@@ -506,41 +489,36 @@ async function deleteDocs(docIds) {
   }
 }
 
-// Fonctions d'affichage
 function showDetails(docId) {
-  // Ferme la modal d'édition si elle est ouverte
-  const editModal = document.getElementById('editModal');
-  if (editModal) editModal.remove();
-  
   const doc = allDocs.find(d => d._id === docId);
   if (!doc) return;
 
   let detailsHtml = `
-    <h3>Détails complet</h3>
-    <div class="detail-grid">
-      <div class="detail-item"><strong>Date:</strong> ${formatDate(doc._id)}</div>
-      <div class="detail-item"><strong>Code Produit:</strong> ${doc.code_produit || '-'}</div>
-      <div class="detail-item"><strong>Désignation:</strong> ${doc.designation || '-'}</div>
-      <div class="detail-item"><strong>Quantité consommée:</strong> ${doc.quantité_consommee || '-'}</div>
-      <div class="detail-item"><strong>Unités:</strong> ${doc.unites || '-'}</div>
-      <div class="detail-item"><strong>À commander:</strong> ${doc.a_commander || '-'}</div>
-      <div class="detail-item"><strong>Remarques:</strong> ${doc.remarques || '-'}</div>
-      <div class="detail-item"><strong>Magasin:</strong> ${doc.magasin || '-'}</div>
-      <div class="detail-item"><strong>Stock initial:</strong> ${doc.stock_initial || '-'}</div>
-      <div class="detail-item"><strong>Stock final:</strong> ${doc.stock_final || '-'}</div>
-      <div class="detail-item"><strong>Seuil de commande:</strong> ${doc.seuil_de_commande || '-'}</div>
-      <div class="detail-item"><strong>Section employeur:</strong> ${doc.section_employeur || '-'}</div>
-      <div class="detail-item"><strong>Emplacement de stockage:</strong> ${doc.emplacement_de_stockage || '-'}</div>
-      <div class="detail-item"><strong>Quantité en stock:</strong> ${doc.quantite_en_stock || '-'}</div>
-      <div class="detail-item"><strong>Quantité théorique:</strong> ${doc.quantite_theorique || '-'}</div>
-      <div class="detail-item"><strong>Date de sortie:</strong> ${doc.date_sortie ? formatDate(doc.date_sortie) : '-'}</div>
-      <div class="detail-item"><strong>Axe 1:</strong> ${getAxe1Label(doc.axe1)}</div>
-      <div class="detail-item"><strong>Axe 2:</strong> ${doc.axe2 || '-'}</div>
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h3>Détails complet</h3>
+      <div class="detail-grid">
+        <div class="detail-item"><strong>Date:</strong> ${formatDate(doc._id)}</div>
+        <div class="detail-item"><strong>Code Produit:</strong> ${doc.code_produit || '-'}</div>
+        <div class="detail-item"><strong>Désignation:</strong> ${doc.designation || '-'}</div>
+        <div class="detail-item"><strong>Quantité consommée:</strong> ${doc.quantité_consommee || '-'}</div>
+        <div class="detail-item"><strong>Unités:</strong> ${doc.unites || '-'}</div>
+        <div class="detail-item"><strong>À commander:</strong> ${doc.a_commander || '-'}</div>
+        <div class="detail-item"><strong>Remarques:</strong> ${doc.remarques || '-'}</div>
+        <div class="detail-item"><strong>Magasin:</strong> ${doc.magasin || '-'}</div>
+        <div class="detail-item"><strong>Stock initial:</strong> ${doc.stock_initial || '-'}</div>
+        <div class="detail-item"><strong>Stock final:</strong> ${doc.stock_final || '-'}</div>
+        <div class="detail-item"><strong>Seuil de commande:</strong> ${doc.seuil_de_commande || '-'}</div>
+        <div class="detail-item"><strong>Section employeur:</strong> ${doc.section_employeur || '-'}</div>
+        <div class="detail-item"><strong>Emplacement de stockage:</strong> ${doc.emplacement_de_stockage || '-'}</div>
+        <div class="detail-item"><strong>Quantité en stock:</strong> ${doc.quantite_en_stock || '-'}</div>
+        <div class="detail-item"><strong>Quantité théorique:</strong> ${doc.quantite_theorique || '-'}</div>
+        <div class="detail-item"><strong>Date de sortie:</strong> ${doc.date_sortie ? formatDate(doc.date_sortie) : '-'}</div>
+        <div class="detail-item"><strong>Axe 1:</strong> ${getAxe1Label(doc.axe1)}</div>
+        <div class="detail-item"><strong>Axe 2:</strong> ${doc.axe2 || '-'}</div>
   `;
 
-  // Gestion sécurisée des photos
   if (doc.photos) {
-    // Vérifie si c'est un tableau ou une chaîne unique
     const photosArray = Array.isArray(doc.photos) ? doc.photos : [doc.photos];
     
     if (photosArray.length > 0 && photosArray[0]) {
@@ -557,21 +535,10 @@ function showDetails(docId) {
     }
   }
 
-  detailsHtml += `</div>`; // Fermeture du detail-grid
-  document.getElementById('modalContent').innerHTML = detailsHtml;
-  document.getElementById('detailsModal').style.display = 'flex';
-}
-
-function closeModal() {
-  document.getElementById('detailsModal').style.display = 'none';
-}
-
-function closeAllModals() {
-  const detailsModal = document.getElementById('detailsModal');
-  if (detailsModal) detailsModal.style.display = 'none';
+  detailsHtml += `</div></div>`;
   
-  const editModal = document.getElementById('editModal');
-  if (editModal) editModal.remove();
+  const modal = modalManager.openModal(detailsHtml);
+  modal.querySelector('.close-btn').addEventListener('click', () => modalManager.closeCurrent());
 }
 
 // Fonctions utilitaires
