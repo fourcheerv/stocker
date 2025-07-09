@@ -13,9 +13,22 @@ let selectedDocs = new Set();
 // Initialisation
 document.addEventListener("DOMContentLoaded", initAdmin);
 
+function getTodayDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+
 function initAdmin() {
   checkAuth();
   setupEventListeners();
+  
+  // Initialiser avec la date du jour
+  document.getElementById('dateFilter').value = getTodayDate();
+  
   loadData();
 }
 
@@ -56,13 +69,13 @@ function setupEventListeners() {
   document.getElementById('dateFilter').addEventListener('change', filterData);
   document.getElementById('commandeFilter').addEventListener('change', filterData);
 
-  function resetFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('filterSelect').value = '';
-    document.getElementById('dateFilter').value = '';
-    document.getElementById('commandeFilter').value = '';
-    filterData();
-  }
+function resetFilters() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterSelect').value = '';
+  document.getElementById('dateFilter').value = getTodayDate(); // Date du jour
+  document.getElementById('commandeFilter').value = '';
+  filterData();
+}
   
   // Pagination
   document.getElementById('firstPageBtn').addEventListener('click', () => goToPage(1));
