@@ -386,78 +386,59 @@ function formatFieldName(key) {
 //fin édition
 
 
-async function exportToCSV() {
+function exportToCSV() {
   if (filteredDocs.length === 0) {
     alert("Aucune donnée à exporter");
     return;
   }
 
-  // 1. Générer le contenu CSV
+  // 1. Génération du CSV
   const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
   let csvContent = headers.join(";") + "\r\n";
   
   filteredDocs.forEach(doc => {
-    const row = [
+    csvContent += [
       doc.code_produit || '',
       doc.quantité_consommee || '',
       doc.axe1 || '',
       doc.axe2 || ''
-    ].map(field => field.includes(';') ? `"${field}"` : field);
-    
-    csvContent += row.join(";") + "\r\n";
+    ].join(";") + "\r\n";
   });
 
-  // 2. Créer le fichier CSV
-  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-  const file = new File([blob], `export_stock_${new Date().toISOString().slice(0,10)}.csv`, {
-    type: "text/csv;charset=utf-8;"
-  });
+  // 2. Création du fichier
+  const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const filename = `export_stock_${new Date().toISOString().slice(0,10)}.csv`;
 
-  // 3. Solution pour Android avec intent Gmail
-  if (/android/i.test(navigator.userAgent)) {
-    try {
-      // Créer un formulaire avec le fichier
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // Stocker temporairement le fichier
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = function() {
-        const base64Data = reader.result.split(',')[1];
-        localStorage.setItem('tempCSVExport', base64Data);
-        
-        // Ouvrir Gmail via intent Android
-        const mailtoLink = `mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr?subject=Export des stocks&body=Ci-joint l'export des stocks&attachment=local://tempCSVExport`;
-        window.location.href = mailtoLink;
-      };
-      
-      // Nettoyer après 5 minutes
-      setTimeout(() => {
-        localStorage.removeItem('tempCSVExport');
-      }, 300000);
-      
-      return;
-    } catch (e) {
-      console.error("Erreur avec l'intent Android:", e);
-    }
+  // 3. Solution pour Android/Chrome
+  if (navigator.userAgent.includes('Android') && navigator.userAgent.includes('Chrome')) {
+    const link = document.createElement('a');
+    link.href = `intent://send?to=spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr&subject=Export des stocks&body=Ci-joint l'export des stocks#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.STREAM=${url};end`;
+    link.click();
+    setTimeout(() => {
+      // Fallback si l'intent échoue
+      downloadFile(url, filename);
+    }, 300);
+    return;
   }
 
-  // 4. Fallback pour les autres plateformes
-  const mailtoLink = `mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr?subject=Export des stocks&body=Merci de trouver ci-joint l'export des stocks`;
-  window.open(mailtoLink, '_blank');
-  
-  // Télécharger le fichier après un court délai
+  // 4. Fallback standard
+  downloadFile(url, filename);
   setTimeout(() => {
-    const url = URL.createObjectURL(file);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    window.open(`mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr?subject=Export des stocks&body=Merci de trouver ci-joint l'export des stocks (fichier téléchargé automatiquement)`);
   }, 500);
+}
+
+function downloadFile(url, filename) {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 100);
 }
 
 async function confirmDeleteSelected() {
