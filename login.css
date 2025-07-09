@@ -176,73 +176,71 @@ body {
 }
 
 @media (max-width: 767px) {
-  .login-header {
-    padding: 20px 15px;
+  body {
+    padding: 10px; /* Réduire le padding global */
+    display: block; /* Changer de flex à block pour éviter les problèmes de hauteur */
+    min-height: 100vh;
+    height: auto;
   }
-  
-  .login-form {
-    padding: 30px;
-  }
-  
-  .logo {
-    font-size: 3rem;
-  }
-  
-  .login-header h1 {
-    font-size: 2rem;
-  }
-  
-  .account-btn {
-    padding: 12px;
-    font-size: 0.9rem;
-  }
-}
 
-
-@media (max-width: 767px) {
   .login-container {
     flex-direction: column;
+    min-height: auto; /* Supprimer la hauteur fixe */
     height: auto;
-    min-height: 100vh; /* S'adapte au contenu */
+    max-height: none;
+    overflow: visible; /* Permettre le défilement naturel */
   }
 
   .login-header {
-    padding: 20px 15px; /* Réduction du padding */
-    flex: 0 0 auto; /* Empêche l'étirement */
+    padding: 15px 10px; /* Padding réduit */
+    flex: none; /* Empêcher l'étirement */
+    min-height: auto;
   }
 
   .logo {
-    font-size: 2.5rem;
-    margin-bottom: 8px;
+    font-size: 2.5rem !important; /* Forcer la taille */
+    margin-bottom: 5px !important;
+    animation: none; /* Désactiver l'animation sur mobile */
   }
 
   .login-header h1 {
-    font-size: 1.5rem;
-    margin-bottom: 5px;
+    font-size: 1.3rem !important;
+    margin-bottom: 5px !important;
   }
 
   .login-header p {
-    font-size: 0.9rem;
-    margin-bottom: 0;
+    font-size: 0.8rem !important;
+    margin-bottom: 0 !important;
   }
 
   .login-form {
-    padding: 20px 15px;
-    flex: 1; /* Prend le reste de l'espace */
-    overflow-y: visible; /* Permet le défilement naturel */
+    padding: 15px 10px !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
   }
 
   .account-options {
-    margin-top: 15px;
-    gap: 10px; /* Espacement réduit entre boutons */
+    margin-top: 10px;
+    gap: 8px;
   }
 
   .account-btn {
-    padding: 10px 12px;
-    font-size: 0.85rem;
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
   }
 
   .account-btn span {
-    font-size: 1.2rem; /* Réduction des icônes */
+    font-size: 1rem !important;
+  }
+
+  .login-form h2 {
+    font-size: 1.5rem !important;
+    margin-bottom: 5px !important;
+  }
+
+  .login-form p {
+    font-size: 0.9rem !important;
+    margin-bottom: 15px !important;
   }
 }
