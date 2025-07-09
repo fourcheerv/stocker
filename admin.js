@@ -32,35 +32,36 @@ function setupEventListeners() {
   document.getElementById('syncBtn').addEventListener('click', syncWithServer);
   document.getElementById('deleteSelectedBtn').addEventListener('click', confirmDeleteSelected);
   document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
+  document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+
   document.querySelectorAll('.view-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    closeAllModals();
-    showDetails(e.target.dataset.id);
+    btn.addEventListener('click', (e) => {
+      closeAllModals();
+      showDetails(e.target.dataset.id);
+    });
   });
-});
   
   document.addEventListener('click', function(e) {
-  if (e.target.classList.contains('edit-btn')) {
-    const docId = e.target.dataset.id;
-    const doc = allDocs.find(d => d._id === docId);
-    if (doc) setupEditModal(doc);
-  }
-});
+    if (e.target.classList.contains('edit-btn')) {
+      const docId = e.target.dataset.id;
+      const doc = allDocs.find(d => d._id === docId);
+      if (doc) setupEditModal(doc);
+    }
+  });
  
-  // Recherche/filtre
+  // Recherche/filtre - MODIFICATION IMPORTANTE
+  // Suppression de l'écouteur pour le bouton de recherche (n'existe plus)
   document.getElementById('searchInput').addEventListener('input', filterData);
-  document.getElementById('searchBtn').addEventListener('click', filterData);
   document.getElementById('filterSelect').addEventListener('change', filterData);
   document.getElementById('dateFilter').addEventListener('change', filterData);
   document.getElementById('commandeFilter').addEventListener('change', filterData);
-  document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
   function resetFilters() {
-  document.getElementById('searchInput').value = '';
-  document.getElementById('filterSelect').value = '';
-  document.getElementById('dateFilter').value = '';
-  document.getElementById('commandeFilter').value = '';
-  filterData();
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterSelect').value = '';
+    document.getElementById('dateFilter').value = '';
+    document.getElementById('commandeFilter').value = '';
+    filterData();
   }
   
   // Pagination
@@ -75,8 +76,6 @@ function setupEventListeners() {
   // Modal
   document.querySelector('.close-btn').addEventListener('click', closeModal);
 }
-
-
 
 async function loadData() {
   try {
@@ -94,6 +93,14 @@ async function loadData() {
 }
 
 function filterData() {
+  // Protection contre les éléments manquants (important après modification HTML)
+  if (!document.getElementById('searchInput') || 
+      !document.getElementById('filterSelect') ||
+      !document.getElementById('dateFilter') ||
+      !document.getElementById('commandeFilter')) {
+    return;
+  }
+  
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   const filterValue = document.getElementById('filterSelect').value;
   const dateFilter = document.getElementById('dateFilter').value;
@@ -135,7 +142,7 @@ function filterData() {
   renderTable();
 }
 
-  function renderTable() {
+function renderTable() {
   const tableBody = document.getElementById('dataTable').querySelector('tbody');
   tableBody.innerHTML = '';
 
@@ -189,6 +196,14 @@ function filterData() {
   // Écouteurs pour les boutons
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.addEventListener('click', (e) => showDetails(e.target.dataset.id));
+  });
+
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const docId = e.target.dataset.id;
+      const doc = allDocs.find(d => d._id === docId);
+      if (doc) setupEditModal(doc);
+    });
   });
 
   document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -274,8 +289,6 @@ async function syncWithServer() {
   }
 }
 
-// Ajoutez ces nouvelles fonctions :
-
 function setupEditModal(doc) {
   // Ferme la modal de visualisation si elle est ouverte
   closeModal();
@@ -317,7 +330,6 @@ function setupEditModal(doc) {
   });
 }
 
-// Début édition
 function generateEditFields(doc) {
   let fields = '';
   const excludedFields = ['_id', '_rev', 'axe1']; // Champs non modifiables
@@ -378,14 +390,19 @@ function formatFieldName(key) {
     code_produit: "Code Produit",
     quantité_consommee: "Quantité Consommée",
     a_commander: "À Commander",
-    // Ajoutez d'autres conversions si nécessaire
+    unites: "Unités",
+    stock_initial: "Stock Initial",
+    stock_final: "Stock Final",
+    seuil_de_commande: "Seuil de Commande",
+    section_employeur: "Section Employeur",
+    emplacement_de_stockage: "Emplacement de Stockage",
+    quantite_en_stock: "Quantité en Stock",
+    quantite_theorique: "Quantité Théorique",
+    date_sortie: "Date de Sortie"
   };
   return names[key] || key.replace(/_/g, ' ');
 }
 
-//fin édition
-
-//export CSV
 function exportToCSV() {
   if (filteredDocs.length === 0) {
     alert("Aucune donnée à exporter");
@@ -430,7 +447,6 @@ function exportToCSV() {
   }, 100);
 }
 
-//confirmation de l'effacement
 async function confirmDeleteSelected() {
   if (selectedDocs.size === 0) {
     alert("Aucun élément sélectionné");
@@ -478,11 +494,11 @@ async function deleteDocs(docIds) {
 }
 
 // Fonctions d'affichage
-
 function showDetails(docId) {
   // Ferme la modal d'édition si elle est ouverte
   const editModal = document.getElementById('editModal');
   if (editModal) editModal.remove();
+  
   const doc = allDocs.find(d => d._id === docId);
   if (!doc) return;
 
@@ -509,17 +525,17 @@ function showDetails(docId) {
       <div class="detail-item"><strong>Axe 2:</strong> ${doc.axe2 || '-'}</div>
   `;
 
-// Gestion sécurisée des photos
+  // Gestion sécurisée des photos
   if (doc.photos) {
     // Vérifie si c'est un tableau ou une chaîne unique
     const photosArray = Array.isArray(doc.photos) ? doc.photos : [doc.photos];
     
-    if (photosArray.length > 0 && photosArray[0]) { // Vérifie qu'il y a au moins une photo non vide
+    if (photosArray.length > 0 && photosArray[0]) {
       detailsHtml += `<div class="detail-full-width"><strong>Photos:</strong></div>
         <div class="photo-gallery">`;
       
       photosArray.forEach(photo => {
-        if (photo) { // Vérifie que la photo existe
+        if (photo) {
           detailsHtml += `<img src="${photo}" alt="Photo stock" class="detail-photo">`;
         }
       });
@@ -528,6 +544,7 @@ function showDetails(docId) {
     }
   }
 
+  detailsHtml += `</div>`; // Fermeture du detail-grid
   document.getElementById('modalContent').innerHTML = detailsHtml;
   document.getElementById('detailsModal').style.display = 'flex';
 }
@@ -543,7 +560,6 @@ function closeAllModals() {
   const editModal = document.getElementById('editModal');
   if (editModal) editModal.remove();
 }
-
 
 // Fonctions utilitaires
 function formatDate(isoString) {
