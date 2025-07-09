@@ -99,124 +99,6 @@ main {
   transform: translateY(-2px);
 }
 
-/* Recherche et filtre */
-.search-filter-container {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.search-container {
-  flex: 1;
-  min-width: 250px;
-  display: flex;
-}
-
-.search-container input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--color-gray);
-  border-radius: var(--border-radius) 0 0 var(--border-radius);
-  font-size: 1rem;
-}
-
-.search-container button {
-  padding: 0 1rem;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: 0 var(--border-radius) var(--border-radius) 0;
-  cursor: pointer;
-}
-
-.filter-container select {
-  padding: 0.75rem;
-  border: 1px solid var(--color-gray);
-  border-radius: var(--border-radius);
-  min-width: 200px;
-}
-
-.filter-container {
-  min-width: 180px;
-}
-
-.filter-input {
-  padding: 0.75rem;
-  border: 1px solid var(--color-gray);
-  border-radius: var(--border-radius);
-  width: 100%;
-}
-
-
-.filter-container {
-  margin: 20px 0;
-  font-family: 'Segoe UI', sans-serif;
-}
-
-.floating-date {
-  position: relative;
-  width: 100%;
-  max-width: 300px;
-}
-
-.date-input {
-  width: 100%;
-  padding: 16px 40px 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-  background: #fff;
-  box-sizing: border-box;
-  height: 50px;
-  transition: border-color 0.3s;
-}
-
-.date-input:focus {
-  outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
-}
-
-.date-label {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  transform: translateY(-50%);
-  color: #999;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  background: transparent;
-  padding: 0 4px;
-}
-
-.date-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: #666;
-  font-size: 18px;
-}
-
-/* Animation du label */
-.date-input:focus + .date-label,
-.date-input:not(:placeholder-shown) + .date-label {
-  top: 0;
-  font-size: 12px;
-  color: #0066cc;
-  background: #fff;
-  transform: translateY(-50%);
-  padding: 0 4px;
-}
-
-/* Pour les navigateurs qui supportent :placeholder-shown */
-.date-input:placeholder-shown + .date-label {
-  background: transparent;
-}
-
-/* Style pour le bouton de réinitialisation */
 #resetFiltersBtn {
   background-color: var(--color-warning);
   color: var(--color-white);
@@ -226,25 +108,21 @@ main {
   background-color: #e67e22;
 }
 
-/* Pour aligner les filtres sur la même ligne */
+/* Recherche et filtre */
 .search-filter-container {
   display: flex;
   gap: 1rem;
-  align-items: center;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
-@media (max-width: 768px) {
-  .filter-container {
-    min-width: 100%;
-  }
-}
-
-/* Styles pour les filtres uniformisés */
+/* Styles unifiés pour tous les filtres */
 .filter-container {
   position: relative;
   min-width: 180px;
   flex: 1;
+  margin: 0;
 }
 
 .floating-filter {
@@ -257,7 +135,7 @@ main {
   width: 100%;
   padding: 16px 40px 10px 12px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: var(--border-radius);
   font-size: 16px;
   background: #fff;
   box-sizing: border-box;
@@ -313,21 +191,10 @@ main {
   padding-right: 40px;
 }
 
-/* Supprimer l'ancien style des filtres si existant */
-.search-container {
-  position: relative;
-  min-width: 250px;
+/* Ajustement pour les icônes des selects */
+.floating-filter select.filter-input + .filter-icon {
+  right: 15px;
 }
-
-.search-container button {
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: 50px;
-  width: 50px;
-  border-radius: var(--border-radius);
-}
-
 
 /* Statistiques */
 .stats-container {
@@ -361,7 +228,7 @@ main {
   opacity: 0.8;
 }
 
-/* Tableau - Mises à jour importantes */
+/* Tableau */
 .table-responsive {
   overflow-x: auto;
   background: var(--color-white);
@@ -401,14 +268,6 @@ tr:hover {
   background-color: #e9f7fe;
 }
 
-/* Colonnes compactes */
-.compact-column {
-  max-width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* Cases à cocher */
 input[type="checkbox"] {
   width: 18px;
@@ -416,14 +275,14 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* Boutons d'action - Mis à jour */
+/* Boutons d'action */
 .action-buttons {
   display: flex;
   gap: 0.5rem;
   flex-wrap: nowrap;
 }
 
-.view-btn, .delete-btn {
+.view-btn, .edit-btn, .delete-btn {
   padding: 0.35rem 0.5rem;
   border: none;
   border-radius: var(--border-radius);
@@ -439,6 +298,15 @@ input[type="checkbox"] {
 
 .view-btn:hover {
   background-color: #0a6a94;
+}
+
+.edit-btn {
+  background-color: var(--color-warning);
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #e67e22;
 }
 
 .delete-btn {
@@ -506,7 +374,7 @@ input[type="checkbox"] {
   border-color: var(--color-primary);
 }
 
-/* Modal - Mises à jour importantes */
+/* Modal */
 .modal {
   display: none;
   position: fixed;
@@ -543,7 +411,7 @@ input[type="checkbox"] {
   border: none;
 }
 
-/* Grille de détails améliorée */
+/* Détails */
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -567,7 +435,7 @@ input[type="checkbox"] {
   grid-column: 1 / -1;
 }
 
-/* Galerie photo améliorée */
+/* Galerie photo */
 .photo-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -588,8 +456,6 @@ input[type="checkbox"] {
 .detail-photo:hover {
   transform: scale(1.05);
 }
-
-/* Ajoutez à votre admin.css */
 
 /* Modal d'édition */
 .edit-modal-content {
@@ -644,11 +510,6 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 5px;
-}
-
 /* Footer */
 footer {
   text-align: center;
@@ -658,7 +519,7 @@ footer {
   border-top: 1px solid var(--color-gray);
 }
 
-/* Responsive - Mises à jour importantes */
+/* Responsive */
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
@@ -674,9 +535,8 @@ footer {
     flex-direction: column;
   }
   
-  /* Table responsive */
-  .hide-on-mobile {
-    display: none;
+  .filter-container {
+    min-width: 100%;
   }
   
   th, td {
@@ -684,7 +544,6 @@ footer {
     font-size: 0.9rem;
   }
   
-  /* Modal en pleine largeur */
   .modal-content {
     width: 100%;
     height: 100%;
@@ -716,5 +575,10 @@ footer {
   
   .photo-gallery {
     grid-template-columns: 1fr;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 0.25rem;
   }
 }
