@@ -387,50 +387,43 @@ function formatFieldName(key) {
 
 
 function exportToCSV() {
+  // Utilise filteredDocs qui contient déjà les documents filtrés
   if (filteredDocs.length === 0) {
     alert("Aucune donnée à exporter");
     return;
   }
 
-  // En-têtes avec seulement les 4 colonnes demandées
-  const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
-  
-  // Génération du contenu CSV
-  let csvContent = headers.join(";") + "\r\n";
-  
-  filteredDocs.forEach(doc => {
-    const row = [
+  // Définir les en-têtes CSV sans la date
+  const headers = [
+    "Code Produit", 
+    "Quantité Consommée",
+    "Axe 1",
+    "Axe 2"
+  ];
+
+  // Préparer les lignes de données
+  const csvContent = [
+    headers.join(";"), // En-têtes
+    ...filteredDocs.map(doc => [
       doc.code_produit || '',
       doc.quantité_consommee || '',
       doc.axe1 || '',
       doc.axe2 || ''
-    ].map(field => field.includes(';') ? `"${field}"` : field);
-    
-    csvContent += row.join(";") + "\r\n";
-  });
+    ].map(field => 
+      // Gérer les champs contenant des point-virgules en les entourant de guillemets
+      typeof field === 'string' && field.includes(';') ? `"${field}"` : field
+    ).join(";"))
+  ].join("\n");
 
-  // Création du fichier CSV
+  // Créer et télécharger le fichier CSV
   const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-  const fileName = `export_stock_${new Date().toISOString().slice(0,10)}.csv`;
-
-  // Destinataires par défaut
-  const defaultRecipients = "spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr";
-  
-  // Tentative d'ouverture de Gmail avec pièce jointe et destinataires pré-remplis
-  try {
-    const mailtoLink = `mailto:${defaultRecipients}?subject=Export%20des%20stocks&body=Ci-joint%20l'export%20des%20stocks&attachment=${encodeURIComponent(url)}`;
-    window.location.href = mailtoLink;
-  } catch (e) {
-    console.error("Erreur ouverture Gmail:", e);
-    // Fallback: téléchargement direct
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `export_stock_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 
