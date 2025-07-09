@@ -385,7 +385,7 @@ function formatFieldName(key) {
 
 //fin édition
 
-
+//export CSV
 function exportToCSV() {
   if (filteredDocs.length === 0) {
     alert("Aucune donnée à exporter");
@@ -430,6 +430,7 @@ function exportToCSV() {
   }, 100);
 }
 
+//confirmation de l'effacement
 async function confirmDeleteSelected() {
   if (selectedDocs.size === 0) {
     alert("Aucun élément sélectionné");
