@@ -386,13 +386,13 @@ function formatFieldName(key) {
 //fin édition
 
 
-function exportToCSV() {
+async function exportToCSV() {
   if (filteredDocs.length === 0) {
     alert("Aucune donnée à exporter");
     return;
   }
 
-  // Génération du contenu CSV
+  // 1. Générer le contenu CSV
   const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
   let csvContent = headers.join(";") + "\r\n";
   
@@ -407,45 +407,58 @@ function exportToCSV() {
     csvContent += row.join(";") + "\r\n";
   });
 
-  // Création du fichier CSV
+  // 2. Créer le fichier CSV
   const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-  const file = new File([blob], `export_stock_${new Date().toISOString().slice(0,10)}.csv`, 
-                    { type: "text/csv;charset=utf-8;" });
+  const file = new File([blob], `export_stock_${new Date().toISOString().slice(0,10)}.csv`, {
+    type: "text/csv;charset=utf-8;"
+  });
 
-  // 1. Essayer l'API Web Share (mobile)
-  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    navigator.share({
-      title: "Export des stocks",
-      text: "Voici l'export des stocks demandé",
-      files: [file],
-      url: 'mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr'
-    }).catch(err => {
-      console.error("Erreur partage:", err);
-      downloadFile(file);
-    });
-  } 
-  // 2. Fallback pour desktop/autres navigateurs
-  else {
-    const mailtoLink = `mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr?subject=Export%20des%20stocks&body=Merci%20de%20t%C3%A9l%C3%A9charger%20le%20fichier%20ci-dessous%20et%20le%20joindre%20manuellement%20%C3%A0%20votre%20email`;
-    window.location.href = mailtoLink;
-    // Télécharger le fichier après un court délai
-    setTimeout(() => {
-      downloadFile(file);
-    }, 500);
+  // 3. Solution pour Android avec intent Gmail
+  if (/android/i.test(navigator.userAgent)) {
+    try {
+      // Créer un formulaire avec le fichier
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Stocker temporairement le fichier
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = function() {
+        const base64Data = reader.result.split(',')[1];
+        localStorage.setItem('tempCSVExport', base64Data);
+        
+        // Ouvrir Gmail via intent Android
+        const mailtoLink = `mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr?subject=Export des stocks&body=Ci-joint l'export des stocks&attachment=local://tempCSVExport`;
+        window.location.href = mailtoLink;
+      };
+      
+      // Nettoyer après 5 minutes
+      setTimeout(() => {
+        localStorage.removeItem('tempCSVExport');
+      }, 300000);
+      
+      return;
+    } catch (e) {
+      console.error("Erreur avec l'intent Android:", e);
+    }
   }
-}
 
-function downloadFile(file) {
-  const url = URL.createObjectURL(file);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = file.name;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 100);
+  // 4. Fallback pour les autres plateformes
+  const mailtoLink = `mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr?subject=Export des stocks&body=Merci de trouver ci-joint l'export des stocks`;
+  window.open(mailtoLink, '_blank');
+  
+  // Télécharger le fichier après un court délai
+  setTimeout(() => {
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }, 500);
 }
-
 
 async function confirmDeleteSelected() {
   if (selectedDocs.size === 0) {
