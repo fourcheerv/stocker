@@ -215,6 +215,7 @@ body {
 
   .login-form {
     padding: 15px 10px !important;
+    margin: 5%;
     max-height: none !important;
     overflow: visible !important;
     flex: none !important;
