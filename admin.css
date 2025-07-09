@@ -4,7 +4,7 @@
   --color-secondary: #0c81b4;
   --color-success: #27ae60;
   --color-error: #e74c3c;
-  --color-warning: #f39c12;
+  --color-warning: #d7d780;
   --color-white: #ffffff;
   --color-light: #f8f9fa;
   --color-gray: #dddddd;
@@ -115,6 +115,11 @@ main {
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.active-filter {
+  border: 2px solid #4CAF50;
+  background-color: #f8f8f8;
 }
 
 /* Styles unifiés pour tous les filtres */
@@ -352,7 +357,7 @@ input[type="checkbox"] {
 }
 
 .edit-btn:hover {
-  background-color: #e67e22;
+  background-color: #dfe622;
 }
 
 .delete-btn {

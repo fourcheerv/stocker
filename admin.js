@@ -74,10 +74,25 @@ function setupEventListeners() {
   document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
   // Recherche/filtres
-  document.getElementById('searchInput').addEventListener('input', filterData);
-  document.getElementById('filterSelect').addEventListener('change', filterData);
-  document.getElementById('dateFilter').addEventListener('change', filterData);
-  document.getElementById('commandeFilter').addEventListener('change', filterData);
+  document.getElementById('searchInput').addEventListener('input', function() {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('filterSelect').addEventListener('change', function() {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('dateFilter').addEventListener('change', function() {
+    currentPage = 1; // Réinitialisation à la première page
+    filterData();
+  });
+  
+  document.getElementById('commandeFilter').addEventListener('change', function() {
+    currentPage = 1;
+    filterData();
+  });
 
   // Pagination
   document.getElementById('firstPageBtn').addEventListener('click', () => goToPage(1));
@@ -121,6 +136,7 @@ function resetFilters() {
   document.getElementById('filterSelect').value = '';
   document.getElementById('dateFilter').value = getTodayDate();
   document.getElementById('commandeFilter').value = '';
+  currentPage = 1; // Réinitialiser à la première page
   filterData();
 }
 
@@ -149,10 +165,11 @@ function filterData() {
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date
+    // Filtre par date - amélioré pour ignorer l'heure
     if (dateFilter) {
       const docDate = new Date(doc._id).toISOString().split('T')[0];
-      if (docDate !== dateFilter) return false;
+      const selectedDate = new Date(dateFilter).toISOString().split('T')[0];
+      if (docDate !== selectedDate) return false;
     }
     
     // Filtre "À commander"
@@ -218,8 +235,18 @@ function renderTable() {
     tableBody.appendChild(row);
   });
 
+  // Mise en évidence de la date active
+  const dateFilter = document.getElementById('dateFilter').value;
+  if (dateFilter) {
+    document.getElementById('dateFilter').classList.add('active-filter');
+  } else {
+    document.getElementById('dateFilter').classList.remove('active-filter');
+  }
+
   updatePagination();
 }
+
+// ... (les autres fonctions restent identiques à la version précédente)
 
 function updateStats() {
   document.getElementById('totalCount').textContent = allDocs.length;
@@ -284,6 +311,7 @@ function goToPage(page) {
   currentPage = page;
   renderTable();
 }
+
 
 // Fonctions de gestion des données
 async function syncWithServer() {
