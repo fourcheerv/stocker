@@ -45,7 +45,10 @@ function getTodayDate() {
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const hours = String(today.getHours()).padStart(2, '0');
+  const minutes = String(today.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 function initAdmin() {
@@ -169,6 +172,20 @@ function filterData() {
   const filterValue = document.getElementById('filterSelect').value;
   const dateFilter = document.getElementById('dateFilter').value;
   const commandeFilter = document.getElementById('commandeFilter').value;
+
+  if (dateFilter) {
+    const docDate = new Date(doc._id);
+    const selectedDate = new Date(dateFilter);
+    
+    // Comparaison jour/mois/année/heure/minute
+    if (docDate.getFullYear() !== selectedDate.getFullYear() || 
+        docDate.getMonth() !== selectedDate.getMonth() || 
+        docDate.getDate() !== selectedDate.getDate() ||
+        docDate.getHours() !== selectedDate.getHours() ||
+        docDate.getMinutes() !== selectedDate.getMinutes()) {
+      return false;
+    }
+  }
 
   filteredDocs = allDocs.filter(doc => {
     // Filtre par compte
