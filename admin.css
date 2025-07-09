@@ -108,6 +108,82 @@ main {
   background-color: #e67e22;
 }
 
+
+/* Nouveau style pour le bouton de déconnexion */
+.logout-btn {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #ff5e62, #ff9966);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logout-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.logout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 94, 98, 0.6);
+}
+
+.logout-btn:hover::before {
+  left: 100%;
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
+/* Icône moderne */
+.logout-btn::after {
+  content: '→';
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.logout-btn svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.logout-btn:hover svg {
+  transform: translateX(3px);
+}
+
+.logout-btn:hover::after {
+  transform: translateX(3px);
+}
+
+/* Version mobile */
+@media (max-width: 768px) {
+  .logout-btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
+
+
+
+
 /* Recherche et filtre */
 .search-filter-container {
   display: flex;
@@ -326,9 +402,15 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* Boutons d'action */
-.action-buttons {
+/* Colonne Actions - Solution Flexbox optimisée */
+#dataTable td:last-child {
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.action-buttons-container {
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
   flex-wrap: nowrap;
 }
@@ -340,6 +422,10 @@ input[type="checkbox"] {
   cursor: pointer;
   transition: var(--transition);
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
 }
 
 .view-btn {
@@ -349,6 +435,7 @@ input[type="checkbox"] {
 
 .view-btn:hover {
   background-color: #0a6a94;
+  transform: scale(1.05);
 }
 
 .edit-btn {
@@ -358,6 +445,7 @@ input[type="checkbox"] {
 
 .edit-btn:hover {
   background-color: #dfe622;
+  transform: scale(1.05);
 }
 
 .delete-btn {
@@ -367,6 +455,7 @@ input[type="checkbox"] {
 
 .delete-btn:hover {
   background-color: #c0392b;
+  transform: scale(1.05);
 }
 
 /* Pagination */
@@ -617,6 +706,17 @@ footer {
     justify-content: center;
     margin-top: 1rem;
   }
+  
+  /* Adaptation des boutons d'action en mobile */
+  .action-buttons-container {
+    gap: 0.3rem;
+  }
+  
+  .view-btn, .edit-btn, .delete-btn {
+    padding: 0.25rem 0.35rem;
+    font-size: 0.8rem;
+    min-width: 28px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -626,10 +726,5 @@ footer {
   
   .photo-gallery {
     grid-template-columns: 1fr;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    gap: 0.25rem;
   }
 }

@@ -226,9 +226,11 @@ function renderTable() {
       <td>${getAxe1Label(doc.axe1)}</td>
       <td>${doc.axe2 || ''}</td>
       <td>
+      <div class="action-buttons-container">
         <button class="view-btn" data-id="${doc._id}">👁️</button>
         <button class="edit-btn" data-id="${doc._id}">✏️</button>
         <button class="delete-btn" data-id="${doc._id}">🗑️</button>
+      </div>
       </td>
     `;
 
