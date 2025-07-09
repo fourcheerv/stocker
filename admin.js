@@ -392,10 +392,8 @@ function exportToCSV() {
     return;
   }
 
-  // En-têtes avec seulement les 4 colonnes demandées
-  const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
-  
   // Génération du contenu CSV
+  const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
   let csvContent = headers.join(";") + "\r\n";
   
   filteredDocs.forEach(doc => {
@@ -411,28 +409,42 @@ function exportToCSV() {
 
   // Création du fichier CSV
   const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const fileName = `export_stock_${new Date().toISOString().slice(0,10)}.csv`;
+  const file = new File([blob], `export_stock_${new Date().toISOString().slice(0,10)}.csv`, 
+                    { type: "text/csv;charset=utf-8;" });
 
-  // Destinataires par défaut
-  const defaultRecipients = "spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr";
-  
-  // Tentative d'ouverture de Gmail avec pièce jointe et destinataires pré-remplis
-  try {
-    const mailtoLink = `mailto:${defaultRecipients}?subject=Export%20des%20stocks&body=Ci-joint%20l'export%20des%20stocks&attachment=${encodeURIComponent(url)}`;
+  // 1. Essayer l'API Web Share (mobile)
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({
+      title: "Export des stocks",
+      text: "Voici l'export des stocks demandé",
+      files: [file],
+      url: 'mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr'
+    }).catch(err => {
+      console.error("Erreur partage:", err);
+      downloadFile(file);
+    });
+  } 
+  // 2. Fallback pour desktop/autres navigateurs
+  else {
+    const mailtoLink = `mailto:spokorski@gmail.com,sebastien.pokorski@estrepublicain.fr?subject=Export%20des%20stocks&body=Merci%20de%20t%C3%A9l%C3%A9charger%20le%20fichier%20ci-dessous%20et%20le%20joindre%20manuellement%20%C3%A0%20votre%20email`;
     window.location.href = mailtoLink;
-  } catch (e) {
-    console.error("Erreur ouverture Gmail:", e);
-    // Fallback: téléchargement direct
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Télécharger le fichier après un court délai
+    setTimeout(() => {
+      downloadFile(file);
+    }, 500);
   }
 }
 
+function downloadFile(file) {
+  const url = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = file.name;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
 
 
 async function confirmDeleteSelected() {
