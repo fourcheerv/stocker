@@ -392,9 +392,10 @@ function exportToCSV() {
     return;
   }
 
-  // 1. Génération du contenu CSV avec les 4 colonnes
+  // 1. Génération du contenu CSV avec encodage UTF-8 et BOM
   const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
-  let csvContent = headers.join(";") + "\r\n";
+  let csvContent = "\uFEFF"; // BOM pour UTF-8
+  csvContent += headers.join(";") + "\r\n";
   
   filteredDocs.forEach(doc => {
     const row = [
@@ -402,13 +403,17 @@ function exportToCSV() {
       doc.quantité_consommee || '',
       doc.axe1 || '',
       doc.axe2 || ''
-    ].map(field => field.includes(';') ? `"${field}"` : field);
+    ].map(field => {
+      // Échapper les guillemets et point-virgules
+      field = field.toString().replace(/"/g, '""');
+      return field.includes(';') ? `"${field}"` : field;
+    });
     
     csvContent += row.join(";") + "\r\n";
   });
 
   // 2. Création et téléchargement du fichier
-  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const filename = `export_stock_${new Date().toISOString().slice(0,10)}.csv`;
   
