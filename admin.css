@@ -181,7 +181,36 @@ main {
   }
 }
 
+/* Style pour la zone utilisateur */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
 
+#currentUserLabel {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Adaptation responsive */
+@media (max-width: 768px) {
+  .user-info {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+  
+  #currentUserLabel {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}
 
 
 /* Recherche et filtre */
