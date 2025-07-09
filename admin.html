@@ -26,57 +26,61 @@
       <button id="resetFiltersBtn">Réinitialiser les filtres</button>
     </div>
 
-    <div class="search-filter-container">
-    <div class="search-container">
-      <input type="text" id="searchInput" placeholder="Rechercher...">
-      <button id="searchBtn">🔍</button>
+<!-- Nouvelle section uniformisée -->
+<div class="search-filter-container">
+  <!-- Recherche avec style flottant -->
+  <div class="filter-container">
+    <div class="floating-filter">
+      <input 
+        type="text" 
+        id="searchInput" 
+        class="filter-input"
+        placeholder=" "
+      >
+      <label for="searchInput" class="filter-label">Rechercher...</label>
+      <span class="filter-icon">🔍</span>
     </div>
-
-
-<div class="filter-container">
-  <div class="floating-date">
-    <input 
-      type="date"
-      id="dateFilter"
-      class="date-input"
-      placeholder=" "
-      required
-    >
-    <label for="dateFilter" class="date-label">Date</label>
-    <span class="date-icon">📅</span>
+  </div>
+  
+  <!-- Date avec style flottant -->
+  <div class="filter-container">
+    <div class="floating-filter">
+      <input 
+        type="date"
+        id="dateFilter"
+        class="filter-input"
+        placeholder=" "
+      >
+      <label for="dateFilter" class="filter-label">Date</label>
+      <span class="filter-icon">📅</span>
+    </div>
+  </div>
+  
+  <!-- Filtre par compte avec style flottant -->
+  <div class="filter-container">
+    <div class="floating-filter">
+      <select id="filterSelect" class="filter-input">
+        <option value="" selected></option>
+        <!-- ... options ... -->
+      </select>
+      <label for="filterSelect" class="filter-label">Compte</label>
+      <span class="filter-icon">▼</span>
+    </div>
+  </div>
+  
+  <!-- Filtre "À commander" avec style flottant -->
+  <div class="filter-container">
+    <div class="floating-filter">
+      <select id="commandeFilter" class="filter-input">
+        <option value="" selected></option>
+        <option value="oui">Oui</option>
+        <option value="non">Non</option>
+      </select>
+      <label for="commandeFilter" class="filter-label">À commander</label>
+      <span class="filter-icon">▼</span>
+    </div>
   </div>
 </div>
-
-
-    
-    <div class="filter-container">
-      <select id="filterSelect">
-        <option value="">Tous les comptes</option>
-        <option value="SCT=E260329">SCE Informations Sportives</option>
-        <option value="SCT=E272329">SCE Support Rédaction</option>
-        <option value="SCT=E370329">Maintenance Machines</option>
-        <option value="SCT=E382329">Service Rotatives</option>
-        <option value="SCT=E390329">Service Expédition</option>
-        <option value="SCT=E500329">Direction Vente</option>
-        <option value="SCT=E730329">LER Charges</option>
-        <option value="SCT=E736329">Service Travaux</option>
-        <option value="SCT=E760329">Achats Magasin</option>
-        <option value="SCT=E762329">Manutention Papier</option>
-        <option value="SCT=E772329">Coursiers</option>
-        <option value="SCT=E860329">Cantine</option>
-        <option value="NEUTRE">Compte Invite</option>
-      </select>
-    </div>
-        
-        <!-- Nouveau filtre "À commander" -->
-        <div class="filter-container">
-            <select id="commandeFilter">
-            <option value="">À commander (tous)</option>
-            <option value="oui">Oui</option>
-            <option value="non">Non</option>
-            </select>
-        </div>
-        </div>
  
 
     <div class="stats-container">
