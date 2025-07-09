@@ -166,22 +166,19 @@ function filterData() {
   const filterValue = document.getElementById('filterSelect').value;
   const dateFilter = document.getElementById('dateFilter').value;
   const commandeFilter = document.getElementById('commandeFilter').value;
-  
- 
-
 
   filteredDocs = allDocs.filter(doc => {
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date
+    // Filtre par date - CORRIGÉ
     if (dateFilter) {
-    const filterDate = new Date(dateFilter);
-    
-    filteredDocs = allDocs.filter(doc => {
       const docDate = new Date(doc._id);
-      return docDate.toDateString() === filterDate.toDateString();
-    });
+      const filterDate = new Date(dateFilter);
+      // Comparaison des dates sans les heures
+      if (docDate.toISOString().split('T')[0] !== filterDate.toISOString().split('T')[0]) {
+        return false;
+      }
     }
     
     // Filtre "À commander"
@@ -593,8 +590,6 @@ function formatDate(isoString) {
     minute: '2-digit'
   });
 }
-
-
 
 function getAxe1Label(axe1) {
   const mappings = {
