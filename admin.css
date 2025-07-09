@@ -52,6 +52,76 @@ h1 {
   font-weight: 600;
 }
 
+/* Style pour la zone utilisateur */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+#currentUserLabel {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Nouveau style pour le bouton de déconnexion */
+.logout-btn {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #ff5e62, #ff9966);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logout-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.logout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 94, 98, 0.6);
+}
+
+.logout-btn:hover::before {
+  left: 100%;
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
+.logout-btn::after {
+  content: '→';
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.logout-btn:hover::after {
+  transform: translateX(3px);
+}
+
 /* Main */
 main {
   max-width: 1200px;
@@ -107,111 +177,6 @@ main {
 #resetFiltersBtn:hover {
   background-color: #e67e22;
 }
-
-
-/* Nouveau style pour le bouton de déconnexion */
-.logout-btn {
-  position: relative;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 50px;
-  background: linear-gradient(135deg, #ff5e62, #ff9966);
-  color: white;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.logout-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: 0.5s;
-}
-
-.logout-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 94, 98, 0.6);
-}
-
-.logout-btn:hover::before {
-  left: 100%;
-}
-
-.logout-btn:active {
-  transform: translateY(0);
-}
-
-/* Icône moderne */
-.logout-btn::after {
-  content: '→';
-  display: inline-block;
-  transition: transform 0.3s ease;
-}
-
-.logout-btn svg {
-  width: 16px;
-  height: 16px;
-  transition: transform 0.3s ease;
-}
-
-.logout-btn:hover svg {
-  transform: translateX(3px);
-}
-
-.logout-btn:hover::after {
-  transform: translateX(3px);
-}
-
-/* Version mobile */
-@media (max-width: 768px) {
-  .logout-btn {
-    padding: 0.6rem 1.2rem;
-    font-size: 0.9rem;
-  }
-}
-
-/* Style pour la zone utilisateur */
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-#currentUserLabel {
-  background-color: rgba(255, 255, 255, 0.2);
-  padding: 0.5rem 1rem;
-  border-radius: 50px;
-  font-weight: 500;
-  font-size: 0.9rem;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Adaptation responsive */
-@media (max-width: 768px) {
-  .user-info {
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: flex-end;
-  }
-  
-  #currentUserLabel {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.8rem;
-  }
-}
-
 
 /* Recherche et filtre */
 .search-filter-container {
@@ -312,46 +277,6 @@ main {
   right: 15px;
 }
 
-/* Style pour le placeholder personnalisé du champ date */
-.date-placeholder {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  transform: translateY(-50%);
-  color: #999;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  font-size: 16px;
-  display: none; /* Caché par défaut */
-}
-
-/* Afficher le placeholder quand le champ est vide */
-.filter-input[type="date"]:not(:focus):invalid + .filter-label + .date-placeholder {
-  display: block;
-}
-
-/* Cacher le placeholder quand le champ a une valeur ou est en focus */
-.filter-input[type="date"]:focus + .filter-label + .date-placeholder,
-.filter-input[type="date"]:valid + .filter-label + .date-placeholder {
-  display: none;
-}
-
-/* Ajustement du label pour le champ date */
-.filter-input[type="date"] + .filter-label {
-  pointer-events: none;
-}
-
-/* Animation spéciale pour le champ date */
-.filter-input[type="date"]:focus + .filter-label,
-.filter-input[type="date"]:valid + .filter-label {
-  top: 0;
-  font-size: 12px;
-  color: #0066cc;
-  background: #fff;
-  transform: translateY(-50%);
-  padding: 0 4px;
-}
-
 /* Statistiques */
 .stats-container {
   display: flex;
@@ -397,7 +322,7 @@ main {
 table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed; /* Important pour le contrôle des colonnes */
 }
 
 th, td {
@@ -424,6 +349,25 @@ tr:hover {
   background-color: #e9f7fe;
 }
 
+/* Colonne Désignation - sur une seule ligne */
+#dataTable td:nth-child(4) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+/* Optionnel : Afficher le texte complet au survol */
+#dataTable td:nth-child(4):hover {
+  overflow: visible;
+  white-space: normal;
+  position: absolute;
+  z-index: 100;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  max-width: 400px;
+}
+
 /* Cases à cocher */
 input[type="checkbox"] {
   width: 18px;
@@ -431,7 +375,7 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* Colonne Actions - Solution Flexbox optimisée */
+/* Colonne Actions */
 #dataTable td:last-child {
   padding: 0.5rem;
   text-align: center;
@@ -696,6 +640,17 @@ footer {
     text-align: center;
   }
   
+  .user-info {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+  
+  #currentUserLabel {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+  }
+  
   .admin-controls {
     flex-direction: column;
   }
@@ -711,6 +666,11 @@ footer {
   th, td {
     padding: 0.5rem;
     font-size: 0.9rem;
+  }
+  
+  /* Adaptation colonne Désignation en mobile */
+  #dataTable td:nth-child(4) {
+    max-width: 150px;
   }
   
   .modal-content {
@@ -755,5 +715,9 @@ footer {
   
   .photo-gallery {
     grid-template-columns: 1fr;
+  }
+  
+  #dataTable td:nth-child(4) {
+    max-width: 100px;
   }
 }

@@ -52,6 +52,12 @@ function initAdmin() {
   checkAuth();
   setupEventListeners();
   
+  // Afficher le nom de l'utilisateur connecté
+  const currentAccount = sessionStorage.getItem('currentAccount');
+  if (currentAccount) {
+    document.getElementById('currentUserLabel').textContent = getAxe1Label(currentAccount);
+  }
+  
   // Initialiser avec la date du jour
   document.getElementById('dateFilter').value = getTodayDate();
   
@@ -85,7 +91,7 @@ function setupEventListeners() {
   });
   
   document.getElementById('dateFilter').addEventListener('change', function() {
-    currentPage = 1; // Réinitialisation à la première page
+    currentPage = 1;
     filterData();
   });
   
@@ -136,7 +142,7 @@ function resetFilters() {
   document.getElementById('filterSelect').value = '';
   document.getElementById('dateFilter').value = getTodayDate();
   document.getElementById('commandeFilter').value = '';
-  currentPage = 1; // Réinitialiser à la première page
+  currentPage = 1;
   filterData();
 }
 
@@ -165,7 +171,7 @@ function filterData() {
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date - amélioré pour ignorer l'heure
+    // Filtre par date
     if (dateFilter) {
       const docDate = new Date(doc._id).toISOString().split('T')[0];
       const selectedDate = new Date(dateFilter).toISOString().split('T')[0];
@@ -216,7 +222,7 @@ function renderTable() {
       <td><input type="checkbox" class="row-checkbox" data-id="${doc._id}" ${isSelected ? 'checked' : ''}></td>
       <td>${formatDate(doc._id)}</td>
       <td>${doc.code_produit || ''}</td>
-      <td>${doc.designation || ''}</td>
+      <td class="designation-cell" title="${doc.designation || ''}">${doc.designation || ''}</td>
       <td>${doc.quantité_consommee || ''}</td>
       <td>${doc.unites || ''}</td>
       <td>${doc.a_commander || ''}</td>
@@ -226,11 +232,11 @@ function renderTable() {
       <td>${getAxe1Label(doc.axe1)}</td>
       <td>${doc.axe2 || ''}</td>
       <td>
-      <div class="action-buttons-container">
-        <button class="view-btn" data-id="${doc._id}">👁️</button>
-        <button class="edit-btn" data-id="${doc._id}">✏️</button>
-        <button class="delete-btn" data-id="${doc._id}">🗑️</button>
-      </div>
+        <div class="action-buttons-container">
+          <button class="view-btn" data-id="${doc._id}">👁️</button>
+          <button class="edit-btn" data-id="${doc._id}">✏️</button>
+          <button class="delete-btn" data-id="${doc._id}">🗑️</button>
+        </div>
       </td>
     `;
 
@@ -247,8 +253,6 @@ function renderTable() {
 
   updatePagination();
 }
-
-// ... (les autres fonctions restent identiques à la version précédente)
 
 function updateStats() {
   document.getElementById('totalCount').textContent = allDocs.length;
@@ -314,8 +318,6 @@ function goToPage(page) {
   renderTable();
 }
 
-
-// Fonctions de gestion des données
 async function syncWithServer() {
   try {
     await localDB.sync(remoteDB);
