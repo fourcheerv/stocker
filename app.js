@@ -52,6 +52,7 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 
 
 // === Chargement Excel ===
+// === Chargement Excel ===
 function loadExcelData() {
   fetch("stocker_temp.xlsx")
     .then((r) => r.arrayBuffer())
@@ -72,11 +73,14 @@ function loadExcelData() {
       excelData.forEach((row) => {
         // Pour les désignations
         const designation = row["Désignation:"] || row["Désignation"];
-        if (designation && String(designation).trim() !== "") {
-          designations.add(String(designation).trim());
+        if (designation !== undefined && designation !== null) {
+          const designationStr = String(designation).trim();
+          if (designationStr !== "") {
+            designations.add(designationStr);
+          }
         }
         
-        // Pour les codes produits - conversion explicite en string
+        // Pour les codes produits
         const code = row["Code_Produit"];
         if (code !== undefined && code !== null) {
           const codeStr = String(code).trim();
