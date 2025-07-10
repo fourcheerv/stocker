@@ -40,6 +40,18 @@ const modalManager = {
 // Initialisation
 document.addEventListener("DOMContentLoaded", initAdmin);
 
+// À placer juste après le DOMContentLoaded
+document.addEventListener("DOMContentLoaded", () => {
+  // Solution radicale (bypass)
+  const today = new Date();
+  const day = String(today.getDate()).padStart(2, '0');
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const year = today.getFullYear();
+  
+  document.getElementById('dateFilter').value = `${year}-${month}-${day}`;
+  initAdmin();
+});
+
 function getTodayDate() {
   const now = new Date();
   // Compensation du fuseau horaire (ex: UTC+2 pour Paris)
