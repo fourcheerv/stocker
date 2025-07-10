@@ -42,9 +42,10 @@ document.addEventListener("DOMContentLoaded", initAdmin);
 
 function getTodayDate() {
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Réinitialiser l'heure
-  return today.toISOString().split('T')[0];
+  today.setHours(0, 0, 0, 0); // Réinitialiser l'heure à minuit
+  return today.toLocaleDateString('fr-FR'); // Format: "JJ/MM/AAAA"
 }
+
 
 function initAdmin() {
   checkAuth();
