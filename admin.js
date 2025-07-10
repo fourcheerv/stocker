@@ -40,12 +40,16 @@ const modalManager = {
 // Initialisation
 document.addEventListener("DOMContentLoaded", initAdmin);
 
-function getTodayDate() {
+function getTodayDate(format = 'ISO') {
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Réinitialiser l'heure à minuit
-  return today.toLocaleDateString('fr-FR'); // Format: "JJ/MM/AAAA"
+  today.setHours(0, 0, 0, 0);
+  
+  if (format === 'fr-FR') {
+    return today.toLocaleDateString('fr-FR'); // Pour affichage UI
+  } else {
+    return today.toISOString().split('T')[0]; // "YYYY-MM-DD" pour input[type="date"]
+  }
 }
-
 
 function initAdmin() {
   checkAuth();
@@ -58,7 +62,8 @@ function initAdmin() {
   }
   
   // Initialiser avec la date du jour
-  document.getElementById('dateFilter').value = getTodayDate();
+ // Pour le filtre (format ISO)
+document.getElementById('dateFilter').value = getTodayDate(); // "2025-07-10"
   
   loadData();
 }
