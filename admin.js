@@ -40,33 +40,29 @@ const modalManager = {
 // Initialisation
 document.addEventListener("DOMContentLoaded", initAdmin);
 
-function getTodayDate(format = 'ISO') {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Réinitialiser l'heure à minuit
-  
-  if (format === 'fr-FR') {
-    return today.toLocaleDateString('fr-FR'); // Format: "JJ/MM/AAAA" pour l'affichage
-  } else {
-    return today.toISOString().split('T')[0]; // Format: "AAAA-MM-JJ" pour les inputs date
-  }
+function getTodayDate() {
+  const now = new Date();
+  // Compensation du fuseau horaire (ex: UTC+2 pour Paris)
+  const timezoneOffset = now.getTimezoneOffset() * 60000; // en millisecondes
+  const today = new Date(now - timezoneOffset);
+  return today.toISOString().split('T')[0]; // "YYYY-MM-DD"
 }
 
 function initAdmin() {
   checkAuth();
   setupEventListeners();
-  
-  // Afficher le nom de l'utilisateur connecté
+
+  // Afficher le nom utilisateur
   const currentAccount = sessionStorage.getItem('currentAccount');
   if (currentAccount) {
     document.getElementById('currentUserLabel').textContent = getAxe1Label(currentAccount);
   }
-  
-  // Initialiser avec la date du jour (au format ISO pour l'input date)
-  document.getElementById('dateFilter').value = getTodayDate(); // "YYYY-MM-DD"
-  
-  // Exemple d'utilisation pour un affichage en français :
-  // document.getElementById('todayLabel').textContent = getTodayDate('fr-FR'); // "10/07/2025"
-  
+
+  // FORCE la date du jour (debug)
+  const dateFilter = document.getElementById('dateFilter');
+  dateFilter.value = getTodayDate();
+  console.log("Date initialisée :", dateFilter.value); // Doit afficher "2025-07-10"
+
   loadData();
 }
 
