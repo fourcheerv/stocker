@@ -349,38 +349,43 @@ tr:hover {
   background-color: #e9f7fe;
 }
 
-/* Colonne Désignation - sur une seule ligne */
+/* Colonne Désignation - Correction du popup */
 #dataTable td:nth-child(4) {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 250px;
-}
-
-/* Colonne Axe 2 */
-#dataTable td:nth-last-child(2) {
-  max-width: 150px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  position: relative;
 }
 
-#dataTable td:nth-last-child(2):hover {
+#dataTable td:nth-child(4):hover {
   overflow: visible;
   white-space: normal;
-  position: absolute;
+  position: relative;
   z-index: 100;
   background-color: white;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  max-width: 300px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  max-width: 400px;
+  min-width: 250px;
 }
 
-/* Colonne Actions */
-#dataTable td:last-child {
-  padding: 0.5rem;
-  text-align: center;
+/* Colonne Axe 2 - Retrait du popup */
+#dataTable td:nth-last-child(2) {
+  max-width: 150px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Colonne Actions - Positionnement fixe */
+#dataTable td:last-child {
   width: 150px;
+  min-width: 150px;
+  white-space: nowrap;
+  text-align: center;
+  padding: 0.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .action-buttons-container {
@@ -670,6 +675,11 @@ footer {
     font-size: 0.9rem;
   }
   
+  /* Colonne Désignation en mobile */
+  #dataTable td:nth-child(4) {
+    max-width: 150px;
+  }
+  
   /* Colonne Actions en mobile */
   #dataTable td:last-child {
     width: 120px;
@@ -716,5 +726,9 @@ footer {
   
   .photo-gallery {
     grid-template-columns: 1fr;
+  }
+  
+  #dataTable td:nth-child(4) {
+    max-width: 100px;
   }
 }
