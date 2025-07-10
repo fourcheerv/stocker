@@ -50,14 +50,16 @@
     <form id="stockForm">
       <div class="full-width">
         <label for="code_produit"> 📵 Code Produit (Scan QR)</label>
-        <input type="text" id="code_produit" name="code_produit" required>
+         <input type="text" id="code_produit" name="code_produit" list="codeProduitList" required>
       </div>
-
       <div class="full-width">
         <label for="designation"> 📝 Désignation</label>
         <input list="designationList" id="designation" name="designation" autocomplete="off" required>
         <datalist id="designationList">
           <!-- Les options seront ajoutées dynamiquement -->
+        </datalist>
+        <datalist id="codeProduitList">
+        <!-- Les options seront ajoutées dynamiquement -->
         </datalist>
       </div>
 

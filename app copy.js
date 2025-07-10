@@ -59,114 +59,30 @@ function loadExcelData() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
       
-      const designationList = document.getElementById("designationList");
-      designationList.innerHTML = '';
-      
-      const codeList = document.getElementById("codeProduitList");
-      codeList.innerHTML = '';
+      const list = document.getElementById("designationList");
+      list.innerHTML = '';
       
       const designations = new Set();
-      const codes = new Set();
       
       excelData.forEach((row) => {
-        // Pour les désignations
         const designation = row["Désignation:"] || row["Désignation"];
         if (designation && designation.trim() !== "") {
           designations.add(designation.trim());
         }
-        
-        // Pour les codes produits
-        const code = row["Code_Produit"];
-        if (code && code.trim() !== "") {
-          codes.add(code.trim());
-        }
       });
       
-      // Remplir le datalist des désignations
       designations.forEach(designation => {
         const option = document.createElement("option");
         option.value = designation;
-        designationList.appendChild(option);
-      });
-      
-      // Remplir le datalist des codes produits
-      codes.forEach(code => {
-        const option = document.createElement("option");
-        option.value = code;
-        codeList.appendChild(option);
+        list.appendChild(option);
       });
       
       initQRScanner();
-      setupEventListeners();
     })
     .catch((e) => {
       console.error("Erreur chargement Excel :", e);
       alert("Erreur lors du chargement du fichier Excel");
     });
-}
-
-// === Configuration des écouteurs d'événements ===
-function setupEventListeners() {
-  // Écouteur pour le champ code_produit
-  document.getElementById("code_produit").addEventListener("input", function() {
-    const codeValue = this.value.trim().toLowerCase();
-    if (codeValue) {
-      const match = excelData.find(
-        (row) => (row["Code_Produit"] || "").toString().toLowerCase() === codeValue
-      );
-      if (match) {
-        fillFormFromExcel(match);
-      }
-    }
-  });
-
-  // Écouteur pour le champ designation
-  document.getElementById("designation").addEventListener("input", function() {
-    const val = this.value.trim().toLowerCase();
-    const match = excelData.find(
-      (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
-    );
-    if (match) {
-      fillFormFromExcel(match);
-    }
-  });
-}
-
-// === Remplissage du formulaire à partir des données Excel ===
-function fillFormFromExcel(match) {
-  const map = {
-    "Code_Produit": "code_produit",
-    "Désignation:": "designation",
-    "Désignation": "designation",
-    "Quantité_Consommée": "quantité_consommee",
-    "unité(s)": "unites",
-    "A Commander": "a_commander",
-    "Remarques:": "remarques",
-    "Magasin": "magasin",
-    "Date de sortie": "date_sortie",
-    "axe2": "axe2"
-  };
-
-  for (const [excelKey, formId] of Object.entries(map)) {
-    if (match[excelKey] !== undefined) {
-      if (excelKey === "Date de sortie") {
-        const date = new Date(match[excelKey]);
-        if (!isNaN(date.getTime())) {
-          document.getElementById(formId).value = formatDateForInput(date);
-        } else {
-          document.getElementById(formId).value = formatDateForInput(new Date());
-        }
-      } else {
-        document.getElementById(formId).value = match[excelKey];
-      }
-    }
-  }
-
-  if (!match["axe2"] || match["axe2"].trim() === "") {
-    document.getElementById("axe2").value = "SUP=SEMPQRLER";
-  }
-
-  document.getElementById("axe1").value = currentAccount;
 }
 
 // === Initialisation du scanner QR ===
@@ -182,12 +98,15 @@ function initQRScanner() {
             (text) => {
               if (!isSubmitting) {
                 document.getElementById("code_produit").value = text;
+                
                 const product = excelData.find(item => item["Code_Produit"] === text);
                 if (product) {
-                  fillFormFromExcel(product);
+                  document.getElementById("designation").value = product["Désignation:"] || product["Désignation"];
+                  document.getElementById("designation").dispatchEvent(new Event('change'));
                 }
               }
             },
+            
             (err) => console.warn("QR error", err)
           ).catch((err) => console.error("QR init error", err));
         } else {
@@ -204,7 +123,48 @@ function stopQRScanner() {
   }
 }
 
-// === Formatage de la date pour l'input ===
+// === Auto-remplissage par désignation ===
+document.getElementById("designation").addEventListener("change", () => {
+  const val = document.getElementById("designation").value.trim().toLowerCase();
+  const match = excelData.find(
+    (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
+  );
+
+  if (!match) return;
+
+  const map = {
+    "Code_Produit": "code_produit",
+    "Quantité_Consommée": "quantité_consommee",
+    "unité(s)": "unites",
+    "A Commander": "a_commander",
+    "Remarques:": "remarques",
+    "Magasin": "magasin",
+    "Date de sortie": "date_sortie",
+    "axe2": "axe2"
+  };
+
+  for (const [key, id] of Object.entries(map)) {
+    if (match[key] !== undefined) {
+      if (key === "Date de sortie") {
+        const date = new Date(match[key]);
+        if (!isNaN(date.getTime())) {
+          document.getElementById(id).value = formatDateForInput(date);
+        } else {
+          document.getElementById(id).value = formatDateForInput(new Date());
+        }
+      } else {
+        document.getElementById(id).value = match[key];
+      }
+    }
+  }
+  
+  if (!match["axe2"] || match["axe2"].trim() === "") {
+    document.getElementById("axe2").value = "SUP=SEMPQRLER";
+  }
+  
+  document.getElementById("axe1").value = currentAccount;
+});
+
 function formatDateForInput(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -278,7 +238,6 @@ function handleFiles(fileList) {
   });
 }
 
-// Écouteurs pour les boutons photo
 document.getElementById("cameraInput").addEventListener("change", (e) =>
   handleFiles(e.target.files)
 );
