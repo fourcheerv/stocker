@@ -54,18 +54,57 @@ header {
   font-size: 0.9rem;
 }
 
+/* Nouveau style pour le bouton de déconnexion */
 .logout-btn {
-  background: none;
-  border: 1px solid var(--color-white);
-  color: var(--color-white);
-  padding: 5px 15px;
-  border-radius: 20px;
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #ff5e62, #ff9966);
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
-  transition: all 0.3s;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logout-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
 }
 
 .logout-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 94, 98, 0.6);
+}
+
+.logout-btn:hover::before {
+  left: 100%;
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
+.logout-btn::after {
+  content: '→';
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.logout-btn:hover::after {
+  transform: translateX(3px);
 }
 
 h1 {
