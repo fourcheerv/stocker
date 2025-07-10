@@ -42,12 +42,12 @@ document.addEventListener("DOMContentLoaded", initAdmin);
 
 function getTodayDate(format = 'ISO') {
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Réinitialiser l'heure à minuit
+  today.setHours(0, 0, 0, 0);
   
   if (format === 'fr-FR') {
-    return today.toLocaleDateString('fr-FR'); // Format: "JJ/MM/AAAA" pour l'affichage
+    return today.toLocaleDateString('fr-FR'); // Pour affichage UI
   } else {
-    return today.toISOString().split('T')[0]; // Format: "AAAA-MM-JJ" pour les inputs date
+    return today.toISOString().split('T')[0]; // "YYYY-MM-DD" pour input[type="date"]
   }
 }
 
@@ -61,11 +61,9 @@ function initAdmin() {
     document.getElementById('currentUserLabel').textContent = getAxe1Label(currentAccount);
   }
   
-  // Initialiser avec la date du jour (au format ISO pour l'input date)
-  document.getElementById('dateFilter').value = getTodayDate(); // "YYYY-MM-DD"
-  
-  // Exemple d'utilisation pour un affichage en français :
-  // document.getElementById('todayLabel').textContent = getTodayDate('fr-FR'); // "10/07/2025"
+  // Initialiser avec la date du jour
+ // Pour le filtre (format ISO)
+document.getElementById('dateFilter').value = getTodayDate(); // "2025-07-10"
   
   loadData();
 }
@@ -587,14 +585,11 @@ function showDetails(docId) {
   modal.querySelector('.close-btn').addEventListener('click', () => modalManager.closeCurrent());
 }
 
-// Fonctions utilitaires (ajout de la gestion du format ISO/fr-FR)
+// Fonctions utilitaires
 function formatDate(isoString) {
-  if (!isoString) return '';
-  
-  // Si la date est déjà au format français (ex: "10/07/2025"), ne pas la reconvertir
+  // Si c'est déjà au format français, ne pas reconvertir
   if (isoString.includes('/')) return isoString;
   
-  // Convertir l'ISO en format français
   const date = new Date(isoString);
   return date.toLocaleDateString('fr-FR', {
     day: '2-digit',
