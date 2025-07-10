@@ -385,6 +385,7 @@ function setupEditModal(doc) {
   });
 }
 
+
 function generateEditFields(doc) {
   let fields = '';
   const excludedFields = ['_id', '_rev', 'axe1'];
@@ -395,13 +396,18 @@ function generateEditFields(doc) {
     fields += `
       <div class="form-group">
         <label for="edit_${key}">${formatFieldName(key)}:</label>
-        ${getInputField(key, value)}
+        ${key === 'date_sortie' 
+          ? `<input type="text" id="edit_${key}" class="form-control" value="${formatDate(value)}" readonly>` 
+          : getInputField(key, value)
+        }
       </div>
     `;
   }
   
   return fields;
 }
+
+
 
 function getInputField(key, value) {
   if (key === 'a_commander') {
