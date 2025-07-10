@@ -50,6 +50,7 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   window.location.href = 'login.html';
 });
 
+
 // === Chargement Excel ===
 function loadExcelData() {
   fetch("stocker_temp.xlsx")
@@ -71,14 +72,17 @@ function loadExcelData() {
       excelData.forEach((row) => {
         // Pour les désignations
         const designation = row["Désignation:"] || row["Désignation"];
-        if (designation && designation.trim() !== "") {
-          designations.add(designation.trim());
+        if (designation && String(designation).trim() !== "") {
+          designations.add(String(designation).trim());
         }
         
-        // Pour les codes produits
+        // Pour les codes produits - conversion explicite en string
         const code = row["Code_Produit"];
-        if (code && code.trim() !== "") {
-          codes.add(code.trim());
+        if (code !== undefined && code !== null) {
+          const codeStr = String(code).trim();
+          if (codeStr !== "") {
+            codes.add(codeStr);
+          }
         }
       });
       
@@ -109,7 +113,7 @@ function loadExcelData() {
 function setupEventListeners() {
   // Écouteur pour le champ code_produit
   document.getElementById("code_produit").addEventListener("input", function() {
-    const codeValue = this.value.trim().toLowerCase();
+    const codeValue = String(this.value).trim().toLowerCase();
     if (codeValue) {
       const match = excelData.find(
         (row) => (row["Code_Produit"] || "").toString().toLowerCase() === codeValue
@@ -122,7 +126,7 @@ function setupEventListeners() {
 
   // Écouteur pour le champ designation
   document.getElementById("designation").addEventListener("input", function() {
-    const val = this.value.trim().toLowerCase();
+    const val = String(this.value).trim().toLowerCase();
     const match = excelData.find(
       (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
     );
