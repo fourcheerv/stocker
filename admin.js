@@ -249,8 +249,6 @@ function renderTable() {
       <td>${doc.unites || ''}</td>
       <td>${doc.a_commander || ''}</td>
       <td>${doc.magasin || ''}</td>
-      <td>${doc.stock_initial || ''}</td>
-      <td>${doc.stock_final || ''}</td>
       <td>${getAxe1Label(doc.axe1)}</td>
       <td>${doc.axe2 || ''}</td>
       <td>
@@ -451,13 +449,6 @@ function formatFieldName(key) {
     quantité_consommee: "Quantité Consommée",
     a_commander: "À Commander",
     unites: "Unités",
-    stock_initial: "Stock Initial",
-    stock_final: "Stock Final",
-    seuil_de_commande: "Seuil de Commande",
-    section_employeur: "Section Employeur",
-    emplacement_de_stockage: "Emplacement de Stockage",
-    quantite_en_stock: "Quantité en Stock",
-    quantite_theorique: "Quantité Théorique",
     date_sortie: "Date de Sortie"
   };
   return names[key] || key.replace(/_/g, ' ');
@@ -567,13 +558,6 @@ function showDetails(docId) {
         <div class="detail-item"><strong>À commander:</strong> ${doc.a_commander || '-'}</div>
         <div class="detail-item"><strong>Remarques:</strong> ${doc.remarques || '-'}</div>
         <div class="detail-item"><strong>Magasin:</strong> ${doc.magasin || '-'}</div>
-        <div class="detail-item"><strong>Stock initial:</strong> ${doc.stock_initial || '-'}</div>
-        <div class="detail-item"><strong>Stock final:</strong> ${doc.stock_final || '-'}</div>
-        <div class="detail-item"><strong>Seuil de commande:</strong> ${doc.seuil_de_commande || '-'}</div>
-        <div class="detail-item"><strong>Section employeur:</strong> ${doc.section_employeur || '-'}</div>
-        <div class="detail-item"><strong>Emplacement de stockage:</strong> ${doc.emplacement_de_stockage || '-'}</div>
-        <div class="detail-item"><strong>Quantité en stock:</strong> ${doc.quantite_en_stock || '-'}</div>
-        <div class="detail-item"><strong>Quantité théorique:</strong> ${doc.quantite_theorique || '-'}</div>
         <div class="detail-item"><strong>Date de sortie:</strong> ${doc.date_sortie ? formatDate(doc.date_sortie) : '-'}</div>
         <div class="detail-item"><strong>Axe 1:</strong> ${getAxe1Label(doc.axe1)}</div>
         <div class="detail-item"><strong>Axe 2:</strong> ${doc.axe2 || '-'}</div>

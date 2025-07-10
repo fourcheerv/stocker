@@ -137,13 +137,6 @@ document.getElementById("designation").addEventListener("change", () => {
     "A Commander": "a_commander",
     "Remarques:": "remarques",
     "Magasin": "magasin",
-    "Stock initial": "stock_initial",
-    "Stock final": "stock_final",
-    "seuil de commande": "seuil_de_commande",
-    "Section employeur": "section_employeur",
-    "emplacement de stockage": "emplacement_de_stockage",
-    "quantité en stock": "quantite_en_stock",
-    "quantité théorique": "quantite_theorique",
     "Date de sortie": "date_sortie",
     "axe2": "axe2"
   };
