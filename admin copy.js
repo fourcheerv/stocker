@@ -42,8 +42,10 @@ document.addEventListener("DOMContentLoaded", initAdmin);
 
 function getTodayDate() {
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Réinitialiser l'heure
-  return today.toISOString().split('T')[0];
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function initAdmin() {
@@ -173,13 +175,8 @@ function filterData() {
     if (dateFilter) {
       const docDate = new Date(doc._id);
       const filterDate = new Date(dateFilter);
-      
-      // Normaliser les dates (ignorer les heures/minutes/secondes)
-      const docDateNormalized = new Date(docDate.getFullYear(), docDate.getMonth(), docDate.getDate());
-      const filterDateNormalized = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
-      
-      // Comparer les dates normalisées
-      if (docDateNormalized.getTime() !== filterDateNormalized.getTime()) {
+      // Comparaison des dates sans les heures
+      if (docDate.toISOString().split('T')[0] !== filterDate.toISOString().split('T')[0]) {
         return false;
       }
     }
