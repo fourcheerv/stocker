@@ -322,7 +322,7 @@ main {
 table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* Important pour le contrôle des colonnes */
+  table-layout: fixed;
 }
 
 th, td {
@@ -357,28 +357,30 @@ tr:hover {
   max-width: 250px;
 }
 
-/* Optionnel : Afficher le texte complet au survol */
-#dataTable td:nth-child(4):hover {
+/* Colonne Axe 2 */
+#dataTable td:nth-last-child(2) {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#dataTable td:nth-last-child(2):hover {
   overflow: visible;
   white-space: normal;
   position: absolute;
   z-index: 100;
   background-color: white;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  max-width: 400px;
-}
-
-/* Cases à cocher */
-input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
+  max-width: 300px;
 }
 
 /* Colonne Actions */
 #dataTable td:last-child {
   padding: 0.5rem;
   text-align: center;
+  white-space: nowrap;
+  width: 150px;
 }
 
 .action-buttons-container {
@@ -668,9 +670,19 @@ footer {
     font-size: 0.9rem;
   }
   
-  /* Adaptation colonne Désignation en mobile */
-  #dataTable td:nth-child(4) {
-    max-width: 150px;
+  /* Colonne Actions en mobile */
+  #dataTable td:last-child {
+    width: 120px;
+  }
+  
+  .action-buttons-container {
+    gap: 0.3rem;
+  }
+  
+  .view-btn, .edit-btn, .delete-btn {
+    padding: 0.25rem 0.35rem;
+    font-size: 0.8rem;
+    min-width: 28px;
   }
   
   .modal-content {
@@ -695,17 +707,6 @@ footer {
     justify-content: center;
     margin-top: 1rem;
   }
-  
-  /* Adaptation des boutons d'action en mobile */
-  .action-buttons-container {
-    gap: 0.3rem;
-  }
-  
-  .view-btn, .edit-btn, .delete-btn {
-    padding: 0.25rem 0.35rem;
-    font-size: 0.8rem;
-    min-width: 28px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -715,9 +716,5 @@ footer {
   
   .photo-gallery {
     grid-template-columns: 1fr;
-  }
-  
-  #dataTable td:nth-child(4) {
-    max-width: 100px;
   }
 }
