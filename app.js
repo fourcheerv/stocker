@@ -41,6 +41,8 @@ window.addEventListener("DOMContentLoaded", () => {
   
   document.getElementById('axe1').value = currentAccount;
   loadExcelData();
+  resetForm();
+  
 });
 
 // === Déconnexion ===
@@ -51,15 +53,17 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 });
 
 // date de sortie format FR
-function formatToFrDate(date) {
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
+function formatToDateTimeLocal(date) {
   const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+
 // === Chargement Excel ===
 function loadExcelData() {
   fetch("stocker_temp.xlsx")
@@ -321,12 +325,8 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
 
   form.forEach((val, key) => {
     if (key === "date_sortie") {
-      // Convertir la date fr-FR en ISO pour le stockage
-      const [datePart, timePart] = val.split(' ');
-      const [day, month, year] = datePart.split('/');
-      const [hours, minutes] = timePart.split(':');
-      const isoDate = new Date(`${year}-${month}-${day}T${hours}:${minutes}`).toISOString();
-      record[key] = isoDate;
+      // Le format datetime-local est déjà compatible avec Date
+      record[key] = new Date(val).toISOString();
     } else {
       record[key] = val;
     }
@@ -367,8 +367,8 @@ function resetForm() {
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("axe2").value = "SUP=SEMPQRLER";
 
-  // Initialiser avec la date/heure actuelle
-  document.getElementById("date_sortie").value = formatToFrDate(new Date());
+  // Initialiser avec la date/heure actuelle au format datetime-local
+  document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
 }
 
 // === Bouton de réinitialisation ===
