@@ -32,24 +32,25 @@ body {
   min-height: 100vh;
 }
 
-/* Nouveau style pour le header */
+/* Nouveau style pour le header - aligné avec admin.css */
 .app-header {
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: var(--color-white);
-  padding: 1.5rem 2rem;
-  border-radius: var(--border-radius);
+  padding: 1.5rem 0;
   box-shadow: var(--box-shadow);
   margin-bottom: 30px;
   position: relative;
   overflow: hidden;
+  border-radius: 0;
 }
 
 .header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 900px;
-  margin: 0 auto;
   position: relative;
   z-index: 2;
 }
@@ -76,23 +77,37 @@ body {
   padding: 0.5rem 1rem;
   border-radius: 20px;
   backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Style amélioré pour le bouton de déconnexion */
 .logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  position: relative;
+  padding: 0.7rem 1.3rem;
+  border: none;
+  border-radius: 50px;
   background: linear-gradient(135deg, #ff5e62, #ff9966);
   color: white;
-  padding: 0.7rem 1.3rem;
-  border-radius: 50px;
-  border: none;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
+  overflow: hidden;
   transition: var(--transition);
   box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.logout-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
 }
 
 .logout-btn:hover {
@@ -100,11 +115,21 @@ body {
   box-shadow: 0 6px 20px rgba(255, 94, 98, 0.6);
 }
 
-.logout-btn svg {
+.logout-btn:hover::before {
+  left: 100%;
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
+.logout-btn::after {
+  content: '→';
+  display: inline-block;
   transition: transform 0.3s ease;
 }
 
-.logout-btn:hover svg {
+.logout-btn:hover::after {
   transform: translateX(3px);
 }
 
