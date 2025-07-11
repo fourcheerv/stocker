@@ -10,20 +10,6 @@ const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud
 
 localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
 
-// Fonction utilitaire pour la date
-function formatToDateTimeLocal(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-function updateSortieDate() {
-  document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
-}
-
 // === Gestion de la session ===
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem('currentAccount');
@@ -55,6 +41,8 @@ window.addEventListener("DOMContentLoaded", () => {
   
   document.getElementById('axe1').value = currentAccount;
   loadExcelData();
+  resetForm();
+  
 });
 
 // === Déconnexion ===
@@ -63,6 +51,18 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   sessionStorage.removeItem('currentAccount');
   window.location.href = 'login.html';
 });
+
+// date de sortie format FR
+function formatToDateTimeLocal(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 
 // === Chargement Excel ===
 function loadExcelData() {
@@ -118,13 +118,42 @@ function loadExcelData() {
       
       initQRScanner();
       setupEventListeners();
-      resetForm(); // Initialise le formulaire avec la date du jour
     })
     .catch((e) => {
       console.error("Erreur chargement Excel :", e);
       alert("Erreur lors du chargement du fichier Excel");
     });
 }
+
+function setupEventListeners() {
+  // Écouteur pour le champ code_produit
+  document.getElementById("code_produit").addEventListener("input", function() {
+    const codeValue = String(this.value).trim().toLowerCase();
+    if (codeValue) {
+      const match = excelData.find(
+        (row) => (row["Code_Produit"] || "").toString().toLowerCase() === codeValue
+      );
+      if (match) {
+        fillFormFromExcel(match);
+      } else {
+        // Si l'utilisateur tape manuellement un code, on rafraîchit la date
+        document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
+      }
+    }
+  });
+
+  // Écouteur pour le champ designation (déjà modifié précédemment)
+  document.getElementById("designation").addEventListener("input", function() {
+    const val = String(this.value).trim().toLowerCase();
+    const match = excelData.find(
+      (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
+    );
+    if (match) {
+      fillFormFromExcel(match);
+    } else {
+      document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
+    }
+  });
 
 // === Remplissage du formulaire à partir des données Excel ===
 function fillFormFromExcel(match) {
@@ -151,41 +180,9 @@ function fillFormFromExcel(match) {
   }
 
   document.getElementById("axe1").value = currentAccount;
-  updateSortieDate(); // Met à jour la date quand on remplit via Excel
-}
 
-function setupEventListeners() {
-  // Écouteur pour le champ code_produit
-  document.getElementById("code_produit").addEventListener("input", function() {
-    const codeValue = String(this.value).trim().toLowerCase();
-    if (codeValue) {
-      const match = excelData.find(
-        (row) => (row["Code_Produit"] || "").toString().toLowerCase() === codeValue
-      );
-      if (match) {
-        fillFormFromExcel(match);
-      } else {
-        updateSortieDate(); // Mise à jour date si saisie manuelle
-      }
-    } else {
-      updateSortieDate(); // Mise à jour date si champ vidé
-    }
-  });
-
-  // Écouteur pour le champ designation
-  document.getElementById("designation").addEventListener("input", function() {
-    const val = String(this.value).trim().toLowerCase();
-    const match = excelData.find(
-      (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
-    );
-    if (match) {
-      fillFormFromExcel(match);
-    } else {
-      updateSortieDate(); // Mise à jour date si saisie manuelle
-    }
-  });
-
-  // Autres écouteurs existants...
+   // Mettre à jour la date de sortie avec l'heure actuelle
+  document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
 }
 
 // === Initialisation du scanner QR ===
@@ -221,6 +218,17 @@ function stopQRScanner() {
   if (qrReader) {
     qrReader.stop().catch(err => console.error("Failed to stop QR scanner", err));
   }
+}
+
+// === Formatage de la date pour l'input ===
+function formatDateForInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 // === Gestion Photos ===
@@ -323,6 +331,7 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
 
   form.forEach((val, key) => {
     if (key === "date_sortie") {
+      // Le format datetime-local est déjà compatible avec Date
       record[key] = new Date(val).toISOString();
     } else {
       record[key] = val;
@@ -363,7 +372,9 @@ function resetForm() {
   document.getElementById("designation").value = "";
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("axe2").value = "SUP=SEMPQRLER";
-  updateSortieDate(); // Initialise la date du jour
+
+  // Initialiser avec la date/heure actuelle au format datetime-local
+  document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
 }
 
 // === Bouton de réinitialisation ===
