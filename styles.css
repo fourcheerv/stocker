@@ -156,6 +156,22 @@ main {
   background-color: var(--color-secondary);
 }
 
+.photo-buttons button {
+  color: white !important; /* Force le texte en blanc */
+  background-color: var(--color-primary);
+  transition: var(--transition);
+}
+
+.photo-buttons button:hover {
+  background-color: var(--color-secondary);
+  color: white !important; /* Maintient le texte blanc au survol */
+}
+
+/* Pour les icônes dans les boutons */
+.photo-buttons button span {
+  color: white !important;
+}
+
 .photo-count {
   font-weight: bold;
   color: var(--color-primary);
