@@ -318,18 +318,16 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   const record = { 
     _id: new Date().toISOString(), 
     photos: [],
-    axe1: currentAccount,
-    // Ajoutez la date de sortie actuelle ici
-    date_sortie: new Date().toISOString()
+    axe1: currentAccount
   };
 
   form.forEach((val, key) => {
-    // Ne pas écraser date_sortie si elle est déjà définie manuellement
-    if (key !== "date_sortie") {
+    if (key === "date_sortie") {
+      record[key] = new Date(val).toISOString();
+    } else {
       record[key] = val;
     }
   });
-
 
   if (imageFiles.length > 0) {
     for (const file of imageFiles) {
