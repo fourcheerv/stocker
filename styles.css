@@ -1,4 +1,5 @@
 :root {
+  /* Couleurs */
   --color-primary: #003d66;
   --color-secondary: #0c81b4;
   --color-rotatives: #3498db;
@@ -7,11 +8,16 @@
   --color-success: #27ae60;
   --color-warning: #f39c12;
   --color-white: #fff;
+  --color-light: #f8f9fa;
   --color-gray: #e0e0e0;
-  --color-light-gray: #f8f9fa;
+  --color-dark: #333;
   --color-dark-gray: #6c757d;
-  --color-text: #333;
+  
+  /* Texte et fond */
+  --color-text: var(--color-dark);
   --color-bg: #f4f4f4;
+  
+  /* Effets */
   --border-radius: 8px;
   --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   --transition: all 0.25s ease;
@@ -32,11 +38,11 @@ body {
   min-height: 100vh;
 }
 
-/* Header */
+/* ========== HEADER ========== */
 header {
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: var(--color-white);
-  padding: 1.5rem 0;
+  padding: 1rem 0;
   box-shadow: var(--box-shadow);
   margin-bottom: 2rem;
 }
@@ -48,17 +54,22 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 h1 {
   font-size: 1.8rem;
   font-weight: 600;
+  margin: 0.5rem 0;
 }
 
 .user-info {
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 #currentUserLabel {
@@ -67,12 +78,10 @@ h1 {
   border-radius: 50px;
   font-weight: 500;
   font-size: 0.9rem;
-  backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logout-btn {
-  position: relative;
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 50px;
@@ -81,36 +90,16 @@ h1 {
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  overflow: hidden;
-  transition: all 0.3s ease;
+  transition: var(--transition);
   box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.logout-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: 0.5s;
-}
-
 .logout-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(255, 94, 98, 0.6);
-}
-
-.logout-btn:hover::before {
-  left: 100%;
-}
-
-.logout-btn:active {
-  transform: translateY(0);
 }
 
 .logout-btn::after {
@@ -123,7 +112,7 @@ h1 {
   transform: translateX(3px);
 }
 
-/* Le reste de votre CSS existant reste inchangé */
+/* ========== MAIN CONTENT ========== */
 main {
   max-width: 900px;
   margin: 0 auto;
@@ -167,37 +156,26 @@ main {
 .photo-buttons button {
   flex: 1;
   padding: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background-color: var(--color-primary);
-  transition: var(--transition);
-}
-
-.photo-buttons button:hover {
-  background-color: var(--color-secondary);
-}
-
-.photo-buttons button {
   color: var(--color-white);
   background-color: var(--color-primary);
-  transition: var(--transition);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  transition: var(--transition);
+  cursor: pointer;
 }
 
 .photo-buttons button span {
-  color: inherit;
   font-size: 1.2em;
 }
 
 .photo-buttons button:hover {
   background-color: var(--color-secondary);
-  color: var(--color-white);
+  transform: translateY(-2px);
 }
 
 .photo-count {
@@ -231,7 +209,9 @@ label {
   font-size: 0.95rem;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   width: 100%;
   padding: 12px 15px;
   font-size: 1rem;
@@ -241,7 +221,9 @@ input, textarea, select {
   transition: var(--transition);
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   border-color: var(--color-secondary);
   outline: none;
   box-shadow: 0 0 0 3px rgba(12, 129, 180, 0.15);
@@ -257,6 +239,7 @@ select {
 
 textarea {
   min-height: 100px;
+  resize: vertical;
 }
 
 /* Preview Images */
@@ -372,6 +355,7 @@ button:hover {
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
+/* Footer */
 footer {
   text-align: center;
   margin-top: 40px;
@@ -380,7 +364,7 @@ footer {
   font-size: 0.9rem;
 }
 
-/* Responsive Design */
+/* ========== RESPONSIVE DESIGN ========== */
 @media (min-width: 768px) {
   #stockForm {
     grid-template-columns: 1fr 1fr;
@@ -408,44 +392,57 @@ footer {
   body {
     padding: 10px;
   }
-  
-  .app-header {
-    padding: 1rem;
-  }
-  
-  .header-container {
+
+  .header-content {
     flex-direction: column;
-    gap: 1rem;
     text-align: center;
+    gap: 1rem;
   }
-  
-  .user-actions {
-    flex-direction: column;
+
+  .user-info {
+    justify-content: center;
     width: 100%;
   }
-  
-  .user-label {
-    width: 100%;
-  }
-  
+
   .logout-btn {
     width: 100%;
     justify-content: center;
   }
-  
+
   .photo-buttons {
     flex-direction: column;
   }
-  
+
   .field-group {
     grid-template-columns: 1fr;
   }
-  
+
   .button-group {
     flex-direction: column;
   }
-  
+
   .admin-link {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 20px 15px;
+  }
+  
+  .photo-buttons button {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+  
+  input,
+  textarea,
+  select {
+    padding: 10px 12px;
+  }
+  
+  button {
+    padding: 12px 20px;
   }
 }
