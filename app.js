@@ -47,13 +47,13 @@ window.addEventListener("DOMContentLoaded", () => {
     'SCT=E762329': 'Manutention Papier',
     'SCT=E772329': 'Coursiers',
     'SCT=E860329': 'Cantine',
-    'NEUTRE': 'Compte Neutre'
+    'Invite': 'Compte Invite'  // Changé de 'NEUTRE' à 'Invite' pour correspondre à login.js
   };
   
-  document.getElementById('current-account').textContent = 
+  document.getElementById('currentUserLabel').textContent = 
     accountNames[currentAccount] || currentAccount;
   
-  document.getElementById('axe1').value = currentAccount;
+  document.getElementById('axe1').value = currentAccount === 'Invite' ? 'NEUTRE' : currentAccount;
   loadExcelData();
 });
 
