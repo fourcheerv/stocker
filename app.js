@@ -50,8 +50,16 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   window.location.href = 'login.html';
 });
 
-
-// === Chargement Excel ===
+// date de sortie format FR
+function formatToFrDate(date) {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
 // === Chargement Excel ===
 function loadExcelData() {
   fetch("stocker_temp.xlsx")
@@ -151,22 +159,12 @@ function fillFormFromExcel(match) {
     "A Commander": "a_commander",
     "Remarques:": "remarques",
     "Magasin": "magasin",
-    "Date de sortie": "date_sortie",
     "axe2": "axe2"
   };
 
   for (const [excelKey, formId] of Object.entries(map)) {
     if (match[excelKey] !== undefined) {
-      if (excelKey === "Date de sortie") {
-        const date = new Date(match[excelKey]);
-        if (!isNaN(date.getTime())) {
-          document.getElementById(formId).value = formatDateForInput(date);
-        } else {
-          document.getElementById(formId).value = formatDateForInput(new Date());
-        }
-      } else {
-        document.getElementById(formId).value = match[excelKey];
-      }
+      document.getElementById(formId).value = match[excelKey];
     }
   }
 
@@ -323,7 +321,12 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
 
   form.forEach((val, key) => {
     if (key === "date_sortie") {
-      record[key] = new Date(val).toISOString();
+      // Convertir la date fr-FR en ISO pour le stockage
+      const [datePart, timePart] = val.split(' ');
+      const [day, month, year] = datePart.split('/');
+      const [hours, minutes] = timePart.split(':');
+      const isoDate = new Date(`${year}-${month}-${day}T${hours}:${minutes}`).toISOString();
+      record[key] = isoDate;
     } else {
       record[key] = val;
     }
@@ -363,6 +366,9 @@ function resetForm() {
   document.getElementById("designation").value = "";
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("axe2").value = "SUP=SEMPQRLER";
+
+  // Initialiser avec la date/heure actuelle
+  document.getElementById("date_sortie").value = formatToFrDate(new Date());
 }
 
 // === Bouton de réinitialisation ===
