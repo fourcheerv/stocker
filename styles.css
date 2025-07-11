@@ -157,19 +157,23 @@ main {
 }
 
 .photo-buttons button {
-  color: white !important; /* Force le texte en blanc */
+  color: var(--color-white);
   background-color: var(--color-primary);
   transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.photo-buttons button span {
+  color: inherit; /* Hérite de la couleur du bouton */
+  font-size: 1.2em;
 }
 
 .photo-buttons button:hover {
   background-color: var(--color-secondary);
-  color: white !important; /* Maintient le texte blanc au survol */
-}
-
-/* Pour les icônes dans les boutons */
-.photo-buttons button span {
-  color: white !important;
+  color: var(--color-white);
 }
 
 .photo-count {
