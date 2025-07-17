@@ -214,8 +214,10 @@ function filterData() {
     }
 
    // Filtre "Magasin"
-    if (magasinFilter && doc.magasin !== magasinFilter) {
-    return false;
+    if (magasinFilter) {
+      const magasin = doc.magasin ? doc.magasin : '';
+      if (magasinFilter === 'ER-MG' && magasin !== 'ER-MG') return false;
+      if (magasinFilter === 'ER-MP' && magasin !== 'ER-MP') return false;
     }
     
     
