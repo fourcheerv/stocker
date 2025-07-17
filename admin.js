@@ -213,11 +213,9 @@ function filterData() {
       if (commandeFilter === 'non' && aCommander.includes('oui')) return false;
     }
 
-     // Filtre "Magasin"
-    if (magasinFilter) {
-      const magasin = doc.magasin ? doc.magasin.toLowerCase() : '';
-      if (magasinFilter === 'ER-MG' && !magasin.includes('ER-MG')) return false;
-      if (magasinFilter === 'ER-MP' && magasin.includes('ER-MP')) return false;
+   // Filtre "Magasin"
+    if (magasinFilter && doc.magasin !== magasinFilter) {
+    return false;
     }
     
     
