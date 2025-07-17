@@ -2,15 +2,15 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Administration Stocks</title>
+  <title>Administration des sorties de stocks</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="css/admin.css">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
 </head>
 <body>
   <header>
     <div class="header-content">
-      <h1> 📦 Administration des Stocks</h1>
+      <h1> 📦 Administration des Sorties des stocks</h1>
        <div class="user-info">
       <span id="currentUserLabel"></span>
         <button class="logout-btn" id="logoutBtn">
@@ -89,7 +89,7 @@
         </div>
       </div>
 
-  <!-- Filtre "À commander" avec style flottant -->
+  <!-- À commander -->
   <div class="filter-container">
     <div class="floating-filter">
       <select id="commandeFilter" class="filter-input">
@@ -101,7 +101,22 @@
       <span class="filter-icon">▼</span>
     </div>
   </div>
+
+
+ <!-- Magasin -->
+  <div class="filter-container">
+    <div class="floating-filter">
+      <select id="magasinFilter" class="filter-input">
+        <option value="" selected>Tous</option>
+        <option value="ER-MG">ER-MG</option>
+        <option value="ER-MP">ER-MP</option>
+      </select>
+      <label for="magasinFilter" class="filter-label">Magasin</label>
+      <span class="filter-icon">▼</span>
+    </div>
+  </div>
 </div>
+ 
  
 
     <div class="stats-container">
@@ -164,9 +179,9 @@
   </div>
 
   <footer>
-    <p>&copy; 📦 2025 - Gestion de Stocks</p>
+    <p>&copy; 📦 2025 - Gestion des sorties de Stocks</p>
   </footer>
 
-  <script src="admin.js"></script>
+  <script src="js/admin.js"></script>
 </body>
 </html>
