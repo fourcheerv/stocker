@@ -6,9 +6,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Formulaire pour la gestion des stocks">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="manifest" href="/stocker/manifest.json">
+  <link rel="icon" type="image/png" href="icons/favicon.ico"/>
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker
+                .register("/remote_colis/js/service-worker.js")
+                .then((registration) => {
+                    console.log("Service Worker enregistré avec succès:", registration);
+                })
+                .catch((error) => {
+                    console.error("Échec de l'enregistrement du Service Worker:", error);
+                });
+        });
+    }
+    </script>
 </head>
 <body>
   <header>
