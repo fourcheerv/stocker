@@ -476,7 +476,7 @@ function exportToCSV() {
     return;
   }
 
-  const headers = ["Code Produit", "Quantité Consommée", "Magasin", "Axe 1", "Axe 2"];
+  const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
   let csvContent = "\uFEFF";
   csvContent += headers.join(";") + "\r\n";
   
@@ -484,7 +484,6 @@ function exportToCSV() {
     const row = [
       doc.code_produit || '',
       doc.quantité_consommee || '',
-      doc.magasin || '',
       doc.axe1 || '',
       doc.axe2 || ''
     ].map(field => {
