@@ -15,7 +15,7 @@
     if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
             navigator.serviceWorker
-                .register("/remote_colis/js/service-worker.js")
+                .register("/stocker/js/service-worker.js")
                 .then((registration) => {
                     console.log("Service Worker enregistré avec succès:", registration);
                 })
