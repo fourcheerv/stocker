@@ -4,8 +4,8 @@ const urlsToCache = [
   "/stocker/login.html",
   "/stocker/login.css",
   "/stocker/login.js",
-  "/stocker/icons/icon-192x192.png",
-  "/stocker/icons/icon-512x512.png"
+  "/stocker/icons/logo_package_192x192.png",
+  "/stocker/icons/logo_package_512x512.png"
 ];
 
 self.addEventListener("install", (event) => {
