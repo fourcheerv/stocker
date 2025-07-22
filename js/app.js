@@ -7,48 +7,8 @@ let currentAccount = null;
 
 // Configuration PouchDB améliorée
 const localDB = new PouchDB("stocks");
-const remoteDB = new PouchDB({
-  url: "https://couchdb.monproprecloud.fr/stocks",
-  fetch: function(url, opts) {
-    // Clone les options pour éviter les effets de bord
-    const newOpts = {...opts};
-    newOpts.headers = newOpts.headers || {};
-    
-    // Ajoute l'authentification
-    newOpts.headers['Authorization'] = 'Basic YXBpa2V5X3VzZXI6TW9pLCBqZSB2YWlzIGNvbmZpZ3VyZXIgbW9uIEhvbWUgU2VydmVyIGRhbnMgbGUgNTQgIQ==';
-    
-    // Désactive les credentials pour éviter les conflits
-    newOpts.credentials = 'omit';
-    
-    // Ajoute les headers nécessaires pour CouchDB
-    newOpts.headers['Accept'] = 'application/json';
-    newOpts.headers['Content-Type'] = 'application/json';
-    
-    return PouchDB.fetch(url, newOpts);
-  }
-});
+const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
 
-// Synchronisation robuste avec reconnexion automatique
-function setupSync() {
-  return localDB.sync(remoteDB, {
-    live: true,
-    retry: true,
-    back_off_function: function(delay) {
-      return delay === 0 ? 1000 : delay * 3;
-    }
-  })
-  .on('change', function(change) {
-    console.log('Changement synchronisé:', change);
-  })
-  .on('error', function(err) {
-    console.error('Erreur de synchronisation:', err);
-    // Réessaye après 10 secondes
-    setTimeout(setupSync, 10000);
-  });
-}
-
-// Démarrer la synchronisation
-let syncHandler = setupSync();
 
 localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
 
