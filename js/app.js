@@ -8,17 +8,12 @@ let currentAccount = null;
 const localDB = new PouchDB("stocks");
 //const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
 
-// Nouvelle configuration avec API Key
-const remoteDB = new PouchDB({
-  url: "https://couchdb.monproprecloud.fr/stocks",
-  fetch: function(url, opts) {
-    // Option 1: Si vous utilisez le header Authorization configuré dans NPM
-    return PouchDB.fetch(url, opts);
-    
-    // Option 2: Si besoin d'ajouter manuellement le header
-    // opts.headers = opts.headers || {};
-    // opts.headers['Authorization'] = 'Basic YXBpa2V5X3VzZXI6TW9pLCBqZSB2YWlzIGNvbmZpZ3VyZXIgbW9uIEhvbWUgU2VydmVyIGRhbnMgbGUgNTQgIQ==';
-    // return PouchDB.fetch(url, opts);
+
+const remoteDB = new PouchDB("https://couchdb.monproprecloud.fr/stocks", {
+  ajax: {
+    headers: {
+      "Authorization": "Basic YXBpa2V5X3VzZXI6TW9pLCBqZSB2YWlzIGNvbmZpZ3VyZXIgbW9uIEhvbWUgU2VydmVyIGRhbnMgbGUgNTQgIQ=="
+    }
   }
 });
 
