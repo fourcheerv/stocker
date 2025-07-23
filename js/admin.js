@@ -496,7 +496,18 @@ function exportToCSV() {
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-  const filename = `export_stock_${new Date().toISOString().slice(0,10)}.csv`;
+  
+  // Récupérer la valeur du filtre magasin
+  const magasinFilter = document.getElementById('magasinFilter').value;
+  
+  // Créer le nom du fichier avec la date et le filtre magasin si applicable
+  let filename = `export_stock_${new Date().toISOString().slice(0,10)}`;
+  
+  if (magasinFilter) {
+    filename += `_${magasinFilter}`;
+  }
+  
+  filename += '.csv';
   
   const link = document.createElement("a");
   link.href = url;
@@ -633,6 +644,7 @@ function getAxe1Label(axe1) {
     'SCT=E762329': 'Manutention Papier',
     'SCT=E772329': 'Coursiers',
     'SCT=E860329': 'Cantine',
+    'SCT=E359329': 'SMI',
     'NEUTRE': 'Compte Invite'
   };
   

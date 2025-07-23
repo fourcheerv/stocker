@@ -49,7 +49,8 @@ window.addEventListener("DOMContentLoaded", () => {
     'SCT=E762329': 'Manutention Papier',
     'SCT=E772329': 'Coursiers',
     'SCT=E860329': 'Cantine',
-    'Invite': 'Compte Invite'  // Changé de 'NEUTRE' à 'Invite' pour correspondre à login.js
+    'SCT=E359329': 'SMI',
+    'Invite': 'Compte Invite'
   };
   
   document.getElementById('currentUserLabel').textContent = 
