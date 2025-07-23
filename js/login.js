@@ -12,6 +12,7 @@ const accountMappings = {
   'btn-manutention': 'SCT=E762329',
   'btn-coursiers': 'SCT=E772329',
   'btn-cantine': 'SCT=E860329',
+  'btn-smi': 'SCT=E359329',
   'btn-neutre': 'Invite'
 };
 
