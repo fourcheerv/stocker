@@ -9,7 +9,7 @@
   --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   --account-colors: #3498db, #2ecc71, #9b59b6, #e74c3c, #f39c12, 
                    #1abc9c, #d35400, #34495e, #16a085, #8e44ad, 
-                   #c0392b, #7f8c8d, #27ae60;
+                   #c0392b, #7f8c8d, #27ae60, #27ae80;
 }
 
 * {
@@ -160,6 +160,8 @@ body {
 .account-btn:nth-child(11) { background-color: #c0392b; }
 .account-btn:nth-child(12) { background-color: #7f8c8d; }
 .account-btn:nth-child(13) { background-color: #27ae60; }
+.account-btn:nth-child(14) { background-color: #27ae80; }
+
 
 .account-btn span {
   font-size: 1.5rem;
