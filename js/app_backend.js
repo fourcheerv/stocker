@@ -7,10 +7,7 @@ let currentAccount = null;
 
 // Configuration PouchDB améliorée
 const localDB = new PouchDB("stocks");
-const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
-
-
-localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
+const remoteDB = new PouchDB("https://stocker2-5050d52b8b58.herokuapp.com/api/data");
 
 // Fonction utilitaire pour la date
 function formatToDateTimeLocal(date) {
@@ -26,15 +23,15 @@ function updateSortieDate() {
   document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
 }
 
-// === Gestion de la session ===
+// Gestion de la session
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem('currentAccount');
-  
+
   if (!currentAccount) {
     window.location.href = 'login.html';
     return;
   }
-  
+
   // Mapper le code du compte à un nom lisible
   const accountNames = {
     'SCT=E260329': 'SCE Informations Sportives',
@@ -52,22 +49,22 @@ window.addEventListener("DOMContentLoaded", () => {
     'SCT=E359329': 'SMI',
     'Invite': 'Compte Invite'
   };
-  
-  document.getElementById('currentUserLabel').textContent = 
+
+  document.getElementById('currentUserLabel').textContent =
     accountNames[currentAccount] || currentAccount;
-  
+
   document.getElementById('axe1').value = currentAccount === 'Invite' ? 'NEUTRE' : currentAccount;
   loadExcelData();
 });
 
-// === Déconnexion ===
+// Déconnexion
 document.getElementById('logoutBtn').addEventListener('click', () => {
   resetForm();
   sessionStorage.removeItem('currentAccount');
   window.location.href = 'login.html';
 });
 
-// === Chargement Excel ===
+// Chargement Excel
 function loadExcelData() {
   fetch("modele/stocker_temp.xlsx")
     .then((r) => r.arrayBuffer())
@@ -75,18 +72,17 @@ function loadExcelData() {
       const workbook = XLSX.read(data, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
-      
+
       const designationList = document.getElementById("designationList");
       designationList.innerHTML = '';
-      
+
       const codeList = document.getElementById("codeProduitList");
       codeList.innerHTML = '';
-      
+
       const designations = new Set();
       const codes = new Set();
-      
+
       excelData.forEach((row) => {
-        // Pour les désignations
         const designation = row["Désignation:"] || row["Désignation"];
         if (designation !== undefined && designation !== null) {
           const designationStr = String(designation).trim();
@@ -94,8 +90,7 @@ function loadExcelData() {
             designations.add(designationStr);
           }
         }
-        
-        // Pour les codes produits
+
         const code = row["Code_Produit"];
         if (code !== undefined && code !== null) {
           const codeStr = String(code).trim();
@@ -104,24 +99,22 @@ function loadExcelData() {
           }
         }
       });
-      
-      // Remplir le datalist des désignations
+
       designations.forEach(designation => {
         const option = document.createElement("option");
         option.value = designation;
         designationList.appendChild(option);
       });
-      
-      // Remplir le datalist des codes produits
+
       codes.forEach(code => {
         const option = document.createElement("option");
         option.value = code;
         codeList.appendChild(option);
       });
-      
+
       initQRScanner();
       setupEventListeners();
-      resetForm(); // Initialise le formulaire avec la date du jour
+      resetForm();
     })
     .catch((e) => {
       console.error("Erreur chargement Excel :", e);
@@ -129,7 +122,7 @@ function loadExcelData() {
     });
 }
 
-// === Remplissage du formulaire à partir des données Excel ===
+// Remplissage du formulaire à partir des données Excel
 function fillFormFromExcel(match) {
   const map = {
     "Code_Produit": "code_produit",
@@ -142,23 +135,19 @@ function fillFormFromExcel(match) {
     "Magasin": "magasin",
     "axe2": "axe2"
   };
-
   for (const [excelKey, formId] of Object.entries(map)) {
     if (match[excelKey] !== undefined) {
       document.getElementById(formId).value = match[excelKey];
     }
   }
-
   if (!match["axe2"] || match["axe2"].trim() === "") {
     document.getElementById("axe2").value = "SUP=SEMPQRLER";
   }
-
   document.getElementById("axe1").value = currentAccount;
-  updateSortieDate(); // Met à jour la date quand on remplit via Excel
+  updateSortieDate();
 }
 
 function setupEventListeners() {
-  // Écouteur pour le champ code_produit
   document.getElementById("code_produit").addEventListener("input", function() {
     const codeValue = String(this.value).trim().toLowerCase();
     if (codeValue) {
@@ -168,14 +157,13 @@ function setupEventListeners() {
       if (match) {
         fillFormFromExcel(match);
       } else {
-        updateSortieDate(); // Mise à jour date si saisie manuelle
+        updateSortieDate();
       }
     } else {
-      updateSortieDate(); // Mise à jour date si champ vidé
+      updateSortieDate();
     }
   });
 
-  // Écouteur pour le champ designation
   document.getElementById("designation").addEventListener("input", function() {
     const val = String(this.value).trim().toLowerCase();
     const match = excelData.find(
@@ -184,14 +172,12 @@ function setupEventListeners() {
     if (match) {
       fillFormFromExcel(match);
     } else {
-      updateSortieDate(); // Mise à jour date si saisie manuelle
+      updateSortieDate();
     }
   });
-
-  // Autres écouteurs existants...
 }
 
-// === Initialisation du scanner QR ===
+// Initialisation du scanner QR
 function initQRScanner() {
   if (Html5Qrcode.getCameras().then) {
     Html5Qrcode.getCameras()
@@ -226,7 +212,7 @@ function stopQRScanner() {
   }
 }
 
-// === Gestion Photos ===
+// Gestion Photos
 function compresserImage(file, callback) {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -253,7 +239,6 @@ function handleFiles(fileList) {
     alert("Maximum 3 photos !");
     return;
   }
-
   files.forEach((file) => {
     if (!file.type.startsWith("image/")) return;
     compresserImage(file, (blob) => {
@@ -262,14 +247,11 @@ function handleFiles(fileList) {
       reader.onload = (e) => {
         const wrapper = document.createElement("div");
         wrapper.className = "preview-image";
-
         const img = document.createElement("img");
         img.src = e.target.result;
-
         const removeBtn = document.createElement("button");
         removeBtn.className = "remove-button";
         removeBtn.textContent = "x";
-
         removeBtn.addEventListener("click", () => {
           const idx = Array.from(document.getElementById("previewContainer").children).indexOf(wrapper);
           if (idx !== -1) {
@@ -278,7 +260,6 @@ function handleFiles(fileList) {
             updatePhotoCount();
           }
         });
-
         wrapper.appendChild(img);
         wrapper.appendChild(removeBtn);
         document.getElementById("previewContainer").appendChild(wrapper);
@@ -303,27 +284,24 @@ document.getElementById("chooseGalleryBtn").addEventListener("click", () =>
   document.getElementById("galleryInput").click()
 );
 
-// === Soumission du formulaire ===
+// Soumission du formulaire
 document.getElementById("stockForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  
+
   if (!currentAccount) {
     alert("Veuillez vous authentifier avant de soumettre le formulaire");
     return;
   }
-  
+
   if (isSubmitting) return;
   isSubmitting = true;
-
   stopQRScanner();
-
   const form = new FormData(e.target);
-  const record = { 
-    _id: new Date().toISOString(), 
+  const record = {
+    _id: new Date().toISOString(),
     photos: [],
     axe1: currentAccount
   };
-
   form.forEach((val, key) => {
     if (key === "date_sortie") {
       record[key] = new Date(val).toISOString();
@@ -331,7 +309,6 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
       record[key] = val;
     }
   });
-
   if (imageFiles.length > 0) {
     for (const file of imageFiles) {
       const base64 = await new Promise((resolve) => {
@@ -344,6 +321,19 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   }
 
   try {
+    const response = await fetch('https://stocker2-5050d52b8b58.herokuapp.com/api/data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+      },
+      body: JSON.stringify(record)
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors de l\'enregistrement');
+    }
+
     await localDB.put(record);
     alert("Stock enregistré !");
     resetForm();
@@ -356,7 +346,7 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   }
 });
 
-// === Réinitialisation du formulaire ===
+// Réinitialisation du formulaire
 function resetForm() {
   document.getElementById("stockForm").reset();
   imageFiles = [];
@@ -366,10 +356,10 @@ function resetForm() {
   document.getElementById("designation").value = "";
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("axe2").value = "SUP=SEMPQRLER";
-  updateSortieDate(); // Initialise la date du jour
+  updateSortieDate();
 }
 
-// === Bouton de réinitialisation ===
+// Bouton de réinitialisation
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (confirm("Voulez-vous vraiment réinitialiser le formulaire ?")) {
     resetForm();
