@@ -645,7 +645,7 @@ function getAxe1Label(axe1) {
     'SCT=E772329': 'Coursiers',
     'SCT=E860329': 'Cantine',
     'SCT=E359329': 'SMI',
-    'NEUTRE': 'Compte Invite'
+    'Admin': 'Compte Admin'
   };
   
   return mappings[axe1] || axe1;

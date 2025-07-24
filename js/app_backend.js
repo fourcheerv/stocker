@@ -47,7 +47,7 @@ window.addEventListener("DOMContentLoaded", () => {
     'SCT=E772329': 'Coursiers',
     'SCT=E860329': 'Cantine',
     'SCT=E359329': 'SMI',
-    'Invite': 'Compte Invite'
+    'Admin': 'Compte Admin'
   };
 
   document.getElementById('currentUserLabel').textContent =
