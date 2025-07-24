@@ -13,7 +13,7 @@ const accountMappings = {
   'btn-coursiers': 'SCT=E772329',
   'btn-cantine': 'SCT=E860329',
   'btn-smi': 'SCT=E359329',
-  'btn-neutre': 'Invite'
+  'btn-neutre': 'Admin'
 };
 
 // Ajout des écouteurs pour tous les boutons
