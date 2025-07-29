@@ -537,6 +537,13 @@ function generateCSVContent() {
   return csvContent;
 }
 
+function toBase64(str) {
+  // Solution universelle pour encoder en base64 avec support Unicode
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+    return String.fromCharCode(parseInt(p1, 16));
+  }));
+}
+
 async function exportAndSendEmail() {
   try {
     checkAuth();
@@ -555,61 +562,63 @@ async function exportAndSendEmail() {
         try {
           if (tokenResponse.error) throw new Error(tokenResponse.error);
           
-          // Génération du CSV avec encodage UTF-8 correct
+          // 1. Générer le contenu CSV
           const csvContent = generateCSVContent();
           
-          // Nom du fichier
+          // 2. Préparer le nom du fichier
           const today = new Date();
-          const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+          const dateStr = formatDateForFilename(today);
           const magasinFilter = document.getElementById('magasinFilter').value;
           let filename = `export_stock_${dateStr}`;
           if (magasinFilter) filename += `_${magasinFilter}`;
           filename += '.csv';
 
-          // Construction du message MIME avec encodage UTF-8 correct
-          const boundary = "----boundary_" + Math.random().toString(16);
+          // 3. Construire le message MIME
+          const boundary = "----boundary_" + Math.random().toString(16).substr(2);
           const nl = "\r\n";
           
-          const mimeMessage = [
+          const mimeParts = [
+            // Partie texte
+            `--${boundary}`,
+            'Content-Type: text/plain; charset=UTF-8',
+            'Content-Transfer-Encoding: quoted-printable',
+            '',
+            'Veuillez trouver ci-joint l\'export des stocks.',
+            '',
+            // Partie pièce jointe
+            `--${boundary}`,
+            'Content-Type: text/csv; charset=UTF-8',
+            `Content-Disposition: attachment; filename="${filename}"`,
+            'Content-Transfer-Encoding: base64',
+            '',
+            chunkSplit(toBase64(csvContent), 76), // Découpage en lignes de 76 caractères
+            '',
+            `--${boundary}--`
+          ];
+
+          const rawMessage = [
             `To: sebastien.pokorski@estrepublicain.fr`,
             `Subject: Export Stocks ${dateStr}${magasinFilter ? ` (${magasinFilter})` : ''}`,
-            `MIME-Version: 1.0`,
+            'MIME-Version: 1.0',
             `Content-Type: multipart/mixed; boundary="${boundary}"`,
-            ``,
-            `--${boundary}`,
-            `Content-Type: text/plain; charset=UTF-8`,
-            `Content-Transfer-Encoding: quoted-printable`,
-            ``,
-            `Veuillez trouver ci-joint l'export des stocks.`,
-            ``,
-            `--${boundary}`,
-            `Content-Type: text/csv; charset=UTF-8; name="${filename}"`,
-            `Content-Disposition: attachment; filename="${filename}"`,
-            `Content-Transfer-Encoding: base64`,
-            ``,
-            base64EncodeUnicode(csvContent), // Utilisation de la fonction corrigée
-            ``,
-            `--${boundary}--`
+            '',
+            ...mimeParts
           ].join(nl);
 
-          // Fonction pour encoder correctement en base64 avec UTF-8
-          function base64EncodeUnicode(str) {
-            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, 
-              function toSolidBytes(match, p1) {
-                return String.fromCharCode('0x' + p1);
-              }));
-          }
+          // 4. Encoder le message complet
+          const encodedMessage = toBase64(rawMessage)
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
 
-          // Envoi via l'API Gmail
+          // 5. Envoyer via l'API Gmail
           const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${tokenResponse.access_token}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              raw: base64EncodeUnicode(mimeMessage).replace(/\//g, '_').replace(/\+/g, '-').replace(/=+$/, '')
-            })
+            body: JSON.stringify({ raw: encodedMessage })
           });
 
           if (!response.ok) throw new Error(await response.text());
@@ -630,6 +639,19 @@ async function exportAndSendEmail() {
     console.error("Erreur initiale:", error);
     alert(`Erreur: ${error.message}`);
   }
+}
+
+// Fonctions utilitaires supplémentaires
+function formatDateForFilename(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0')
+  ].join('-');
+}
+
+function chunkSplit(str, length) {
+  return str.match(new RegExp(`.{1,${length}}`, 'g')).join("\r\n");
 }
 
 
