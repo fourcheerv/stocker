@@ -92,6 +92,7 @@ function setupEventListeners() {
   document.getElementById('deleteSelectedBtn').addEventListener('click', confirmDeleteSelected);
   document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
   document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+  document.getElementById('exportToDriveBtn').addEventListener('click', exportAndSendEmail);
 
   // Recherche/filtres
   document.getElementById('searchInput').addEventListener('input', function() {
@@ -397,7 +398,6 @@ function setupEditModal(doc) {
   });
 }
 
-
 function generateEditFields(doc) {
   let fields = '';
   const excludedFields = ['_id', '_rev', 'axe1'];
@@ -418,8 +418,6 @@ function generateEditFields(doc) {
   
   return fields;
 }
-
-
 
 function getInputField(key, value) {
   if (key === 'a_commander') {
@@ -519,6 +517,137 @@ function exportToCSV() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }, 100);
+}
+
+async function exportAndSendEmail() {
+  try {
+    // Vérifier qu'il y a des données à exporter
+    if (filteredDocs.length === 0) {
+      alert("Aucune donnée à exporter");
+      return;
+    }
+
+    // Charger l'API Google
+    await loadGAPI();
+    
+    // Authentifier l'utilisateur
+    await gapi.auth2.getAuthInstance().signIn({
+      scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.send'
+    });
+
+    // Créer le contenu CSV
+    const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
+    let csvContent = "\uFEFF";
+    csvContent += headers.join(";") + "\r\n";
+    
+    filteredDocs.forEach(doc => {
+      const row = [
+        doc.code_produit || '',
+        doc.quantité_consommee || '',
+        doc.axe1 || '',
+        doc.axe2 || ''
+      ].map(field => {
+        field = field.toString().replace(/"/g, '""');
+        return field.includes(';') ? `"${field}"` : field;
+      });
+      
+      csvContent += row.join(";") + "\r\n";
+    });
+
+    // Créer le nom du fichier
+    const magasinFilter = document.getElementById('magasinFilter').value;
+    let filename = `export_stock_${new Date().toISOString().slice(0,10)}`;
+    if (magasinFilter) {
+      filename += `_${magasinFilter}`;
+    }
+    filename += '.csv';
+
+    // Préparer l'email avec pièce jointe
+    const boundary = "-------" + Math.random().toString().substr(2);
+    const rawMessage = [
+      `To: sebastien.pokorski@estrepublicain.fr`,
+      `Subject: Export des stocks - ${new Date().toLocaleDateString('fr-FR')}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      ``,
+      `--${boundary}`,
+      `Content-Type: text/plain; charset=UTF-8`,
+      ``,
+      `Bonjour,`,
+      ``,
+      `Veuillez trouver ci-joint l'export des stocks au format CSV.`,
+      ``,
+      `Cordialement,`,
+      `Votre application de gestion des stocks`,
+      ``,
+      `--${boundary}`,
+      `Content-Type: text/csv; charset=UTF-8; name="${filename}"`,
+      `Content-Disposition: attachment; filename="${filename}"`,
+      `Content-Transfer-Encoding: base64`,
+      ``,
+      btoa(unescape(encodeURIComponent(csvContent))),
+      ``,
+      `--${boundary}--`
+    ].join("\r\n");
+
+    // Encoder le message en base64 URL-safe
+    const encodedMessage = btoa(rawMessage)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    // Envoyer l'email via l'API Gmail
+    const response = await gapi.client.gmail.users.messages.send({
+      userId: 'me',
+      resource: {
+        raw: encodedMessage
+      }
+    });
+
+    console.log("Email envoyé avec succès:", response);
+    alert(`Export CSV envoyé par email à sebastien.pokorski@estrepublicain.fr`);
+    
+  } catch (error) {
+    console.error("Erreur lors de l'export et de l'envoi:", error);
+    alert("Erreur lors de l'export ou de l'envoi de l'email: " + error.message);
+  }
+}
+
+function loadGAPI() {
+  return new Promise((resolve, reject) => {
+    if (window.gapi) {
+      gapi.load('client:auth2', () => {
+        gapi.client.init({
+          apiKey: 'YOUR_API_KEY',
+          clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+          discoveryDocs: [
+            'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+            'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'
+          ],
+          scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.send'
+        }).then(resolve, reject);
+      });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = () => {
+      gapi.load('client:auth2', () => {
+        gapi.client.init({
+          apiKey: 'YOUR_API_KEY',
+          clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+          discoveryDocs: [
+            'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+            'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'
+          ],
+          scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.send'
+        }).then(resolve, reject);
+      });
+    };
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
 }
 
 async function confirmDeleteSelected() {
