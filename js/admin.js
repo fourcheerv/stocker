@@ -517,7 +517,7 @@ function exportToCSV() {
 
 async function exportAndSendEmail() {
   try {
-    // 1. Vérifier si l'utilisateur est connecté
+    // 1. Vérifier l'authentification
     checkAuth();
     
     // 2. Vérifier s'il y a des données à exporter
@@ -540,35 +540,69 @@ async function exportAndSendEmail() {
             throw new Error(`Erreur d'authentification: ${tokenResponse.error}`);
           }
           
-          console.log("Authentification réussie, envoi de l'email...");
+          console.log("Authentification réussie, préparation de l'email...");
           
-          // 5. Générer le contenu CSV
-          const csvContent = generateCSVContent();
-          const dateStr = new Date().toISOString().slice(0,10);
+          // 5. Générer le contenu CSV (identique à exportToCSV)
+          const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
+          let csvContent = "\uFEFF";
+          csvContent += headers.join(";") + "\r\n";
+          
+          filteredDocs.forEach(doc => {
+            const row = [
+              doc.code_produit || '',
+              doc.quantité_consommee || '',
+              doc.axe1 || '',
+              doc.axe2 || ''
+            ].map(field => {
+              field = field.toString().replace(/"/g, '""');
+              return field.includes(';') ? `"${field}"` : field;
+            });
+            
+            csvContent += row.join(";") + "\r\n";
+          });
+
+          // 6. Créer le nom du fichier (identique à exportToCSV)
+          const today = new Date();
+          const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
           const magasinFilter = document.getElementById('magasinFilter').value;
-          let subject = `Export stocks ${dateStr}`;
           
+          let filename = `export_stock_${dateStr}`;
           if (magasinFilter) {
-            subject += ` (${magasinFilter})`;
+            filename += `_${magasinFilter}`;
           }
-          
-          // 6. Préparer l'email
-          const emailContent = [
+          filename += '.csv';
+
+          // 7. Créer le contenu MIME de l'email avec pièce jointe
+          const boundary = "----=_Part_" + Math.random().toString(36).substr(2);
+          const mimeParts = [
+            'MIME-Version: 1.0',
             'To: sebastien.pokorski@estrepublicain.fr',
-            'Subject: ' + subject,
-            'Content-Type: text/csv; charset=UTF-8',
-            'Content-Disposition: attachment; filename="export_stocks.csv"',
+            'Subject: Export Stocks ' + dateStr + (magasinFilter ? ` (${magasinFilter})` : ''),
+            'Content-Type: multipart/mixed; boundary="' + boundary + '"',
             '',
-            csvContent
+            '--' + boundary,
+            'Content-Type: text/plain; charset=UTF-8',
+            '',
+            'Veuillez trouver ci-joint l\'export des stocks.',
+            '',
+            '--' + boundary,
+            'Content-Type: text/csv; charset=UTF-8; name="' + filename + '"',
+            'Content-Disposition: attachment; filename="' + filename + '"',
+            'Content-Transfer-Encoding: base64',
+            '',
+            btoa(csvContent).replace(/\//g, '_').replace(/\+/g, '-').replace(/=+$/, ''),
+            '',
+            '--' + boundary + '--'
           ].join('\r\n');
-          
-          // 7. Encoder en base64
-          const encodedEmail = btoa(emailContent)
+
+          // 8. Encoder en base64 URL-safe
+          const encodedEmail = btoa(mimeParts)
             .replace(/\//g, '_')
             .replace(/\+/g, '-')
             .replace(/=+$/, '');
-          
-          // 8. Envoyer l'email via l'API Gmail
+
+          // 9. Envoyer l'email via l'API Gmail
+          console.log("Envoi de l'email...");
           const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
             method: 'POST',
             headers: {
@@ -585,7 +619,7 @@ async function exportAndSendEmail() {
             throw new Error(errorData.error.message || "Erreur lors de l'envoi");
           }
           
-          alert('Export envoyé par email avec succès!');
+          alert('Export envoyé par email avec succès! Pièce jointe: ' + filename);
         } catch (error) {
           console.error('Erreur lors de l\'envoi:', error);
           alert(`Erreur: ${error.message}`);
@@ -597,7 +631,7 @@ async function exportAndSendEmail() {
       }
     });
 
-    // 9. Demander le token d'accès
+    // 10. Demander le token d'accès
     console.log("Demande de token d'accès...");
     client.requestAccessToken();
     
@@ -606,7 +640,6 @@ async function exportAndSendEmail() {
     alert(`Erreur: ${error.message}`);
   }
 }
-
 // Fonction utilitaire pour charger l'API Google
 function loadGAPI() {
   return new Promise((resolve, reject) => {
