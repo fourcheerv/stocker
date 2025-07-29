@@ -517,24 +517,29 @@ function exportToCSV() {
 
 async function exportAndSendEmail() {
   try {
-    // Vérifier qu'il y a des données à exporter
     if (filteredDocs.length === 0) {
       alert("Aucune donnée à exporter");
       return;
     }
 
-    // Charger l'API Google
+    console.log("Chargement de l'API Google...");
     await loadGAPI();
     
-    // Authentifier l'utilisateur
-    await gapi.auth2.getAuthInstance().signIn({
-      scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.send'
+    console.log("Authentification...");
+    const authInstance = gapi.auth2.getAuthInstance();
+    if (!authInstance) {
+      throw new Error("L'API Google n'est pas initialisée");
+    }
+    
+    const googleUser = await authInstance.signIn({
+      scope: 'https://www.googleapis.com/auth/gmail.send'
     });
+    
+    console.log("Utilisateur authentifié:", googleUser.getBasicProfile().getEmail());
 
-    // Créer le contenu CSV
+    // Création du contenu CSV
     const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
-    let csvContent = "\uFEFF";
-    csvContent += headers.join(";") + "\r\n";
+    let csvContent = "\uFEFF" + headers.join(";") + "\r\n";
     
     filteredDocs.forEach(doc => {
       const row = [
@@ -542,27 +547,21 @@ async function exportAndSendEmail() {
         doc.quantité_consommee || '',
         doc.axe1 || '',
         doc.axe2 || ''
-      ].map(field => {
-        field = field.toString().replace(/"/g, '""');
-        return field.includes(';') ? `"${field}"` : field;
-      });
-      
+      ].map(field => field.toString().replace(/"/g, '""'));
       csvContent += row.join(";") + "\r\n";
     });
 
-    // Créer le nom du fichier
+    // Nom du fichier
     const magasinFilter = document.getElementById('magasinFilter').value;
     let filename = `export_stock_${new Date().toISOString().slice(0,10)}`;
-    if (magasinFilter) {
-      filename += `_${magasinFilter}`;
-    }
+    if (magasinFilter) filename += `_${magasinFilter}`;
     filename += '.csv';
 
-    // Préparer l'email avec pièce jointe
-    const boundary = "-------" + Math.random().toString().substr(2);
-    const rawMessage = [
+    // Construction de l'email
+    const boundary = "----boundary_" + Math.random().toString().substr(2);
+    const emailLines = [
       `To: sebastien.pokorski@estrepublicain.fr`,
-      `Subject: Export des stocks - ${new Date().toLocaleDateString('fr-FR')}`,
+      `Subject: Export des stocks ${new Date().toLocaleDateString('fr-FR')}`,
       `MIME-Version: 1.0`,
       `Content-Type: multipart/mixed; boundary="${boundary}"`,
       ``,
@@ -571,7 +570,7 @@ async function exportAndSendEmail() {
       ``,
       `Bonjour,`,
       ``,
-      `Veuillez trouver ci-joint l'export des stocks au format CSV.`,
+      `Veuillez trouver ci-joint l'export des stocks.`,
       ``,
       `Cordialement,`,
       `Votre application de gestion des stocks`,
@@ -584,64 +583,56 @@ async function exportAndSendEmail() {
       btoa(unescape(encodeURIComponent(csvContent))),
       ``,
       `--${boundary}--`
-    ].join("\r\n");
+    ];
 
-    // Encoder le message en base64 URL-safe
-    const encodedMessage = btoa(rawMessage)
+    const rawEmail = emailLines.join("\r\n").replace(/\n/g, "\r\n");
+    const encodedEmail = btoa(rawEmail)
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=+$/, '');
 
-    // Envoyer l'email via l'API Gmail
+    console.log("Envoi de l'email...");
     const response = await gapi.client.gmail.users.messages.send({
       userId: 'me',
       resource: {
-        raw: encodedMessage
+        raw: encodedEmail
       }
     });
 
-    console.log("Email envoyé avec succès:", response);
-    alert(`Export CSV envoyé par email à sebastien.pokorski@estrepublicain.fr`);
+    console.log("Réponse de l'API:", response);
+    alert(`Export envoyé avec succès à sebastien.pokorski@estrepublicain.fr`);
     
   } catch (error) {
-    console.error("Erreur lors de l'export et de l'envoi:", error);
-    alert("Erreur lors de l'export ou de l'envoi de l'email: " + error.message);
+    console.error("Erreur complète:", error);
+    const errorMsg = error.message || error.result?.error?.message || "Erreur inconnue";
+    alert(`Erreur lors de l'envoi: ${errorMsg}`);
   }
 }
 
 function loadGAPI() {
   return new Promise((resolve, reject) => {
-    if (window.gapi) {
-      gapi.load('client:auth2', () => {
-        gapi.client.init({
-          apiKey: 'AIzaSyD7dQ6PKPCJqSV0Ke-BuqRixHHujWb69xg',
-          clientId: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
-          discoveryDocs: [
-            'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
-            'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'
-          ],
-          scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.send'
-        }).then(resolve, reject);
-      });
-      return;
+    if (window.gapi && window.gapi.client) {
+      console.log("API déjà chargée");
+      return resolve();
     }
 
     const script = document.createElement('script');
     script.src = 'https://apis.google.com/js/api.js';
     script.onload = () => {
-      gapi.load('client:auth2', () => {
-        gapi.client.init({
-          apiKey: 'AIzaSyD7dQ6PKPCJqSV0Ke-BuqRixHHujWb69xg',
-          clientId: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
-          discoveryDocs: [
-            'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
-            'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'
-          ],
-          scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.send'
-        }).then(resolve, reject);
+      console.log("API Google chargée");
+      gapi.load('client:auth2', {
+        callback: () => {
+          gapi.client.init({
+            apiKey: 'AIzaSyD7dQ6PKPCJqSV0Ke-BuqRixHHujWb69xg',
+            clientId: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
+            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'],
+            scope: 'https://www.googleapis.com/auth/gmail.send'
+          }).then(resolve, reject);
+        },
+        onerror: reject
       });
     };
-    script.onerror = reject;
+    script.onerror = () => reject(new Error("Échec du chargement de l'API Google"));
     document.body.appendChild(script);
   });
 }
