@@ -543,7 +543,7 @@ function toBase64(str) {
     return String.fromCharCode(parseInt(p1, 16));
   }));
 }
-// bouton export to drive
+// bouton export csv et envoi pas mail
 async function exportAndSendEmail() {
   try {
     checkAuth();
