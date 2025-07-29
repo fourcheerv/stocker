@@ -52,13 +52,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initAdmin();
 });
 
-
 function getTodayDate() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const now = new Date();
+  // Compensation du fuseau horaire (ex: UTC+2 pour Paris)
+  const timezoneOffset = now.getTimezoneOffset() * 60000; // en millisecondes
+  const today = new Date(now - timezoneOffset);
+  return today.toISOString().split('T')[0]; // "YYYY-MM-DD"
 }
 
 function initAdmin() {
@@ -71,9 +70,11 @@ function initAdmin() {
     document.getElementById('currentUserLabel').textContent = getAxe1Label(currentAccount);
   }
 
-  // Initialiser le filtre date avec la date du jour
-  document.getElementById('dateFilter').value = getTodayDate();
-  
+  // FORCE la date du jour (debug)
+  const dateFilter = document.getElementById('dateFilter');
+  dateFilter.value = getTodayDate();
+  console.log("Date initialisée :", dateFilter.value); // Doit afficher "2025-07-10"
+
   loadData();
 }
 
@@ -158,7 +159,7 @@ function handleTableClick(e) {
 function resetFilters() {
   document.getElementById('searchInput').value = '';
   document.getElementById('filterSelect').value = '';
-  document.getElementById('dateFilter').value = getTodayDate(); // Réinitialise à la date du jour
+  document.getElementById('dateFilter').value = getTodayDate();
   document.getElementById('commandeFilter').value = '';
   document.getElementById('magasinFilter').value = '';
   currentPage = 1;
@@ -191,27 +192,21 @@ function filterData() {
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date de sortie (modifié)
+    // Filtre par date - CORRIGÉ
     if (dateFilter) {
-      // Si le document a une date de sortie, on la compare
-      if (doc.date_sortie) {
-        const docDate = new Date(doc.date_sortie);
-        const filterDate = new Date(dateFilter);
-        
-        const docDateNormalized = new Date(docDate.getFullYear(), docDate.getMonth(), docDate.getDate());
-        const filterDateNormalized = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
-        
-        if (docDateNormalized.getTime() !== filterDateNormalized.getTime()) {
-          return false;
-        }
-      } 
-      // Si le document n'a pas de date de sortie mais qu'un filtre date est appliqué, on l'exclut
-      else {
+      const docDate = new Date(doc._id);
+      const filterDate = new Date(dateFilter);
+      
+      // Normaliser les dates (ignorer les heures/minutes/secondes)
+      const docDateNormalized = new Date(docDate.getFullYear(), docDate.getMonth(), docDate.getDate());
+      const filterDateNormalized = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
+      
+      // Comparer les dates normalisées
+      if (docDateNormalized.getTime() !== filterDateNormalized.getTime()) {
         return false;
       }
     }
     
-    // ... (le reste de la fonction reste inchangé)
     // Filtre "À commander"
     if (commandeFilter) {
       const aCommander = doc.a_commander ? doc.a_commander.toLowerCase() : '';
@@ -219,12 +214,13 @@ function filterData() {
       if (commandeFilter === 'non' && aCommander.includes('oui')) return false;
     }
 
-    // Filtre "Magasin"
+   // Filtre "Magasin"
     if (magasinFilter) {
       const magasin = doc.magasin ? doc.magasin : '';
       if (magasinFilter === 'ER-MG' && magasin !== 'ER-MG') return false;
       if (magasinFilter === 'ER-MP' && magasin !== 'ER-MP') return false;
     }
+    
     
     // Filtre par recherche
     if (searchTerm) {
@@ -261,7 +257,7 @@ function renderTable() {
     
     row.innerHTML = `
       <td><input type="checkbox" class="row-checkbox" data-id="${doc._id}" ${isSelected ? 'checked' : ''}></td>
-      <td>${doc.date_sortie ? formatDate(doc.date_sortie) : formatDate(doc._id)}</td>
+      <td>${formatDate(doc._id)}</td>
       <td>${doc.code_produit || ''}</td>
       <td class="designation-cell" title="${doc.designation || ''}">${doc.designation || ''}</td>
       <td>${doc.quantité_consommee || ''}</td>
@@ -281,6 +277,14 @@ function renderTable() {
 
     tableBody.appendChild(row);
   });
+
+  // Mise en évidence de la date active
+  const dateFilter = document.getElementById('dateFilter').value;
+  if (dateFilter) {
+    document.getElementById('dateFilter').classList.add('active-filter');
+  } else {
+    document.getElementById('dateFilter').classList.remove('active-filter');
+  }
 
   updatePagination();
 }
