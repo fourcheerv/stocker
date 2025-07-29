@@ -518,63 +518,77 @@ function exportToCSV() {
 async function exportAndSendEmail() {
   try {
     // 1. Vérification des données
-    if (filteredDocs.length === 0) return alert("Aucune donnée à exporter");
-
-    // 2. Initialisation robuste
-    if (!window.gapi) {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://apis.google.com/js/api.js';
-        script.onload = resolve;
-        script.onerror = reject;
-        document.body.appendChild(script);
-      });
+    if (filteredDocs.length === 0) {
+      alert("Aucune donnée à exporter");
+      return;
     }
 
-    // 3. Chargement client
-    await new Promise((resolve, reject) => {
-      gapi.load('client:auth2', () => {
-        gapi.client.init({
-          clientId: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
-          scope: 'https://www.googleapis.com/auth/gmail.send'
-        }).then(resolve).catch(reject);
-      });
-    });
+    // 2. Chargement de l'API Google
+    await loadGAPI();
 
-    // 4. Authentification
-    const auth = gapi.auth2.getAuthInstance();
-    const user = await auth.signIn();
-    console.log("Connecté en tant que:", user.getBasicProfile().getEmail());
+    // 3. Authentification
+    const authInstance = gapi.auth2.getAuthInstance();
+    if (!authInstance.isSignedIn.get()) {
+      await authInstance.signIn();
+    }
 
-    // 5. Construction de l'email (version simplifiée)
+    // 4. Préparation des données CSV
     const csvContent = generateCSVContent();
-    const email = [
-      "To: sebastien.pokorski@estrepublicain.fr",
-      "Subject: Export Stocks",
-      "Content-Type: text/plain",
-      "",
-      "Veuillez trouver ci-joint l'export.",
-      "",
-      "--boundary",
-      "Content-Type: text/csv",
-      "Content-Disposition: attachment",
-      "",
-      btoa(unescape(encodeURIComponent(csvContent))),
-      "--boundary--"
-    ].join("\n");
+    const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvBase64 = await blobToBase64(csvBlob);
 
-    // 6. Envoi
+    // 5. Construction de l'email au format MIME correct
+    const boundary = "boundary_" + Math.random().toString().substr(2);
+    const emailParts = [
+      `To: sebastien.pokorski@estrepublicain.fr`,
+      `Subject: Export Stocks ${new Date().toLocaleDateString('fr-FR')}`,
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      "",
+      `--${boundary}`,
+      `Content-Type: text/plain; charset=UTF-8`,
+      "",
+      `Veuillez trouver ci-joint l'export des stocks.`,
+      "",
+      `--${boundary}`,
+      `Content-Type: text/csv; charset=UTF-8; name="export_stocks.csv"`,
+      `Content-Disposition: attachment; filename="export_stocks.csv"`,
+      `Content-Transfer-Encoding: base64`,
+      "",
+      csvBase64.split(/(.{76})/).filter(Boolean).join("\r\n"),
+      "",
+      `--${boundary}--`
+    ];
+
+    const rawEmail = emailParts.join("\r\n");
+    const encodedEmail = btoa(rawEmail)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    // 6. Envoi de l'email
     const response = await gapi.client.gmail.users.messages.send({
       userId: 'me',
-      resource: { raw: btoa(email).replace(/\//g, '_').replace(/\+/g, '-') }
+      resource: {
+        raw: encodedEmail
+      }
     });
 
-    alert("Email envoyé avec succès !");
+    alert("Export envoyé par email avec succès !");
     
   } catch (error) {
     console.error("Erreur détaillée:", error);
-    alert(`Erreur: ${error.details || error.message || "Vérifiez la console"}`);
+    alert(`Erreur lors de l'envoi: ${error.result?.error?.message || error.message}`);
   }
+}
+
+// Fonction utilitaire pour convertir un Blob en base64
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 function generateCSVContent() {
