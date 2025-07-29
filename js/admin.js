@@ -88,6 +88,7 @@ function setupEventListeners() {
   // Boutons
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+  document.getElementById('exportToDriveBtn').addEventListener('click', exportToGoogleDrive);
   document.getElementById('syncBtn').addEventListener('click', syncWithServer);
   document.getElementById('deleteSelectedBtn').addEventListener('click', confirmDeleteSelected);
   document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
