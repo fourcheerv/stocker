@@ -517,21 +517,58 @@ function exportToCSV() {
 
 async function exportAndSendEmail() {
   try {
-    // 1. Charger la bibliothèque Google Identity
-    await new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.onload = resolve;
-      document.head.appendChild(script);
-    });
+    // 1. Vérifier si l'utilisateur est connecté
+    checkAuth();
+    
+    // 2. Vérifier s'il y a des données à exporter
+    if (filteredDocs.length === 0) {
+      alert("Aucune donnée à exporter");
+      return;
+    }
 
-    // 2. Configurer le client OAuth
+    // 3. Charger l'API Google Identity
+    console.log("Chargement de l'API Google...");
+    await loadGAPI();
+    
+    // 4. Configurer le client OAuth
     const client = google.accounts.oauth2.initTokenClient({
       client_id: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
       scope: 'https://www.googleapis.com/auth/gmail.send',
       callback: async (tokenResponse) => {
         try {
-          // Votre logique d'envoi d'email ici
+          if (tokenResponse.error) {
+            throw new Error(`Erreur d'authentification: ${tokenResponse.error}`);
+          }
+          
+          console.log("Authentification réussie, envoi de l'email...");
+          
+          // 5. Générer le contenu CSV
+          const csvContent = generateCSVContent();
+          const dateStr = new Date().toISOString().slice(0,10);
+          const magasinFilter = document.getElementById('magasinFilter').value;
+          let subject = `Export stocks ${dateStr}`;
+          
+          if (magasinFilter) {
+            subject += ` (${magasinFilter})`;
+          }
+          
+          // 6. Préparer l'email
+          const emailContent = [
+            'To: sebastien.pokorski@estrepublicain.fr',
+            'Subject: ' + subject,
+            'Content-Type: text/csv; charset=UTF-8',
+            'Content-Disposition: attachment; filename="export_stocks.csv"',
+            '',
+            csvContent
+          ].join('\r\n');
+          
+          // 7. Encoder en base64
+          const encodedEmail = btoa(emailContent)
+            .replace(/\//g, '_')
+            .replace(/\+/g, '-')
+            .replace(/=+$/, '');
+          
+          // 8. Envoyer l'email via l'API Gmail
           const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
             method: 'POST',
             headers: {
@@ -539,37 +576,38 @@ async function exportAndSendEmail() {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              raw: btoa(`To: sebastien.pokorski@estrepublicain.fr\r\nSubject: Export\r\n\r\nContenu`).replace(/\//g, '_').replace(/\+/g, '-')
+              raw: encodedEmail
             })
           });
-          alert('Email envoyé avec succès!');
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error.message || "Erreur lors de l'envoi");
+          }
+          
+          alert('Export envoyé par email avec succès!');
         } catch (error) {
-          console.error(error);
-          alert('Erreur lors de l\'envoi');
+          console.error('Erreur lors de l\'envoi:', error);
+          alert(`Erreur: ${error.message}`);
         }
+      },
+      error_callback: (error) => {
+        console.error('Erreur de callback OAuth:', error);
+        alert(`Erreur d'authentification: ${error.message}`);
       }
     });
 
-    // 3. Demander le token
+    // 9. Demander le token d'accès
+    console.log("Demande de token d'accès...");
     client.requestAccessToken();
+    
   } catch (error) {
-    console.error('Erreur:', error);
-    alert('Erreur d\'initialisation');
+    console.error('Erreur dans exportAndSendEmail:', error);
+    alert(`Erreur: ${error.message}`);
   }
 }
 
-function generateCSVContent() {
-  return [
-    ["Code Produit", "Quantité", "Axe1", "Axe2"].join(";"),
-    ...filteredDocs.map(doc => [
-      doc.code_produit,
-      doc.quantité_consommee,
-      doc.axe1,
-      doc.axe2
-    ].map(f => `"${(f||'').toString().replace(/"/g,'""')}"`).join(";"))
-  ].join("\r\n");
-}
-
+// Fonction utilitaire pour charger l'API Google
 function loadGAPI() {
   return new Promise((resolve, reject) => {
     if (window.google && window.google.accounts) {
@@ -578,11 +616,22 @@ function loadGAPI() {
 
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    
     script.onload = () => {
-      console.log("Google Identity Services loaded");
-      resolve();
+      if (window.google && window.google.accounts) {
+        console.log("Google Identity Services chargé");
+        resolve();
+      } else {
+        reject(new Error("L'API Google n'est pas disponible après chargement"));
+      }
     };
-    script.onerror = () => reject(new Error("Failed to load Google Identity Services"));
+    
+    script.onerror = () => {
+      reject(new Error("Échec du chargement de l'API Google Identity Services"));
+    };
+    
     document.body.appendChild(script);
   });
 }
