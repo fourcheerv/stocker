@@ -517,78 +517,45 @@ function exportToCSV() {
 
 async function exportAndSendEmail() {
   try {
-    // 1. Vérification des données
-    if (filteredDocs.length === 0) {
-      alert("Aucune donnée à exporter");
-      return;
-    }
+    // 1. Charger la bibliothèque Google Identity
+    await new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.onload = resolve;
+      document.head.appendChild(script);
+    });
 
-    // 2. Chargement de l'API Google
-    await loadGAPI();
-
-    // 3. Authentification
-    const authInstance = gapi.auth2.getAuthInstance();
-    if (!authInstance.isSignedIn.get()) {
-      await authInstance.signIn();
-    }
-
-    // 4. Préparation des données CSV
-    const csvContent = generateCSVContent();
-    const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const csvBase64 = await blobToBase64(csvBlob);
-
-    // 5. Construction de l'email au format MIME correct
-    const boundary = "boundary_" + Math.random().toString().substr(2);
-    const emailParts = [
-      `To: sebastien.pokorski@estrepublicain.fr`,
-      `Subject: Export Stocks ${new Date().toLocaleDateString('fr-FR')}`,
-      `Content-Type: multipart/mixed; boundary="${boundary}"`,
-      "",
-      `--${boundary}`,
-      `Content-Type: text/plain; charset=UTF-8`,
-      "",
-      `Veuillez trouver ci-joint l'export des stocks.`,
-      "",
-      `--${boundary}`,
-      `Content-Type: text/csv; charset=UTF-8; name="export_stocks.csv"`,
-      `Content-Disposition: attachment; filename="export_stocks.csv"`,
-      `Content-Transfer-Encoding: base64`,
-      "",
-      csvBase64.split(/(.{76})/).filter(Boolean).join("\r\n"),
-      "",
-      `--${boundary}--`
-    ];
-
-    const rawEmail = emailParts.join("\r\n");
-    const encodedEmail = btoa(rawEmail)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-
-    // 6. Envoi de l'email
-    const response = await gapi.client.gmail.users.messages.send({
-      userId: 'me',
-      resource: {
-        raw: encodedEmail
+    // 2. Configurer le client OAuth
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
+      scope: 'https://www.googleapis.com/auth/gmail.send',
+      callback: async (tokenResponse) => {
+        try {
+          // Votre logique d'envoi d'email ici
+          const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${tokenResponse.access_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              raw: btoa(`To: sebastien.pokorski@estrepublicain.fr\r\nSubject: Export\r\n\r\nContenu`).replace(/\//g, '_').replace(/\+/g, '-')
+            })
+          });
+          alert('Email envoyé avec succès!');
+        } catch (error) {
+          console.error(error);
+          alert('Erreur lors de l\'envoi');
+        }
       }
     });
 
-    alert("Export envoyé par email avec succès !");
-    
+    // 3. Demander le token
+    client.requestAccessToken();
   } catch (error) {
-    console.error("Erreur détaillée:", error);
-    alert(`Erreur lors de l'envoi: ${error.result?.error?.message || error.message}`);
+    console.error('Erreur:', error);
+    alert('Erreur d\'initialisation');
   }
-}
-
-// Fonction utilitaire pour convertir un Blob en base64
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
 }
 
 function generateCSVContent() {
@@ -605,28 +572,17 @@ function generateCSVContent() {
 
 function loadGAPI() {
   return new Promise((resolve, reject) => {
-    if (window.gapi && window.gapi.client) {
-      console.log("API déjà chargée");
+    if (window.google && window.google.accounts) {
       return resolve();
     }
 
     const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
+    script.src = 'https://accounts.google.com/gsi/client';
     script.onload = () => {
-      console.log("API Google chargée");
-      gapi.load('client:auth2', {
-        callback: () => {
-          gapi.client.init({
-            apiKey: 'AIzaSyD7dQ6PKPCJqSV0Ke-BuqRixHHujWb69xg',
-            clientId: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
-            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'],
-            scope: 'https://www.googleapis.com/auth/gmail.send'
-          }).then(resolve, reject);
-        },
-        onerror: reject
-      });
+      console.log("Google Identity Services loaded");
+      resolve();
     };
-    script.onerror = () => reject(new Error("Échec du chargement de l'API Google"));
+    script.onerror = () => reject(new Error("Failed to load Google Identity Services"));
     document.body.appendChild(script);
   });
 }
