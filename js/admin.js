@@ -517,96 +517,76 @@ function exportToCSV() {
 
 async function exportAndSendEmail() {
   try {
-    if (filteredDocs.length === 0) {
-      alert("Aucune donnée à exporter");
-      return;
+    // 1. Vérification des données
+    if (filteredDocs.length === 0) return alert("Aucune donnée à exporter");
+
+    // 2. Initialisation robuste
+    if (!window.gapi) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://apis.google.com/js/api.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+      });
     }
 
-    console.log("Chargement de l'API Google...");
-    await loadGAPI();
-    
-    console.log("Authentification...");
-    const authInstance = gapi.auth2.getAuthInstance();
-    if (!authInstance) {
-      throw new Error("L'API Google n'est pas initialisée");
-    }
-    
-    const googleUser = await authInstance.signIn({
-      scope: 'https://www.googleapis.com/auth/gmail.send'
-    });
-    
-    console.log("Utilisateur authentifié:", googleUser.getBasicProfile().getEmail());
-
-    // Création du contenu CSV
-    const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
-    let csvContent = "\uFEFF" + headers.join(";") + "\r\n";
-    
-    filteredDocs.forEach(doc => {
-      const row = [
-        doc.code_produit || '',
-        doc.quantité_consommee || '',
-        doc.axe1 || '',
-        doc.axe2 || ''
-      ].map(field => field.toString().replace(/"/g, '""'));
-      csvContent += row.join(";") + "\r\n";
+    // 3. Chargement client
+    await new Promise((resolve, reject) => {
+      gapi.load('client:auth2', () => {
+        gapi.client.init({
+          clientId: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
+          scope: 'https://www.googleapis.com/auth/gmail.send'
+        }).then(resolve).catch(reject);
+      });
     });
 
-    // Nom du fichier
-    const magasinFilter = document.getElementById('magasinFilter').value;
-    let filename = `export_stock_${new Date().toISOString().slice(0,10)}`;
-    if (magasinFilter) filename += `_${magasinFilter}`;
-    filename += '.csv';
+    // 4. Authentification
+    const auth = gapi.auth2.getAuthInstance();
+    const user = await auth.signIn();
+    console.log("Connecté en tant que:", user.getBasicProfile().getEmail());
 
-    // Construction de l'email
-    const boundary = "----boundary_" + Math.random().toString().substr(2);
-    const emailLines = [
-      `To: sebastien.pokorski@estrepublicain.fr`,
-      `Subject: Export des stocks ${new Date().toLocaleDateString('fr-FR')}`,
-      `MIME-Version: 1.0`,
-      `Content-Type: multipart/mixed; boundary="${boundary}"`,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/plain; charset=UTF-8`,
-      ``,
-      `Bonjour,`,
-      ``,
-      `Veuillez trouver ci-joint l'export des stocks.`,
-      ``,
-      `Cordialement,`,
-      `Votre application de gestion des stocks`,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/csv; charset=UTF-8; name="${filename}"`,
-      `Content-Disposition: attachment; filename="${filename}"`,
-      `Content-Transfer-Encoding: base64`,
-      ``,
+    // 5. Construction de l'email (version simplifiée)
+    const csvContent = generateCSVContent();
+    const email = [
+      "To: sebastien.pokorski@estrepublicain.fr",
+      "Subject: Export Stocks",
+      "Content-Type: text/plain",
+      "",
+      "Veuillez trouver ci-joint l'export.",
+      "",
+      "--boundary",
+      "Content-Type: text/csv",
+      "Content-Disposition: attachment",
+      "",
       btoa(unescape(encodeURIComponent(csvContent))),
-      ``,
-      `--${boundary}--`
-    ];
+      "--boundary--"
+    ].join("\n");
 
-    const rawEmail = emailLines.join("\r\n").replace(/\n/g, "\r\n");
-    const encodedEmail = btoa(rawEmail)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-
-    console.log("Envoi de l'email...");
+    // 6. Envoi
     const response = await gapi.client.gmail.users.messages.send({
       userId: 'me',
-      resource: {
-        raw: encodedEmail
-      }
+      resource: { raw: btoa(email).replace(/\//g, '_').replace(/\+/g, '-') }
     });
 
-    console.log("Réponse de l'API:", response);
-    alert(`Export envoyé avec succès à sebastien.pokorski@estrepublicain.fr`);
+    alert("Email envoyé avec succès !");
     
   } catch (error) {
-    console.error("Erreur complète:", error);
-    const errorMsg = error.message || error.result?.error?.message || "Erreur inconnue";
-    alert(`Erreur lors de l'envoi: ${errorMsg}`);
+    console.error("Erreur détaillée:", error);
+    alert(`Erreur: ${error.details || error.message || "Vérifiez la console"}`);
   }
+}
+
+function generateCSVContent() {
+  return [
+    ["Code Produit", "Quantité", "Axe1", "Axe2"].join(";"),
+    ...filteredDocs.map(doc => [
+      doc.code_produit,
+      doc.quantité_consommee,
+      doc.axe1,
+      doc.axe2
+    ].map(f => `"${(f||'').toString().replace(/"/g,'""')}"`).join(";"))
+  ].join("\r\n");
 }
 
 function loadGAPI() {
