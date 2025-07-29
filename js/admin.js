@@ -614,8 +614,8 @@ function loadGAPI() {
     if (window.gapi) {
       gapi.load('client:auth2', () => {
         gapi.client.init({
-          apiKey: 'YOUR_API_KEY',
-          clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+          apiKey: 'AIzaSyD7dQ6PKPCJqSV0Ke-BuqRixHHujWb69xg',
+          clientId: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
           discoveryDocs: [
             'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
             'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'
@@ -631,8 +631,8 @@ function loadGAPI() {
     script.onload = () => {
       gapi.load('client:auth2', () => {
         gapi.client.init({
-          apiKey: 'YOUR_API_KEY',
-          clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+          apiKey: 'AIzaSyD7dQ6PKPCJqSV0Ke-BuqRixHHujWb69xg',
+          clientId: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
           discoveryDocs: [
             'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
             'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'
