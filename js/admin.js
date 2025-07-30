@@ -37,24 +37,38 @@ const modalManager = {
   }
 };
 
+// Fonctions utilitaires pour la gestion des dates
+function formatToDateTimeLocal(date) {
+  if (!date) return '';
+  
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function formatDateForDisplay(isoString) {
+  if (!isoString) return '';
+  
+  const date = new Date(isoString);
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 // Initialisation
 document.addEventListener("DOMContentLoaded", () => {
   const today = new Date();
-  const day = String(today.getDate()).padStart(2, '0');
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const year = today.getFullYear();
-  
-  document.getElementById('dateFilter').value = `${year}-${month}-${day}`;
+  document.getElementById('dateFilter').value = today.toISOString().split('T')[0];
   initAdmin();
 });
-
-function getTodayDate() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function initAdmin() {
   checkAuth();
@@ -65,7 +79,6 @@ function initAdmin() {
     document.getElementById('currentUserLabel').textContent = getAxe1Label(currentAccount);
   }
 
-  document.getElementById('dateFilter').value = getTodayDate();
   loadData();
 }
 
@@ -145,7 +158,7 @@ function handleTableClick(e) {
 function resetFilters() {
   document.getElementById('searchInput').value = '';
   document.getElementById('filterSelect').value = '';
-  document.getElementById('dateFilter').value = getTodayDate();
+  document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
   document.getElementById('commandeFilter').value = '';
   document.getElementById('magasinFilter').value = '';
   currentPage = 1;
@@ -170,27 +183,23 @@ async function loadData() {
 function filterData() {
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   const filterValue = document.getElementById('filterSelect').value;
-  const dateFilter = document.getElementById('dateFilter').value;
+  const dateFilterValue = document.getElementById('dateFilter').value;
   const commandeFilter = document.getElementById('commandeFilter').value;
   const magasinFilter = document.getElementById('magasinFilter').value;
 
   filteredDocs = allDocs.filter(doc => {
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    if (dateFilter) {
-      if (doc.date_sortie) {
-        const docDate = new Date(doc.date_sortie);
-        const filterDate = new Date(dateFilter);
-        
-        const docDateNormalized = new Date(docDate.getFullYear(), docDate.getMonth(), docDate.getDate());
-        const filterDateNormalized = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
-        
-        if (docDateNormalized.getTime() !== filterDateNormalized.getTime()) {
-          return false;
-        }
-      } else {
-        return false;
-      }
+    // Filtre par date (corrigé pour gérer à la fois _id et date_sortie)
+    if (dateFilterValue) {
+      const docDate = doc.date_sortie ? new Date(doc.date_sortie) : new Date(doc._id);
+      const filterDate = new Date(dateFilterValue);
+      
+      return (
+        docDate.getFullYear() === filterDate.getFullYear() &&
+        docDate.getMonth() === filterDate.getMonth() && 
+        docDate.getDate() === filterDate.getDate()
+      );
     }
     
     if (commandeFilter) {
@@ -239,7 +248,7 @@ function renderTable() {
     
     row.innerHTML = `
       <td><input type="checkbox" class="row-checkbox" data-id="${doc._id}" ${isSelected ? 'checked' : ''}></td>
-      <td>${doc.date_sortie ? formatDate(doc.date_sortie) : formatDate(doc._id)}</td>
+      <td>${doc.date_sortie ? formatDateForDisplay(doc.date_sortie) : formatDateForDisplay(doc._id)}</td>
       <td>${doc.code_produit || ''}</td>
       <td class="designation-cell" title="${doc.designation || ''}">${doc.designation || ''}</td>
       <td>${doc.quantité_consommee || ''}</td>
@@ -395,7 +404,7 @@ function getInputField(key, value) {
       </select>
     `;
   } else if (key === 'date_sortie') {
-    return `<input type="date" id="edit_${key}" class="form-control" value="${value || ''}">`;
+    return `<input type="datetime-local" id="edit_${key}" class="form-control" value="${formatToDateTimeLocal(value)}">`;
   } else if (key === 'remarques') {
     return `<textarea id="edit_${key}" class="form-control">${value || ''}</textarea>`;
   } else {
@@ -412,8 +421,8 @@ async function saveEditedDoc(docId) {
     
     inputs.forEach(input => {
       const key = input.id.replace('edit_', '');
-      if (input.type === 'date') {
-        doc[key] = input.value;
+      if (input.type === 'datetime-local') {
+        doc[key] = input.value ? new Date(input.value).toISOString() : '';
       } else {
         doc[key] = input.type === 'number' ? parseFloat(input.value) : input.value;
       }
@@ -699,7 +708,7 @@ function showDetails(docId) {
       <span class="close-btn">&times;</span>
       <h3>Détails complet</h3>
       <div class="detail-grid">
-        <div class="detail-item"><strong>Date:</strong> ${formatDate(doc._id)}</div>
+        <div class="detail-item"><strong>Date:</strong> ${formatDateForDisplay(doc._id)}</div>
         <div class="detail-item"><strong>Code Produit:</strong> ${doc.code_produit || '-'}</div>
         <div class="detail-item"><strong>Désignation:</strong> ${doc.designation || '-'}</div>
         <div class="detail-item"><strong>Quantité consommée:</strong> ${doc.quantité_consommee || '-'}</div>
@@ -707,7 +716,7 @@ function showDetails(docId) {
         <div class="detail-item"><strong>À commander:</strong> ${doc.a_commander || '-'}</div>
         <div class="detail-item"><strong>Remarques:</strong> ${doc.remarques || '-'}</div>
         <div class="detail-item"><strong>Magasin:</strong> ${doc.magasin || '-'}</div>
-        <div class="detail-item"><strong>Date de sortie:</strong> ${doc.date_sortie ? formatDate(doc.date_sortie) : '-'}</div>
+        <div class="detail-item"><strong>Date de sortie:</strong> ${doc.date_sortie ? formatDateForDisplay(doc.date_sortie) : '-'}</div>
         <div class="detail-item"><strong>Axe 1:</strong> ${getAxe1Label(doc.axe1)}</div>
         <div class="detail-item"><strong>Axe 2:</strong> ${doc.axe2 || '-'}</div>
   `;
@@ -733,21 +742,6 @@ function showDetails(docId) {
   
   const modal = modalManager.openModal(detailsHtml);
   modal.querySelector('.close-btn').addEventListener('click', () => modalManager.closeCurrent());
-}
-
-function formatDate(isoString) {
-  if (!isoString) return '';
-  
-  if (isoString.includes('/')) return isoString;
-  
-  const date = new Date(isoString);
-  return date.toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
 }
 
 function getAxe1Label(axe1) {
