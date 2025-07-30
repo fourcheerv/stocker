@@ -188,9 +188,10 @@ function filterData() {
   const magasinFilter = document.getElementById('magasinFilter').value;
 
   filteredDocs = allDocs.filter(doc => {
+    // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date (corrigé pour gérer à la fois _id et date_sortie)
+    // Filtre par date
     if (dateFilterValue) {
       const docDate = doc.date_sortie ? new Date(doc.date_sortie) : new Date(doc._id);
       const filterDate = new Date(dateFilterValue);
@@ -202,23 +203,26 @@ function filterData() {
       );
     }
     
+    // Filtre "À commander" (corrigé)
     if (commandeFilter) {
-      const aCommander = doc.a_commander ? doc.a_commander.toLowerCase() : '';
-      if (commandeFilter === 'oui' && !aCommander.includes('oui')) return false;
-      if (commandeFilter === 'non' && aCommander.includes('oui')) return false;
+      const aCommander = doc.a_commander ? doc.a_commander.toString().toLowerCase() : '';
+      if (commandeFilter === 'oui' && aCommander !== 'oui') return false;
+      if (commandeFilter === 'non' && aCommander === 'oui') return false;
     }
 
+    // Filtre "Magasin" (corrigé)
     if (magasinFilter) {
-      const magasin = doc.magasin ? doc.magasin : '';
-      if (magasinFilter === 'ER-MG' && magasin !== 'ER-MG') return false;
-      if (magasinFilter === 'ER-MP' && magasin !== 'ER-MP') return false;
+      const magasinValue = doc.magasin ? doc.magasin.toString() : '';
+      if (magasinFilter === 'ER-MG' && magasinValue !== 'ER-MG') return false;
+      if (magasinFilter === 'ER-MP' && magasinValue !== 'ER-MP') return false;
     }
     
+    // Filtre par recherche
     if (searchTerm) {
-      const matchesCode = doc.code_produit && doc.code_produit.toLowerCase().includes(searchTerm);
-      const matchesDesignation = doc.designation && doc.designation.toLowerCase().includes(searchTerm);
-      const matchesAxe2 = doc.axe2 && doc.axe2.toLowerCase().includes(searchTerm);
-      const matchesRemarques = doc.remarques && doc.remarques.toLowerCase().includes(searchTerm);
+      const matchesCode = doc.code_produit && doc.code_produit.toString().toLowerCase().includes(searchTerm);
+      const matchesDesignation = doc.designation && doc.designation.toString().toLowerCase().includes(searchTerm);
+      const matchesAxe2 = doc.axe2 && doc.axe2.toString().toLowerCase().includes(searchTerm);
+      const matchesRemarques = doc.remarques && doc.remarques.toString().toLowerCase().includes(searchTerm);
       
       if (!(matchesCode || matchesDesignation || matchesAxe2 || matchesRemarques)) {
         return false;
