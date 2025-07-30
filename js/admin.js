@@ -181,7 +181,7 @@ async function loadData() {
 }
 
 function filterData() {
-  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
   const filterValue = document.getElementById('filterSelect').value;
   const dateFilterValue = document.getElementById('dateFilter').value;
   const commandeFilter = document.getElementById('commandeFilter').value;
@@ -191,40 +191,52 @@ function filterData() {
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date
+    // Filtre par date (uniquement si une date est spécifiée)
     if (dateFilterValue) {
       const docDate = doc.date_sortie ? new Date(doc.date_sortie) : new Date(doc._id);
       const filterDate = new Date(dateFilterValue);
       
-      return (
-        docDate.getFullYear() === filterDate.getFullYear() &&
-        docDate.getMonth() === filterDate.getMonth() && 
-        docDate.getDate() === filterDate.getDate()
-      );
+      if (!(docDate.getFullYear() === filterDate.getFullYear() &&
+          docDate.getMonth() === filterDate.getMonth() && 
+          docDate.getDate() === filterDate.getDate())) {
+        return false;
+      }
     }
     
-    // Filtre "À commander" (corrigé)
+    // Filtre "À commander" 
     if (commandeFilter) {
-      const aCommander = doc.a_commander ? doc.a_commander.toString().toLowerCase() : '';
-      if (commandeFilter === 'oui' && aCommander !== 'oui') return false;
-      if (commandeFilter === 'non' && aCommander === 'oui') return false;
+      const aCommander = doc.a_commander ? doc.a_commander.toString().trim().toLowerCase() : '';
+      
+      if (commandeFilter === 'oui' && !['oui', 'o', 'yes', 'y'].includes(aCommander)) {
+        return false;
+      }
+      if (commandeFilter === 'non' && ['oui', 'o', 'yes', 'y'].includes(aCommander)) {
+        return false;
+      }
     }
 
-    // Filtre "Magasin" (corrigé)
+    // Filtre "Magasin"
     if (magasinFilter) {
-      const magasinValue = doc.magasin ? doc.magasin.toString() : '';
-      if (magasinFilter === 'ER-MG' && magasinValue !== 'ER-MG') return false;
-      if (magasinFilter === 'ER-MP' && magasinValue !== 'ER-MP') return false;
+      const magasinValue = doc.magasin ? doc.magasin.toString().trim().toUpperCase() : '';
+      
+      if (magasinFilter === 'ER-MG' && magasinValue !== 'ER-MG') {
+        return false;
+      }
+      if (magasinFilter === 'ER-MP' && magasinValue !== 'ER-MP') {
+        return false;
+      }
     }
     
     // Filtre par recherche
     if (searchTerm) {
-      const matchesCode = doc.code_produit && doc.code_produit.toString().toLowerCase().includes(searchTerm);
-      const matchesDesignation = doc.designation && doc.designation.toString().toLowerCase().includes(searchTerm);
-      const matchesAxe2 = doc.axe2 && doc.axe2.toString().toLowerCase().includes(searchTerm);
-      const matchesRemarques = doc.remarques && doc.remarques.toString().toLowerCase().includes(searchTerm);
+      const searchFields = [
+        doc.code_produit?.toString().toLowerCase() || '',
+        doc.designation?.toString().toLowerCase() || '',
+        doc.axe2?.toString().toLowerCase() || '',
+        doc.remarques?.toString().toLowerCase() || ''
+      ];
       
-      if (!(matchesCode || matchesDesignation || matchesAxe2 || matchesRemarques)) {
+      if (!searchFields.some(field => field.includes(searchTerm))) {
         return false;
       }
     }
