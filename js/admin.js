@@ -404,10 +404,7 @@ function generateEditFields(doc) {
     fields += `
       <div class="form-group">
         <label for="edit_${key}">${formatFieldName(key)}:</label>
-        ${key === 'date_sortie' 
-          ? `<input type="text" id="edit_${key}" class="form-control" value="${formatDate(value)}" readonly>` 
-          : getInputField(key, value)
-        }
+        ${getInputField(key, value)}  // Retirer le traitement spécial pour date_sortie
       </div>
     `;
   }
@@ -423,7 +420,9 @@ function getInputField(key, value) {
         <option value="Non" ${value === 'Non' ? 'selected' : ''}>Non</option>
       </select>
     `;
-    
+  } else if (key === 'date_sortie') {
+    // Utiliser input type="date" pour une meilleure expérience utilisateur
+    return `<input type="date" id="edit_${key}" class="form-control" value="${value || ''}">`;
   } else if (key === 'remarques') {
     return `<textarea id="edit_${key}" class="form-control">${value || ''}</textarea>`;
   } else {
@@ -440,7 +439,12 @@ async function saveEditedDoc(docId) {
     
     inputs.forEach(input => {
       const key = input.id.replace('edit_', '');
-      doc[key] = input.type === 'number' ? parseFloat(input.value) : input.value;
+      // Traitement spécial pour les champs date
+      if (input.type === 'date') {
+        doc[key] = input.value; // Sauvegarde la date au format YYYY-MM-DD
+      } else {
+        doc[key] = input.type === 'number' ? parseFloat(input.value) : input.value;
+      }
     });
     
     await localDB.put(doc);
