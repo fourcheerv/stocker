@@ -1,4 +1,4 @@
-// Configuration PouchDB améliorée
+// Configuration PouchDB
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
 
@@ -38,11 +38,7 @@ const modalManager = {
 };
 
 // Initialisation
-document.addEventListener("DOMContentLoaded", initAdmin);
-
-// À placer juste après le DOMContentLoaded
 document.addEventListener("DOMContentLoaded", () => {
-  // Solution radicale (bypass)
   const today = new Date();
   const day = String(today.getDate()).padStart(2, '0');
   const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -51,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('dateFilter').value = `${year}-${month}-${day}`;
   initAdmin();
 });
-
 
 function getTodayDate() {
   const today = new Date();
@@ -65,15 +60,12 @@ function initAdmin() {
   checkAuth();
   setupEventListeners();
 
-  // Afficher le nom utilisateur
   const currentAccount = sessionStorage.getItem('currentAccount');
   if (currentAccount) {
     document.getElementById('currentUserLabel').textContent = getAxe1Label(currentAccount);
   }
 
-  // Initialiser le filtre date avec la date du jour
   document.getElementById('dateFilter').value = getTodayDate();
-  
   loadData();
 }
 
@@ -84,7 +76,6 @@ function checkAuth() {
 }
 
 function setupEventListeners() {
-  // Boutons
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('exportBtn').addEventListener('click', exportToCSV);
   document.getElementById('syncBtn').addEventListener('click', syncWithServer);
@@ -93,41 +84,37 @@ function setupEventListeners() {
   document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
   document.getElementById('exportToDriveBtn').addEventListener('click', exportAndSendEmail);
 
-  // Recherche/filtres
-  document.getElementById('searchInput').addEventListener('input', function() {
+  document.getElementById('searchInput').addEventListener('input', () => {
     currentPage = 1;
     filterData();
   });
   
-  document.getElementById('filterSelect').addEventListener('change', function() {
+  document.getElementById('filterSelect').addEventListener('change', () => {
     currentPage = 1;
     filterData();
   });
   
-  document.getElementById('dateFilter').addEventListener('change', function() {
+  document.getElementById('dateFilter').addEventListener('change', () => {
     currentPage = 1;
     filterData();
   });
   
-  document.getElementById('commandeFilter').addEventListener('change', function() {
+  document.getElementById('commandeFilter').addEventListener('change', () => {
     currentPage = 1;
     filterData();
   });
-    document.getElementById('magasinFilter').addEventListener('change', function() {
+  
+  document.getElementById('magasinFilter').addEventListener('change', () => {
     currentPage = 1;
     filterData();
   });
 
-  // Pagination
   document.getElementById('firstPageBtn').addEventListener('click', () => goToPage(1));
   document.getElementById('prevPageBtn').addEventListener('click', () => goToPage(currentPage - 1));
   document.getElementById('nextPageBtn').addEventListener('click', () => goToPage(currentPage + 1));
   document.getElementById('lastPageBtn').addEventListener('click', () => goToPage(totalPages));
   
-  // Sélection
   document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
-
-  // Délégation d'événements pour le tableau
   document.getElementById('dataTable').addEventListener('click', handleTableClick);
 }
 
@@ -158,7 +145,7 @@ function handleTableClick(e) {
 function resetFilters() {
   document.getElementById('searchInput').value = '';
   document.getElementById('filterSelect').value = '';
-  document.getElementById('dateFilter').value = getTodayDate(); // Réinitialise à la date du jour
+  document.getElementById('dateFilter').value = getTodayDate();
   document.getElementById('commandeFilter').value = '';
   document.getElementById('magasinFilter').value = '';
   currentPage = 1;
@@ -188,12 +175,9 @@ function filterData() {
   const magasinFilter = document.getElementById('magasinFilter').value;
 
   filteredDocs = allDocs.filter(doc => {
-    // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
-    // Filtre par date de sortie (modifié)
     if (dateFilter) {
-      // Si le document a une date de sortie, on la compare
       if (doc.date_sortie) {
         const docDate = new Date(doc.date_sortie);
         const filterDate = new Date(dateFilter);
@@ -204,29 +188,23 @@ function filterData() {
         if (docDateNormalized.getTime() !== filterDateNormalized.getTime()) {
           return false;
         }
-      } 
-      // Si le document n'a pas de date de sortie mais qu'un filtre date est appliqué, on l'exclut
-      else {
+      } else {
         return false;
       }
     }
     
-    // ... (le reste de la fonction reste inchangé)
-    // Filtre "À commander"
     if (commandeFilter) {
       const aCommander = doc.a_commander ? doc.a_commander.toLowerCase() : '';
       if (commandeFilter === 'oui' && !aCommander.includes('oui')) return false;
       if (commandeFilter === 'non' && aCommander.includes('oui')) return false;
     }
 
-    // Filtre "Magasin"
     if (magasinFilter) {
       const magasin = doc.magasin ? doc.magasin : '';
       if (magasinFilter === 'ER-MG' && magasin !== 'ER-MG') return false;
       if (magasinFilter === 'ER-MP' && magasin !== 'ER-MP') return false;
     }
     
-    // Filtre par recherche
     if (searchTerm) {
       const matchesCode = doc.code_produit && doc.code_produit.toLowerCase().includes(searchTerm);
       const matchesDesignation = doc.designation && doc.designation.toLowerCase().includes(searchTerm);
@@ -323,13 +301,11 @@ function updatePagination() {
   
   pageInfo.textContent = `Page ${currentPage} sur ${totalPages} - ${filteredDocs.length} éléments`;
   
-  // Contrôles de pagination
   document.getElementById('firstPageBtn').disabled = currentPage === 1;
   document.getElementById('prevPageBtn').disabled = currentPage === 1;
   document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
   document.getElementById('lastPageBtn').disabled = currentPage === totalPages;
   
-  // Numéros de page
   pageNumbers.innerHTML = '';
   const startPage = Math.max(1, currentPage - 2);
   const endPage = Math.min(totalPages, currentPage + 2);
@@ -377,7 +353,6 @@ function setupEditModal(doc) {
   
   const modal = modalManager.openModal(modalContent, true);
 
-  // Gestion de la fermeture
   modal.querySelector('.close-btn').addEventListener('click', () => {
     modalManager.closeCurrent();
   });
@@ -386,7 +361,6 @@ function setupEditModal(doc) {
     modalManager.closeCurrent();
   });
 
-  // Gestion de la sauvegarde
   modal.querySelector('#saveEditBtn').addEventListener('click', async (e) => {
     e.preventDefault();
     await saveEditedDoc(doc._id);
@@ -404,7 +378,7 @@ function generateEditFields(doc) {
     fields += `
       <div class="form-group">
         <label for="edit_${key}">${formatFieldName(key)}:</label>
-        ${getInputField(key, value)}  // Retirer le traitement spécial pour date_sortie
+        ${getInputField(key, value)}
       </div>
     `;
   }
@@ -421,7 +395,6 @@ function getInputField(key, value) {
       </select>
     `;
   } else if (key === 'date_sortie') {
-    // Utiliser input type="date" pour une meilleure expérience utilisateur
     return `<input type="date" id="edit_${key}" class="form-control" value="${value || ''}">`;
   } else if (key === 'remarques') {
     return `<textarea id="edit_${key}" class="form-control">${value || ''}</textarea>`;
@@ -439,9 +412,8 @@ async function saveEditedDoc(docId) {
     
     inputs.forEach(input => {
       const key = input.id.replace('edit_', '');
-      // Traitement spécial pour les champs date
       if (input.type === 'date') {
-        doc[key] = input.value; // Sauvegarde la date au format YYYY-MM-DD
+        doc[key] = input.value;
       } else {
         doc[key] = input.type === 'number' ? parseFloat(input.value) : input.value;
       }
@@ -495,10 +467,7 @@ function exportToCSV() {
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   
-  // Récupérer la valeur du filtre magasin
   const magasinFilter = document.getElementById('magasinFilter').value;
-  
-  // Créer le nom du fichier avec la date et le filtre magasin si applicable
   let filename = `export_stock_${new Date().toISOString().slice(0,10)}`;
   
   if (magasinFilter) {
@@ -521,7 +490,7 @@ function exportToCSV() {
 
 function generateCSVContent() {
   const headers = ["Code Produit", "Quantité Consommée", "Axe 1", "Axe 2"];
-  let csvContent = "\uFEFF"; // BOM pour UTF-8
+  let csvContent = "\uFEFF";
   csvContent += headers.join(";") + "\r\n";
   
   filteredDocs.forEach(doc => {
@@ -542,12 +511,11 @@ function generateCSVContent() {
 }
 
 function toBase64(str) {
-  // Solution universelle pour encoder en base64 avec support Unicode
   return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => {
     return String.fromCharCode(parseInt(p1, 16));
   }));
 }
-// bouton export csv et envoi pas mail
+
 async function exportAndSendEmail() {
   try {
     checkAuth();
@@ -566,10 +534,7 @@ async function exportAndSendEmail() {
         try {
           if (tokenResponse.error) throw new Error(tokenResponse.error);
           
-          // 1. Générer le contenu CSV
           const csvContent = generateCSVContent();
-          
-          // 2. Préparer le nom du fichier
           const today = new Date();
           const dateStr = formatDateForFilename(today);
           const magasinFilter = document.getElementById('magasinFilter').value;
@@ -577,25 +542,22 @@ async function exportAndSendEmail() {
           if (magasinFilter) filename += `_${magasinFilter}`;
           filename += '.csv';
 
-          // 3. Construire le message MIME
           const boundary = "----boundary_" + Math.random().toString(16).substr(2);
           const nl = "\r\n";
           
           const mimeParts = [
-            // Partie texte
             `--${boundary}`,
             'Content-Type: text/plain; charset=UTF-8',
             'Content-Transfer-Encoding: quoted-printable',
             '',
             'Veuillez trouver ci-joint l\'export des stocks.',
             '',
-            // Partie pièce jointe
             `--${boundary}`,
             'Content-Type: text/csv; charset=UTF-8',
             `Content-Disposition: attachment; filename="${filename}"`,
             'Content-Transfer-Encoding: base64',
             '',
-            chunkSplit(toBase64(csvContent), 76), // Découpage en lignes de 76 caractères
+            chunkSplit(toBase64(csvContent), 76),
             '',
             `--${boundary}--`
           ];
@@ -609,13 +571,11 @@ async function exportAndSendEmail() {
             ...mimeParts
           ].join(nl);
 
-          // 4. Encoder le message complet
           const encodedMessage = toBase64(rawMessage)
             .replace(/\+/g, '-')
             .replace(/\//g, '_')
             .replace(/=+$/, '');
 
-          // 5. Envoyer via l'API Gmail
           const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
             method: 'POST',
             headers: {
@@ -645,7 +605,6 @@ async function exportAndSendEmail() {
   }
 }
 
-// Fonctions utilitaires supplémentaires
 function formatDateForFilename(date) {
   return [
     date.getFullYear(),
@@ -658,8 +617,6 @@ function chunkSplit(str, length) {
   return str.match(new RegExp(`.{1,${length}}`, 'g')).join("\r\n");
 }
 
-
-// Fonction utilitaire pour charger l'API Google
 function loadGAPI() {
   return new Promise((resolve, reject) => {
     if (window.google && window.google.accounts) {
@@ -673,7 +630,6 @@ function loadGAPI() {
     
     script.onload = () => {
       if (window.google && window.google.accounts) {
-        console.log("Google Identity Services chargé");
         resolve();
       } else {
         reject(new Error("L'API Google n'est pas disponible après chargement"));
@@ -779,14 +735,11 @@ function showDetails(docId) {
   modal.querySelector('.close-btn').addEventListener('click', () => modalManager.closeCurrent());
 }
 
-// Fonctions utilitaires (ajout de la gestion du format ISO/fr-FR)
 function formatDate(isoString) {
   if (!isoString) return '';
   
-  // Si la date est déjà au format français (ex: "10/07/2025"), ne pas la reconvertir
   if (isoString.includes('/')) return isoString;
   
-  // Convertir l'ISO en format français
   const date = new Date(isoString);
   return date.toLocaleDateString('fr-FR', {
     day: '2-digit',
