@@ -66,11 +66,11 @@
 </div>
   
    <!-- Filtre par compte avec style flottant -->
-      <div class="filter-container">
+      <!--<div class="filter-container">
         <div class="floating-filter">
-          <select id="filterSelect" class="filter-input">
+          <select id="filterSelect" class="filter-input">-->
 
-<option value="" selected>Tous les comptes</option>
+<!--<option value="" selected>Tous les comptes</option>
             <option value="SCT=E260329">SCE Informations Sportives</option>
             <option value="SCT=E272329">SCE Support Rédaction</option>
             <option value="SCT=E370329">Maintenance Machines</option>
@@ -89,7 +89,37 @@
           <label for="filterSelect" class="filter-label">Compte</label>
           <span class="filter-icon">▼</span>
         </div>
-      </div>
+      </div>-->
+  
+
+  <div class="filter-container">
+  <div class="filter-group">
+    <div class="filter-select-wrapper">
+      <select id="filterSelect" class="form-control" disabled>
+        <option value="" selected>Tous les comptes</option>
+        <option value="SCT=E260329">SCE Informations Sportives</option>
+        <option value="SCT=E272329">SCE Support Rédaction</option>
+        <option value="SCT=E370329">Maintenance Machines</option>
+        <option value="SCT=E382329">Service Rotatives</option>
+        <option value="SCT=E390329">Service Expédition</option>
+        <option value="SCT=E500329">Direction Vente</option>
+        <option value="SCT=E730329">LER Charges</option>
+        <option value="SCT=E736329">Service Travaux</option>
+        <option value="SCT=E760329">Achats Magasin</option>
+        <option value="SCT=E762329">Manutention Papier</option>
+        <option value="SCT=E772329">Coursiers</option>
+        <option value="SCT=E860329">Cantine</option>
+        <option value="SCT=E359329">SMI</option>
+        <option value="Admin">Compte Admin</option>
+      </select>
+      <label for="filterSelect" class="filter-label">Compte</label>
+      <span class="filter-icon">▼</span>
+    </div>
+  </div>
+</div>
+<div id="currentServiceDisplay" class="current-service-display">
+  Service actuel: <strong id="currentServiceLabel">Chargement...</strong>
+</div>
 
   <!-- À commander -->
   <div class="filter-container">
