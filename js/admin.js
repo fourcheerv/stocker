@@ -113,7 +113,7 @@ function checkAuth() {
     return;
   }
 
-  AccountFilter(currentAccount);
+  applyAccountFilter(currentAccount);
 }
 
 function applyAccountFilter(account) {
@@ -885,5 +885,6 @@ function getAxe1Label(axe1) {
 
 function logout() {
   sessionStorage.removeItem('currentAccount');
+  sessionStorage.removeItem('currentServiceName');
   window.location.href = 'login.html';
 }
