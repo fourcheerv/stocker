@@ -134,6 +134,41 @@ h1 {
   transform: translateX(3px);
 }
 
+
+/* Ajoutez ces styles à la fin de votre fichier admin.css */
+
+/* Style pour le bouton Retour */
+#backBtn {
+  padding: 8px 16px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-right: 10px;
+}
+
+#backBtn:hover {
+  background-color: #5a6268;
+}
+
+/* Affichage du service actuel */
+.current-service-display {
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-size: 14px;
+  grid-column: 1 / -1;
+}
+
+.current-service-display strong {
+  color: #2c3e50;
+  font-weight: bold;
+}
+
+
 /* Main */
 main {
   max-width: 1200px;
