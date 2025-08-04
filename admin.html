@@ -114,24 +114,39 @@
       </div>
     </div>
     
-    <div class="stats-container">
-      <div class="stat-card">
-        <span class="stat-value" id="totalCount">0</span>
-        <span class="stat-label">Total</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value" id="rotativesCount">0</span>
-        <span class="stat-label">Rotatives</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value" id="expeditionCount">0</span>
-        <span class="stat-label">Expédition</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-value" id="selectedCount">0</span>
-        <span class="stat-label">Sélectionnés</span>
-      </div>
+<div class="stats-container">
+  <!-- Carte 1 : Total -->
+  <div class="stat-card" data-tooltip="Total des enregistrements du service">
+    <span class="stat-value" id="totalCount">0</span>
+    <span class="stat-label">Total</span>
+    <div class="stat-trend" id="trendTotal"></div>
+  </div>
+
+  <!-- Carte 2 : 7 derniers jours -->
+  <div class="stat-card" data-tooltip="Enregistrements des 7 derniers jours">
+    <span class="stat-value" id="last7DaysCount">0</span>
+    <span class="stat-label">7 derniers jours</span>
+    <div class="stat-trend" id="trend7Days"></div>
+  </div>
+
+  <!-- Carte 3 : À commander -->
+  <div class="stat-card" data-tooltip="Articles marqués 'À commander'">
+    <span class="stat-value" id="toOrderCount">0</span>
+    <span class="stat-label">À commander</span>
+    <div class="stat-badge" id="urgentOrders"></div>
+  </div>
+
+  <!-- Carte 4 : Par magasin (ER-MP/ER-MG) -->
+  <div class="stat-card" data-tooltip="Répartition par magasin">
+    <div class="stat-magasin">
+      <span class="magasin-value" id="magasinMP">0</span>
+      <span class="magasin-label">ER-MP</span>
+      <span class="magasin-value" id="magasinMG">0</span>
+      <span class="magasin-label">ER-MG</span>
     </div>
+    <span class="stat-label">Répartition magasin</span>
+  </div>
+</div>
 
     <div class="table-responsive">
       <table id="dataTable">
