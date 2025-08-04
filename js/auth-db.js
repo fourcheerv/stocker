@@ -6,42 +6,66 @@ if (typeof idb === 'undefined') {
 
 class AuthDB {
   constructor() {
-    this.dbPromise = this.initDB();
+    try {
+      this.dbPromise = this.initDB();
+    } catch (error) {
+      console.error('Erreur initialisation DB:', error);
+      throw new Error('Impossible d\'initialiser la base de données');
+    }
   }
 
   initDB() {
     return idb.open('AuthDatabase', 1, upgradeDB => {
-      if (!upgradeDB.objectStoreNames.contains('users')) {
-        const store = upgradeDB.createObjectStore('users', { keyPath: 'id' });
-        store.createIndex('by_service', 'service', { unique: true });
+      try {
+        if (!upgradeDB.objectStoreNames.contains('users')) {
+          const store = upgradeDB.createObjectStore('users', { keyPath: 'id' });
+          store.createIndex('by_service', 'service', { unique: true });
+        }
+      } catch (error) {
+        console.error('Erreur création store:', error);
+        throw error;
       }
     });
   }
 
   async saveUser(user) {
-    const db = await this.dbPromise;
-    const tx = db.transaction('users', 'readwrite');
-    await tx.objectStore('users').put(user);
-    await tx.complete;
-    return user;
+    try {
+      const db = await this.dbPromise;
+      const tx = db.transaction('users', 'readwrite');
+      await tx.objectStore('users').put(user);
+      await tx.complete;
+      return user;
+    } catch (error) {
+      console.error('Erreur sauvegarde utilisateur:', error);
+      throw error;
+    }
   }
 
   async getUserById(id) {
-    const db = await this.dbPromise;
-    return db.transaction('users')
-      .objectStore('users').get(id);
+    try {
+      const db = await this.dbPromise;
+      return await db.transaction('users').objectStore('users').get(id);
+    } catch (error) {
+      console.error('Erreur récupération utilisateur:', error);
+      throw error;
+    }
   }
 
   async getUserByService(service) {
-    const db = await this.dbPromise;
-    return db.transaction('users')
-      .objectStore('users')
-      .index('by_service')
-      .get(service);
+    try {
+      const db = await this.dbPromise;
+      return await db.transaction('users')
+        .objectStore('users')
+        .index('by_service')
+        .get(service);
+    } catch (error) {
+      console.error('Erreur récupération par service:', error);
+      throw error;
+    }
   }
 
   async initializeDefaultAccounts() {
-    const defaultAccounts = [
+    const defaultAccounts =  [
       {
         id: 'SCT=E260329',
         service: 'SCE Informations Sportives',
@@ -142,14 +166,28 @@ class AuthDB {
       }
     ];
 
-    for (const account of defaultAccounts) {
-      const existing = await this.getUserByService(account.service);
-      if (!existing) {
-        await this.saveUser(account);
+     try {
+      for (const account of defaultAccounts) {
+        try {
+          const existing = await this.getUserByService(account.service);
+          if (!existing) {
+            await this.saveUser(account);
+          }
+        } catch (error) {
+          console.error(`Erreur initialisation compte ${account.service}:`, error);
+        }
       }
+    } catch (error) {
+      console.error('Erreur initialisation des comptes:', error);
+      throw error;
     }
   }
 }
 
-// Crée et expose l'instance globale
-window.authDB = new AuthDB();
+// Crée et expose l'instance globale avec vérification
+try {
+  window.authDB = new AuthDB();
+} catch (error) {
+  console.error('Erreur création AuthDB:', error);
+  window.authDB = null;
+}

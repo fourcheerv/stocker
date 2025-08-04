@@ -7,9 +7,13 @@
   <link rel="stylesheet" href="css/login.css">
   <link rel="manifest" href="/stocker/manifest.json">
   <link rel="icon" type="image/png" href="icons/favicon.ico"/>
-   <!-- Chargement des dépendances en premier -->
+    <!-- Charger les dépendances en premier -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/idb/7.0.2/idb.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bcrypt.js/2.4.0/bcrypt.min.js"></script>
+  
+  <!-- Charger nos scripts ensuite -->
+  <script src="js/auth-db.js"></script>
+  <script src="js/login.js"></script>
 </head> 
   <script>
     if ("serviceWorker" in navigator) {
@@ -95,7 +99,5 @@
       </div>
     </div>
   </div>
-  <script src="js/auth-db.js"></script>
-  <script src="js/login.js"></script>
 </body>
 </html>
