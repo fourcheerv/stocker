@@ -1,186 +1,152 @@
-document.addEventListener('DOMContentLoaded', async () => {
-  // Vérification des dépendances
-  if (typeof authDB === 'undefined' || authDB === null) {
-    showError('Erreur système. Veuillez recharger la page.');
-    return;
+// Configuration des comptes avec mots de passe
+const serviceAccounts = {
+  'btn-info-sport': {
+    id: 'SCT=E260329',
+    password: 'sport2025',
+    name: 'SCE Informations Sportives',
+    redirect: 'index.html'
+  },
+  'btn-support-redac': {
+    id: 'SCT=E272329',
+    password: 'redac2025',
+    name: 'SCE Support Rédaction',
+    redirect: 'index.html'
+  },
+  'btn-maintenance': {
+    id: 'SCT=E370329',
+    password: 'maintenance2025',
+    name: 'Maintenance Machines',
+    redirect: 'index.html'
+  },
+  'btn-rotatives': {
+    id: 'SCT=E382329',
+    password: 'rotatives2025',
+    name: 'Service Rotatives',
+    redirect: 'index.html'
+  },
+  'btn-expedition': {
+    id: 'SCT=E390329',
+    password: 'expedition2025',
+    name: 'Service Expédition',
+    redirect: 'index.html'
+  },
+  'btn-direction': {
+    id: 'SCT=E500329',
+    password: 'direction2025',
+    name: 'Direction Vente',
+    redirect: 'index.html'
+  },
+  'btn-ler': {
+    id: 'SCT=E730329',
+    password: 'ler2025',
+    name: 'LER Charges',
+    redirect: 'index.html'
+  },
+  'btn-travaux': {
+    id: 'SCT=E736329',
+    password: 'travaux2025',
+    name: 'Service Travaux',
+    redirect: 'index.html'
+  },
+  'btn-achats': {
+    id: 'SCT=E760329',
+    password: 'achats2025',
+    name: 'Achats Magasin',
+    redirect: 'index.html'
+  },
+  'btn-manutention': {
+    id: 'SCT=E762329',
+    password: 'manutention2025',
+    name: 'Manutention Papier',
+    redirect: 'index.html'
+  },
+  'btn-coursiers': {
+    id: 'SCT=E772329',
+    password: 'coursiers2025',
+    name: 'Coursiers',
+    redirect: 'index.html'
+  },
+  'btn-cantine': {
+    id: 'SCT=E860329',
+    password: 'cantine2025',
+    name: 'Cantine',
+    redirect: 'index.html'
+  },
+  'btn-smi': {
+    id: 'SCT=E359329',
+    password: 'smi2025',
+    name: 'SMI',
+    redirect: 'index.html'
+  },
+  'btn-admin': {
+    id: 'Admin',
+    password: 'adminStocker2025!',
+    name: 'Administrateur',
+    redirect: 'admin.html'
   }
+};
 
-  if (typeof bcrypt === 'undefined') {
-    showError('Erreur de sécurité. Veuillez recharger la page.');
-    return;
-  }
-
-  try {
-    await authDB.initializeDefaultAccounts();
-  } catch (error) {
-    showError('Erreur initialisation. Veuillez recharger la page.');
-    return;
-  }
-
-  // Éléments du DOM
-  const uiElements = {
-    passwordSection: document.getElementById('passwordSection'),
-    passwordInput: document.getElementById('passwordInput'),
-    loginBtn: document.getElementById('loginBtn'),
-    errorMsg: document.getElementById('errorMsg'),
-    selectedServiceTitle: document.getElementById('selectedServiceTitle')
-  };
+document.addEventListener('DOMContentLoaded', () => {
+  const passwordSection = document.getElementById('passwordSection');
+  const passwordInput = document.getElementById('passwordInput');
+  const loginBtn = document.getElementById('loginBtn');
+  const errorMsg = document.getElementById('errorMsg');
+  const selectedServiceTitle = document.getElementById('selectedServiceTitle');
   
   let selectedService = null;
 
-  // Initialisation UI
-  initButtonAnimations();
-  setupEventListeners(uiElements);
+  // Animation des boutons
+  const accountButtons = document.querySelectorAll('.account-btn');
+  setTimeout(() => {
+    accountButtons.forEach((btn, index) => {
+      setTimeout(() => {
+        btn.style.opacity = '1';
+        btn.style.transform = 'translateY(0)';
+      }, 100 * index);
+    });
+  }, 500);
+  
+  accountButtons.forEach(btn => {
+    btn.style.opacity = '0';
+    btn.style.transform = 'translateY(20px)';
+    btn.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  });
 
-  // Fonctions internes
-  function showError(message) {
-    console.error(message);
-    if (uiElements.errorMsg) {
-      uiElements.errorMsg.textContent = message;
-    } else {
-      alert(message);
+  // Gestion de la sélection du service
+  accountButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const serviceId = btn.id;
+      if (serviceAccounts[serviceId]) {
+        selectedService = serviceAccounts[serviceId];
+        selectedServiceTitle.textContent = selectedService.name;
+        passwordSection.style.display = 'block';
+        passwordInput.value = '';
+        passwordInput.focus();
+        errorMsg.textContent = '';
+      }
+    });
+  });
+
+  // Gestion de la connexion
+  loginBtn.addEventListener('click', () => {
+    if (!selectedService) {
+      errorMsg.textContent = "Veuillez sélectionner un service";
+      return;
     }
-  }
-
-  function initButtonAnimations() {
-    const accountButtons = document.querySelectorAll('.account-btn');
-    setTimeout(() => {
-      accountButtons.forEach((btn, index) => {
-        setTimeout(() => {
-          btn.style.opacity = '1';
-          btn.style.transform = 'translateY(0)';
-        }, 100 * index);
-      });
-    }, 500);
     
-    accountButtons.forEach(btn => {
-      btn.style.opacity = '0';
-      btn.style.transform = 'translateY(20px)';
-      btn.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-    });
-  }
-
-  function setupEventListeners({ passwordSection, passwordInput, loginBtn, errorMsg, selectedServiceTitle }) {
-    // Gestion de la sélection du service
-    document.querySelectorAll('.account-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        try {
-          const serviceName = btn.dataset.service;
-          selectedService = await authDB.getUserByService(serviceName);
-          
-          if (selectedService) {
-            selectedServiceTitle.textContent = selectedService.service;
-            passwordSection.style.display = 'block';
-            passwordInput.value = '';
-            passwordInput.focus();
-            errorMsg.textContent = '';
-          }
-        } catch (error) {
-          showError('Erreur de sélection du service');
-        }
-      });
-    });
-
-    // Connexion
-    loginBtn.addEventListener('click', handleLogin);
-
-    // Touche Entrée
-    passwordInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        handleLogin();
-      }
-    });
-  }
-
-  async function handleLogin() {
-    try {
-      if (!selectedService) {
-        showError("Veuillez sélectionner un service");
-        return;
-      }
-      
-      const passwordMatch = bcrypt.compareSync(uiElements.passwordInput.value, selectedService.password);
-      
-      if (passwordMatch) {
-        if (!selectedService.passwordChanged) {
-          showPasswordChangeForm();
-        } else {
-          proceedToLogin();
-        }
-      } else {
-        showError("Mot de passe incorrect");
-      }
-    } catch (error) {
-      showError('Erreur de connexion');
-    }
-  }
-
-  async function showPasswordChangeForm() {
-    try {
-      uiElements.passwordSection.style.display = 'none';
-      
-      const changePasswordHTML = `
-        <div id="changePasswordSection" class="password-section">
-          <h3>Première connexion - Changer votre mot de passe</h3>
-          <p>Vous devez changer le mot de passe par défaut</p>
-          <input type="password" id="newPasswordInput" placeholder="Nouveau mot de passe" class="password-input">
-          <input type="password" id="confirmPasswordInput" placeholder="Confirmer le nouveau mot de passe" class="password-input">
-          <button id="changePasswordBtn" class="login-btn">Changer le mot de passe</button>
-          <p id="changePasswordError" class="error-message"></p>
-        </div>
-      `;
-      
-      uiElements.passwordSection.insertAdjacentHTML('afterend', changePasswordHTML);
-      
-      document.getElementById('changePasswordBtn').addEventListener('click', handlePasswordChange);
-    } catch (error) {
-      showError('Erreur d\'affichage du formulaire');
-    }
-  }
-
-  async function handlePasswordChange() {
-    const newPassword = document.getElementById('newPasswordInput')?.value;
-    const confirmPassword = document.getElementById('confirmPasswordInput')?.value;
-    const errorElement = document.getElementById('changePasswordError');
-    
-    try {
-      if (!newPassword || !confirmPassword) {
-        throw new Error('Champs manquants');
-      }
-      
-      if (newPassword !== confirmPassword) {
-        errorElement.textContent = "Les mots de passe ne correspondent pas";
-        return;
-      }
-      
-      if (newPassword.length < 8) {
-        errorElement.textContent = "Le mot de passe doit contenir au moins 8 caractères";
-        return;
-      }
-      
-      const salt = bcrypt.genSaltSync(10);
-      const hashedPassword = bcrypt.hashSync(newPassword, salt);
-      
-      selectedService.password = hashedPassword;
-      selectedService.passwordChanged = true;
-      
-      await authDB.saveUser(selectedService);
-      
-      document.getElementById('changePasswordSection').remove();
-      uiElements.passwordSection.style.display = 'block';
-      proceedToLogin();
-    } catch (error) {
-      errorElement.textContent = "Erreur lors du changement de mot de passe";
-    }
-  }
-
-  function proceedToLogin() {
-    try {
+    if (passwordInput.value === selectedService.password) {
       sessionStorage.setItem('currentAccount', selectedService.id);
-      sessionStorage.setItem('currentServiceName', selectedService.service);
+      sessionStorage.setItem('currentServiceName', selectedService.name);
       window.location.href = selectedService.redirect;
-    } catch (error) {
-      showError('Erreur de redirection');
+    } else {
+      errorMsg.textContent = "Mot de passe incorrect";
     }
-  }
+  });
+
+  // Entrée pour valider
+  passwordInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      loginBtn.click();
+    }
+  });
 });
