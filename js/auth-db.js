@@ -1,3 +1,9 @@
+// Vérification que idb est bien chargé
+if (typeof idb === 'undefined') {
+  console.error('Erreur: La bibliothèque idb n\'est pas chargée correctement');
+  throw new Error('La bibliothèque IndexedDB (idb) est requise');
+}
+
 class AuthDB {
   constructor() {
     this.dbPromise = this.initDB();
@@ -145,4 +151,5 @@ class AuthDB {
   }
 }
 
-const authDB = new AuthDB();
+// Crée et expose l'instance globale
+window.authDB = new AuthDB();
