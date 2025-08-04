@@ -334,6 +334,8 @@ button:hover {
 }
 
 .admin-link {
+  display: none; /* Caché par défaut */
+  background-color: #4CAF50; /* Couleur verte différente du lien admin */
   display: inline-block;
   padding: 12px 25px;
   background-color: #4c61af;
@@ -383,7 +385,7 @@ footer {
 }
 
 #adminLink:hover {
-  background-color: #3a4f9b;
+  background-color: #3e8e41;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
