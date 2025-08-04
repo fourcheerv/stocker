@@ -1,4 +1,4 @@
-// Configuration PouchDB
+/*// Configuration PouchDB
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
 
@@ -205,7 +205,211 @@ if (sessionStorage.getItem('currentAccount') === 'Admin') {
   
   document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
   document.getElementById('dataTable').addEventListener('click', handleTableClick);
+}*/
+
+// Configuration PouchDB
+const localDB = new PouchDB("stocks");
+const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
+
+// Variables globales
+let allDocs = [];
+let filteredDocs = [];
+let currentPage = 1;
+const itemsPerPage = 10;
+let totalPages = 1;
+let selectedDocs = new Set();
+
+// Gestionnaire de modales
+const modalManager = {
+  currentModal: null,
+
+  openModal: function(content, isEdit = false) {
+    this.closeCurrent();
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = isEdit ? 'editModal' : 'detailsModal';
+    modal.innerHTML = content;
+    
+    document.body.appendChild(modal);
+    this.currentModal = modal;
+    modal.style.display = 'flex';
+
+    return modal;
+  },
+
+  closeCurrent: function() {
+    if (this.currentModal) {
+      this.currentModal.remove();
+      this.currentModal = null;
+    }
+  }
+};
+
+// Fonctions utilitaires pour la gestion des dates
+function formatToDateTimeLocal(date) {
+  if (!date) return '';
+  
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+function formatDateForDisplay(isoString) {
+  if (!isoString) return '';
+  
+  const date = new Date(isoString);
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+// Initialisation
+document.addEventListener("DOMContentLoaded", () => {
+  const today = new Date();
+  document.getElementById('dateFilter').value = today.toISOString().split('T')[0];
+  initAdmin();
+});
+
+function initAdmin() {
+  checkAuth();
+  setupEventListeners();
+
+  const currentAccount = sessionStorage.getItem('currentAccount');
+  const currentServiceName = sessionStorage.getItem('currentServiceName');
+  
+  if (currentAccount) {
+    document.getElementById('currentUserLabel').textContent = currentServiceName || getAxe1Label(currentAccount);
+    applyAccountFilter(currentAccount);
+  }
+
+  loadData();
+}
+
+function checkAuth() {
+  const currentAccount = sessionStorage.getItem('currentAccount');
+  if (!currentAccount) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  // Redirection si non-admin sur admin.html
+  if (currentAccount !== 'Admin' && window.location.pathname.endsWith('admin.html')) {
+    window.location.href = 'index.html';
+  }
+}
+
+function applyAccountFilter(account) {
+  const filterSelect = document.getElementById('filterSelect');
+  const currentServiceLabel = document.getElementById('currentServiceLabel');
+  
+  if (account === 'Admin') {
+    filterSelect.disabled = false;
+    filterSelect.value = '';
+    currentServiceLabel.textContent = 'Tous les comptes (mode Admin)';
+  } else {
+    filterSelect.value = account;
+    filterSelect.disabled = true;
+    currentServiceLabel.textContent = getAxe1Label(account);
+  }
+}
+
+function getAxe1Label(axe1) {
+  const mappings = {
+    'SCT=E260329': 'SCE Informations Sportives',
+    'SCT=E272329': 'SCE Support Rédaction',
+    'SCT=E370329': 'Maintenance Machines',
+    'SCT=E382329': 'Service Rotatives',
+    'SCT=E390329': 'Service Expédition',
+    'SCT=E500329': 'Direction Vente',
+    'SCT=E730329': 'LER Charges',
+    'SCT=E736329': 'Service Travaux',
+    'SCT=E760329': 'Achats Magasin',
+    'SCT=E762329': 'Manutention Papier',
+    'SCT=E772329': 'Coursiers',
+    'SCT=E860329': 'Cantine',
+    'SCT=E359329': 'SMI',
+    'Admin': 'Compte Admin'
+  };
+  
+  return mappings[axe1] || axe1;
+}
+
+function setupEventListeners() {
+  // Ajout du bouton Retour
+  const backBtn = document.createElement('button');
+  backBtn.id = 'backBtn';
+  backBtn.textContent = 'Retour';
+  backBtn.className = 'btn-secondary';
+  backBtn.style.marginRight = '10px';
+  
+  const logoutBtn = document.getElementById('logoutBtn');
+  logoutBtn.parentNode.insertBefore(backBtn, logoutBtn);
+  
+  backBtn.addEventListener('click', () => {
+    const currentAccount = sessionStorage.getItem('currentAccount');
+    if (currentAccount && currentAccount !== 'Admin') {
+      window.location.href = 'index.html';
+    } else {
+      window.location.href = 'login.html';
+    }
+  });
+  
+  if (sessionStorage.getItem('currentAccount') === 'Admin') {
+    backBtn.style.display = 'none';
+  }
+  
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+  document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+  document.getElementById('syncBtn').addEventListener('click', syncWithServer);
+  document.getElementById('deleteSelectedBtn').addEventListener('click', confirmDeleteSelected);
+  document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
+  document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+  document.getElementById('exportToDriveBtn').addEventListener('click', exportAndSendEmail);
+
+  document.getElementById('searchInput').addEventListener('input', () => {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('filterSelect').addEventListener('change', () => {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('dateFilter').addEventListener('change', () => {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('commandeFilter').addEventListener('change', () => {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('magasinFilter').addEventListener('change', () => {
+    currentPage = 1;
+    filterData();
+  });
+
+  document.getElementById('firstPageBtn').addEventListener('click', () => goToPage(1));
+  document.getElementById('prevPageBtn').addEventListener('click', () => goToPage(currentPage - 1));
+  document.getElementById('nextPageBtn').addEventListener('click', () => goToPage(currentPage + 1));
+  document.getElementById('lastPageBtn').addEventListener('click', () => goToPage(totalPages));
+  
+  document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
+  document.getElementById('dataTable').addEventListener('click', handleTableClick);
+}
+
+
 
 function handleTableClick(e) {
   const target = e.target;
