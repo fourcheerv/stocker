@@ -101,12 +101,21 @@ function checkAuth() {
 function applyAccountFilter(account) {
   const filterSelect = document.getElementById('filterSelect');
   const currentServiceLabel = document.getElementById('currentServiceLabel');
-  
-  if (account === 'Admin') {
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromIndex = urlParams.get('fromIndex');
+
+  if (fromIndex === 'true') {
+    // Forcer le filtre du compte utilisateur quand on vient de index.html
+    filterSelect.value = account;
+    filterSelect.disabled = true;
+    currentServiceLabel.textContent = `Mes enregistrements (${getAxe1Label(account)})`;
+  } else if (account === 'Admin') {
+    // Comportement normal pour l'admin
     filterSelect.disabled = false;
     filterSelect.value = '';
     currentServiceLabel.textContent = 'Tous les comptes (mode Admin)';
   } else {
+    // Comportement normal pour les autres utilisateurs
     filterSelect.value = account;
     filterSelect.disabled = true;
     currentServiceLabel.textContent = getAxe1Label(account);
