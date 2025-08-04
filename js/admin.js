@@ -126,24 +126,25 @@ function applyAccountFilter(account) {
   const filterContainer = filterSelect.closest('.filter-container');
   
   if (fromIndex === 'true') {
-    // Forcer le filtre du compte utilisateur quand on vient de index.html
     filterSelect.value = account;
     filterSelect.disabled = true;
     currentServiceLabel.textContent = `Mes enregistrements (${getAxe1Label(account)})`;
     filterContainer.classList.add('has-value');
   } else if (account === 'Admin') {
-    // Comportement normal pour l'admin
     filterSelect.disabled = false;
     filterSelect.value = '';
     currentServiceLabel.textContent = 'Tous les comptes (mode Admin)';
     filterContainer.classList.remove('has-value');
   } else {
-    // Comportement normal pour les autres utilisateurs
     filterSelect.value = account;
     filterSelect.disabled = true;
     currentServiceLabel.textContent = getAxe1Label(account);
     filterContainer.classList.add('has-value');
   }
+  
+  // Mettre à jour le label de l'utilisateur connecté en haut à droite
+  const currentServiceName = sessionStorage.getItem('currentServiceName');
+  document.getElementById('currentUserLabel').textContent = currentServiceName || getAxe1Label(account);
 }
 
 function getAxe1Label(axe1) {
