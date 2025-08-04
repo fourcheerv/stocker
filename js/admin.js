@@ -84,11 +84,14 @@ function initAdmin() {
   setupEventListeners();
 
   const currentAccount = sessionStorage.getItem('currentAccount');
-  const currentServiceName = sessionStorage.getItem('currentServiceName');
-  
-  if (currentAccount) {
-    document.getElementById('currentUserLabel').textContent = currentServiceName || getAxe1Label(currentAccount);
-    applyAccountFilter(currentAccount);
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromIndex = urlParams.get('fromIndex');
+
+  if (fromIndex === 'true') {
+    // Forcer le filtre sur le compte courant
+    document.getElementById('filterSelect').value = currentAccount;
+    document.getElementById('filterSelect').disabled = true;
+    document.getElementById('currentServiceLabel').textContent = `Mes enregistrements (${getAxe1Label(currentAccount)})`;
   }
 
   loadData();
