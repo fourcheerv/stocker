@@ -336,6 +336,15 @@ main {
   appearance: none;
 }
 
+.filter-container.has-value .filter-label {
+  top: 0;
+  font-size: 12px;
+  color: #0066cc;
+  background: #fff;
+  transform: translateY(-50%);
+  padding: 0 4px;
+}
+
 /* Statistiques */
 .stats-container {
   display: flex;
