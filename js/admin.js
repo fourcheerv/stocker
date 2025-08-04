@@ -187,10 +187,7 @@ function setupEventListeners() {
       window.location.href = 'login.html';
     }
   });
-  
-  if (sessionStorage.getItem('currentAccount') === 'Admin') {
-    backBtn.style.display = 'none';
-  }
+ 
   
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('exportBtn').addEventListener('click', exportToCSV);
