@@ -48,6 +48,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   
   // Mise à jour de l'interface utilisateur
+  updateUIForUserRole(); 
   updateUserInterface();
   
   // Chargement des données Excel
