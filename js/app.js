@@ -38,6 +38,12 @@ function updateUIForUserRole() {
   }
 }
 
+function logout() {
+  sessionStorage.removeItem('currentAccount');
+  sessionStorage.removeItem('currentServiceName');
+  window.location.href = 'login.html';
+}
+
 // Gestion de la session
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem('currentAccount');
@@ -53,6 +59,11 @@ window.addEventListener("DOMContentLoaded", () => {
   
   // Chargement des données Excel
   loadExcelData();
+
+ const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', logout);
+  }  
 });
 
 function updateUserInterface() {
