@@ -25,6 +25,19 @@ function updateSortieDate() {
   document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
 }
 
+function updateUIForUserRole() {
+  const adminLink = document.getElementById('adminLink');
+  
+  // Afficher le lien pour tous les utilisateurs authentifiés (pas seulement admin)
+  if (currentAccount) {
+    adminLink.style.display = 'block';
+    adminLink.textContent = '📊 Voir mes enregistrements';
+    adminLink.href = 'admin.html'; // Redirige vers admin.html avec filtre automatique
+  } else {
+    adminLink.style.display = 'none';
+  }
+}
+
 // Gestion de la session
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem('currentAccount');
