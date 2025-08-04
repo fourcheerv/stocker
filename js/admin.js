@@ -89,6 +89,33 @@ function checkAuth() {
 }
 
 function setupEventListeners() {
+  // Ajouter un bouton Retour pour les utilisateurs non-admin
+const backBtn = document.createElement('button');
+backBtn.id = 'backBtn';
+backBtn.textContent = 'Retour';
+backBtn.className = 'btn-secondary';
+backBtn.style.marginRight = '10px';
+
+// Insérer avant le bouton de déconnexion
+const logoutBtn = document.getElementById('logoutBtn');
+logoutBtn.parentNode.insertBefore(backBtn, logoutBtn);
+
+// Gestionnaire d'événement pour le bouton Retour
+backBtn.addEventListener('click', () => {
+  const currentAccount = sessionStorage.getItem('currentAccount');
+  if (currentAccount && currentAccount !== 'Admin') {
+    window.location.href = 'index.html';
+  } else {
+    // Pour l'admin ou si non authentifié, retourner à la page de login
+    window.location.href = 'login.html';
+  }
+});
+
+// Masquer le bouton si l'utilisateur est Admin
+if (sessionStorage.getItem('currentAccount') === 'Admin') {
+  backBtn.style.display = 'none';
+}
+  
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('exportBtn').addEventListener('click', exportToCSV);
   document.getElementById('syncBtn').addEventListener('click', syncWithServer);
