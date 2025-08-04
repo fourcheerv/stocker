@@ -69,6 +69,18 @@ h1 {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.current-service-display {
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.current-service-display strong {
+  color: #2c3e50;
+}
+
 /* Nouveau style pour le bouton de déconnexion */
 .logout-btn {
   position: relative;
