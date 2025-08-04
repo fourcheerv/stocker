@@ -92,10 +92,19 @@ function checkAuth() {
     return;
   }
 
-  // Redirection si non-admin sur admin.html
-  if (currentAccount !== 'Admin' && window.location.pathname.endsWith('admin.html')) {
+  // Nouvelle vérification pour l'accès à admin.html
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromIndex = urlParams.get('fromIndex');
+  
+  // Autoriser l'accès si:
+  // 1. C'est un admin OU
+  // 2. On vient de index.html (paramètre fromIndex=true)
+  if (currentAccount !== 'Admin' && fromIndex !== 'true') {
     window.location.href = 'index.html';
+    return;
   }
+
+  applyAccountFilter(currentAccount);
 }
 
 function applyAccountFilter(account) {
