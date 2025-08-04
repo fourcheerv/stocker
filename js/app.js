@@ -56,40 +56,18 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 function updateUserInterface() {
-  const accountNames = {
-    'SCT=E260329': 'SCE Informations Sportives',
-    'SCT=E272329': 'SCE Support Rédaction',
-    'SCT=E370329': 'Maintenance Machines',
-    'SCT=E382329': 'Service Rotatives',
-    'SCT=E390329': 'Service Expédition',
-    'SCT=E500329': 'Direction Vente',
-    'SCT=E730329': 'LER Charges',
-    'SCT=E736329': 'Service Travaux',
-    'SCT=E760329': 'Achats Magasin',
-    'SCT=E762329': 'Manutention Papier',
-    'SCT=E772329': 'Coursiers',
-    'SCT=E860329': 'Cantine',
-    'SCT=E359329': 'SMI',
-    'Admin': 'Compte Admin'
-  };
+  const currentAccount = sessionStorage.getItem('currentAccount');
+  const currentServiceName = sessionStorage.getItem('currentServiceName') || getAxe1Label(currentAccount);
   
-  const currentServiceName = sessionStorage.getItem('currentServiceName') || accountNames[currentAccount] || currentAccount;
+  // Mettre à jour l'affichage du compte
   document.getElementById('currentUserLabel').textContent = currentServiceName;
-  document.getElementById('axe1').value = currentAccount;
   
-  // Afficher le lien admin seulement pour l'administrateur
-  if (currentAccount === 'Admin') {
-    document.getElementById('adminLink').style.display = 'block';
+  // Afficher le bouton Retour seulement si nécessaire
+  const backBtn = document.getElementById('backBtn');
+  if (backBtn) {
+    backBtn.style.display = currentAccount === 'Admin' ? 'none' : 'block';
   }
 }
-
-// Déconnexion
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  resetForm();
-  sessionStorage.removeItem('currentAccount');
-  sessionStorage.removeItem('currentServiceName');
-  window.location.href = 'login.html';
-});
 
 // Chargement Excel (reste identique)
 function loadExcelData() {
