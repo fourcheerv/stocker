@@ -28,11 +28,11 @@ function updateSortieDate() {
 function updateUIForUserRole() {
   const adminLink = document.getElementById('adminLink');
   
-  // Afficher le lien pour tous les utilisateurs authentifiés (pas seulement admin)
   if (currentAccount) {
     adminLink.style.display = 'block';
     adminLink.textContent = '📊 Voir mes enregistrements';
-    adminLink.href = 'admin.html'; // Redirige vers admin.html avec filtre automatique
+    // Ajout du paramètre fromIndex
+    adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
   } else {
     adminLink.style.display = 'none';
   }
