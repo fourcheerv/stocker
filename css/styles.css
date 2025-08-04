@@ -364,6 +364,39 @@ footer {
   font-size: 0.9rem;
 }
 
+/* Ajoutez ces styles à la fin de votre fichier styles.css */
+
+/* Style pour le lien admin caché par défaut */
+#adminLink {
+  display: none;
+  margin: 25px auto;
+  padding: 12px 25px;
+  background-color: #4c61af;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.25s ease;
+  text-align: center;
+  width: fit-content;
+}
+
+#adminLink:hover {
+  background-color: #3a4f9b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* Style pour l'indicateur de compte */
+.account-info {
+  background-color: rgba(0, 61, 102, 0.1);
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-weight: 500;
+  border: 1px solid rgba(0, 61, 102, 0.2);
+}
+
 /* ========== RESPONSIVE DESIGN ========== */
 @media (min-width: 768px) {
   #stockForm {
