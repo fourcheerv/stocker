@@ -394,10 +394,60 @@ function renderTable() {
 }
 
 function updateStats() {
-  document.getElementById('totalCount').textContent = allDocs.length;
-  document.getElementById('rotativesCount').textContent = allDocs.filter(d => d.axe1 === 'SCT=E382329').length;
-  document.getElementById('expeditionCount').textContent = allDocs.filter(d => d.axe1 !== 'SCT=E382329').length;
-  updateSelectedCount();
+  const currentAccount = sessionStorage.getItem('currentAccount');
+  const isAdmin = currentAccount === 'Admin';
+  
+  // Filtrer les données par service (sauf pour l'admin)
+  const filteredByAccount = isAdmin 
+    ? allDocs 
+    : allDocs.filter(doc => doc.axe1 === currentAccount);
+
+  // 1. Statistiques de base
+  document.getElementById('totalCount').textContent = filteredByAccount.length;
+
+  // 2. Activité récente (7 jours)
+  const last7Days = filteredByAccount.filter(doc => {
+    const docDate = new Date(doc.date_sortie || doc._id);
+    return docDate > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  });
+  document.getElementById('last7DaysCount').textContent = last7Days.length;
+
+  // 3. Articles à commander (avec indicateur d'urgence)
+  const toOrder = filteredByAccount.filter(doc => 
+    ['oui', 'o', 'yes', 'y'].includes(doc.a_commander?.toString().toLowerCase())
+  );
+  document.getElementById('toOrderCount').textContent = toOrder.length;
+  document.getElementById('urgentOrders').textContent = toOrder.length > 5 ? "!" : "";
+
+  // 4. Répartition par magasin
+  const magasinMP = filteredByAccount.filter(doc => doc.magasin === 'ER-MP').length;
+  const magasinMG = filteredByAccount.filter(doc => doc.magasin === 'ER-MG').length;
+  document.getElementById('magasinMP').textContent = magasinMP;
+  document.getElementById('magasinMG').textContent = magasinMG;
+
+  // [Optionnel] Tendances (flèches ↑/↓)
+  updateTrends(filteredByAccount);
+}
+
+// Fonction pour calculer les tendances
+function updateTrends(data) {
+  const today = new Date();
+  const lastWeekData = data.filter(doc => {
+    const docDate = new Date(doc.date_sortie || doc._id);
+    return docDate > new Date(today - 14 * 24 * 60 * 60 * 1000) && docDate <= new Date(today - 7 * 24 * 60 * 60 * 1000);
+  });
+
+  const currentWeekData = data.filter(doc => {
+    const docDate = new Date(doc.date_sortie || doc._id);
+    return docDate > new Date(today - 7 * 24 * 60 * 60 * 1000);
+  });
+
+  const trendElement = document.getElementById('trend7Days');
+  if (lastWeekData.length > 0) {
+    const trend = ((currentWeekData.length - lastWeekData.length) / lastWeekData.length) * 100;
+    trendElement.innerHTML = trend >= 0 ? `↑ ${Math.abs(trend.toFixed(1))}%` : `↓ ${Math.abs(trend.toFixed(1))}%`;
+    trendElement.style.color = trend >= 0 ? '#2ecc71' : '#e74c3c';
+  }
 }
 
 function updateSelectedCount() {
