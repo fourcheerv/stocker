@@ -88,7 +88,7 @@ function initAdmin() {
   
   if (currentAccount) {
     document.getElementById('currentUserLabel').textContent = currentServiceName || getAxe1Label(currentAccount);
-    applyAccountFilter(currentAccount);
+    AccountFilter(currentAccount);
   }
 
   loadData();
@@ -113,7 +113,7 @@ function checkAuth() {
     return;
   }
 
-  applyAccountFilter(currentAccount);
+  AccountFilter(currentAccount);
 }
 
 function applyAccountFilter(account) {
@@ -122,21 +122,27 @@ function applyAccountFilter(account) {
   const urlParams = new URLSearchParams(window.location.search);
   const fromIndex = urlParams.get('fromIndex');
 
+  // Ajouter la classe has-value au container du select
+  const filterContainer = filterSelect.closest('.filter-container');
+  
   if (fromIndex === 'true') {
     // Forcer le filtre du compte utilisateur quand on vient de index.html
     filterSelect.value = account;
     filterSelect.disabled = true;
     currentServiceLabel.textContent = `Mes enregistrements (${getAxe1Label(account)})`;
+    filterContainer.classList.add('has-value');
   } else if (account === 'Admin') {
     // Comportement normal pour l'admin
     filterSelect.disabled = false;
     filterSelect.value = '';
     currentServiceLabel.textContent = 'Tous les comptes (mode Admin)';
+    filterContainer.classList.remove('has-value');
   } else {
     // Comportement normal pour les autres utilisateurs
     filterSelect.value = account;
     filterSelect.disabled = true;
     currentServiceLabel.textContent = getAxe1Label(account);
+    filterContainer.classList.add('has-value');
   }
 }
 
