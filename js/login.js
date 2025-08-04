@@ -1,92 +1,7 @@
-// Configuration des comptes avec mots de passe
-const serviceAccounts = {
-  'btn-info-sport': {
-    id: 'SCT=E260329',
-    password: 'sport2025',
-    name: 'SCE Informations Sportives',
-    redirect: 'index.html'
-  },
-  'btn-support-redac': {
-    id: 'SCT=E272329',
-    password: 'redac2025',
-    name: 'SCE Support Rédaction',
-    redirect: 'index.html'
-  },
-  'btn-maintenance': {
-    id: 'SCT=E370329',
-    password: 'maintenance2025',
-    name: 'Maintenance Machines',
-    redirect: 'index.html'
-  },
-  'btn-rotatives': {
-    id: 'SCT=E382329',
-    password: 'rotatives2025',
-    name: 'Service Rotatives',
-    redirect: 'index.html'
-  },
-  'btn-expedition': {
-    id: 'SCT=E390329',
-    password: 'expedition2025',
-    name: 'Service Expédition',
-    redirect: 'index.html'
-  },
-  'btn-direction': {
-    id: 'SCT=E500329',
-    password: 'direction2025',
-    name: 'Direction Vente',
-    redirect: 'index.html'
-  },
-  'btn-ler': {
-    id: 'SCT=E730329',
-    password: 'ler2025',
-    name: 'LER Charges',
-    redirect: 'index.html'
-  },
-  'btn-travaux': {
-    id: 'SCT=E736329',
-    password: 'travaux2025',
-    name: 'Service Travaux',
-    redirect: 'index.html'
-  },
-  'btn-achats': {
-    id: 'SCT=E760329',
-    password: 'achats2025',
-    name: 'Achats Magasin',
-    redirect: 'index.html'
-  },
-  'btn-manutention': {
-    id: 'SCT=E762329',
-    password: 'manutention2025',
-    name: 'Manutention Papier',
-    redirect: 'index.html'
-  },
-  'btn-coursiers': {
-    id: 'SCT=E772329',
-    password: 'coursiers2025',
-    name: 'Coursiers',
-    redirect: 'index.html'
-  },
-  'btn-cantine': {
-    id: 'SCT=E860329',
-    password: 'cantine2025',
-    name: 'Cantine',
-    redirect: 'index.html'
-  },
-  'btn-smi': {
-    id: 'SCT=E359329',
-    password: 'smi2025',
-    name: 'SMI',
-    redirect: 'index.html'
-  },
-  'btn-admin': {
-    id: 'Admin',
-    password: 'adminStocker2025!',
-    name: 'Administrateur',
-    redirect: 'admin.html'
-  }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await authDB.initializeDefaultAccounts();
+  
+  // Éléments du DOM
   const passwordSection = document.getElementById('passwordSection');
   const passwordInput = document.getElementById('passwordInput');
   const loginBtn = document.getElementById('loginBtn');
@@ -114,11 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Gestion de la sélection du service
   accountButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const serviceId = btn.id;
-      if (serviceAccounts[serviceId]) {
-        selectedService = serviceAccounts[serviceId];
-        selectedServiceTitle.textContent = selectedService.name;
+    btn.addEventListener('click', async () => {
+      const serviceName = btn.dataset.service;
+      selectedService = await authDB.getUserByService(serviceName);
+      
+      if (selectedService) {
+        selectedServiceTitle.textContent = selectedService.service;
         passwordSection.style.display = 'block';
         passwordInput.value = '';
         passwordInput.focus();
@@ -127,23 +43,83 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Gestion de la connexion
-  loginBtn.addEventListener('click', () => {
+  // Connexion
+  loginBtn.addEventListener('click', async () => {
     if (!selectedService) {
       errorMsg.textContent = "Veuillez sélectionner un service";
       return;
     }
     
-    if (passwordInput.value === selectedService.password) {
-      sessionStorage.setItem('currentAccount', selectedService.id);
-      sessionStorage.setItem('currentServiceName', selectedService.name);
-      window.location.href = selectedService.redirect;
+    const passwordMatch = bcrypt.compareSync(passwordInput.value, selectedService.password);
+    
+    if (passwordMatch) {
+      if (!selectedService.passwordChanged) {
+        showPasswordChangeForm();
+      } else {
+        proceedToLogin();
+      }
     } else {
       errorMsg.textContent = "Mot de passe incorrect";
     }
   });
 
-  // Entrée pour valider
+  async function showPasswordChangeForm() {
+    passwordSection.style.display = 'none';
+    
+    const changePasswordHTML = `
+      <div id="changePasswordSection" class="password-section">
+        <h3>Première connexion - Changer votre mot de passe</h3>
+        <p>Vous devez changer le mot de passe par défaut</p>
+        <input type="password" id="newPasswordInput" placeholder="Nouveau mot de passe" class="password-input">
+        <input type="password" id="confirmPasswordInput" placeholder="Confirmer le nouveau mot de passe" class="password-input">
+        <button id="changePasswordBtn" class="login-btn">Changer le mot de passe</button>
+        <p id="changePasswordError" class="error-message"></p>
+      </div>
+    `;
+    
+    passwordSection.insertAdjacentHTML('afterend', changePasswordHTML);
+    
+    document.getElementById('changePasswordBtn').addEventListener('click', handlePasswordChange);
+  }
+
+  async function handlePasswordChange() {
+    const newPassword = document.getElementById('newPasswordInput').value;
+    const confirmPassword = document.getElementById('confirmPasswordInput').value;
+    const errorElement = document.getElementById('changePasswordError');
+    
+    if (newPassword !== confirmPassword) {
+      errorElement.textContent = "Les mots de passe ne correspondent pas";
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      errorElement.textContent = "Le mot de passe doit contenir au moins 8 caractères";
+      return;
+    }
+    
+    // Hacher le nouveau mot de passe
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(newPassword, salt);
+    
+    // Mettre à jour l'utilisateur
+    selectedService.password = hashedPassword;
+    selectedService.passwordChanged = true;
+    
+    await authDB.saveUser(selectedService);
+    
+    // Procéder à la connexion
+    document.getElementById('changePasswordSection').remove();
+    passwordSection.style.display = 'block';
+    proceedToLogin();
+  }
+
+  function proceedToLogin() {
+    sessionStorage.setItem('currentAccount', selectedService.id);
+    sessionStorage.setItem('currentServiceName', selectedService.service);
+    window.location.href = selectedService.redirect;
+  }
+
+  // Gestion de la touche Entrée
   passwordInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       loginBtn.click();
