@@ -1,3 +1,12 @@
+// Vérifier si le compte dans l'URL correspond au compte connecté
+const urlParams = new URLSearchParams(window.location.search);
+const urlAccount = urlParams.get('account');
+const currentAccount = sessionStorage.getItem('currentAccount');
+
+if (urlAccount && urlAccount !== currentAccount) {
+  window.location.href = 'index.html';
+}
+
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
