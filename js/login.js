@@ -119,7 +119,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = selectedService.redirect;
   }
 
-  // Gestion de la touche Entrée
   passwordInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       loginBtn.click();
