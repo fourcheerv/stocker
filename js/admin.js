@@ -88,7 +88,7 @@ function initAdmin() {
   
   if (currentAccount) {
     document.getElementById('currentUserLabel').textContent = currentServiceName || getAxe1Label(currentAccount);
-    AccountFilter(currentAccount);
+    applyAccountFilter(currentAccount);
   }
 
   loadData();
