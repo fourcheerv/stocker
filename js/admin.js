@@ -82,9 +82,58 @@ function initAdmin() {
   loadData();
 }
 
+//function checkAuth() {
+//  if (!sessionStorage.getItem('currentAccount')) {
+//    window.location.href = 'login.html';
+//  }
+//}
+
 function checkAuth() {
-  if (!sessionStorage.getItem('currentAccount')) {
+  const currentAccount = sessionStorage.getItem('currentAccount');
+  if (!currentAccount) {
     window.location.href = 'login.html';
+    return;
+  }
+
+  // Appliquer automatiquement le filtre correspondant au compte
+  applyAccountFilter(currentAccount);
+}
+
+function applyAccountFilter(account) {
+  if (account === 'Admin') {
+    // L'admin voit tout, pas de filtre automatique
+    document.getElementById('filterSelect').value = '';
+    document.getElementById('currentServiceLabel').textContent = 'Tous les services';
+    return;
+  }
+
+  const accountMappings = {
+    'SCT=E260329': 'SCE Informations Sportives',
+    'SCT=E272329': 'SCE Support Rédaction',
+    'SCT=E370329': 'Maintenance Machines',
+    'SCT=E382329': 'Service Rotatives',
+    'SCT=E390329': 'Service Expédition',
+    'SCT=E500329': 'Direction Vente',
+    'SCT=E730329': 'LER Charges',
+    'SCT=E736329': 'Service Travaux',
+    'SCT=E760329': 'Achats Magasin',
+    'SCT=E762329': 'Manutention Papier',
+    'SCT=E772329': 'Coursiers',
+    'SCT=E860329': 'Cantine',
+    'SCT=E359329': 'SMI'
+  };
+
+  if (accountMappings[account]) {
+    document.getElementById('filterSelect').value = account;
+    document.getElementById('currentServiceLabel').textContent = accountMappings[account];
+  } else {
+    document.getElementById('filterSelect').value = '';
+    document.getElementById('currentServiceLabel').textContent = 'Service inconnu';
+  }
+
+  // Désactiver le filtre pour les utilisateurs non-admin
+  if (account !== 'Admin') {
+    document.getElementById('filterSelect').disabled = true;
   }
 }
 
