@@ -134,9 +134,6 @@ h1 {
   transform: translateX(3px);
 }
 
-
-/* Ajoutez ces styles à la fin de votre fichier admin.css */
-
 /* Style pour le bouton Retour */
 #backBtn {
   padding: 8px 16px;
@@ -167,7 +164,6 @@ h1 {
   color: #2c3e50;
   font-weight: bold;
 }
-
 
 /* Main */
 main {
@@ -225,7 +221,7 @@ main {
   background-color: #e67e22;
 }
 
-/* Recherche et filtre - MODIFICATIONS PRINCIPALES */
+/* Recherche et filtre */
 .search-filter-container {
   display: flex;
   gap: 1rem;
@@ -322,6 +318,22 @@ main {
 /* Ajustement pour les icônes des selects */
 .floating-filter select.filter-input + .filter-icon {
   right: 15px;
+}
+
+/* Style spécifique pour le select des comptes */
+#filterSelect {
+  width: 100%;
+  padding: 16px 40px 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  background: #fff;
+  box-sizing: border-box;
+  height: 50px;
+  transition: border-color 0.3s;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 /* Statistiques */
@@ -686,22 +698,7 @@ footer {
   border-top: 1px solid var(--color-gray);
 }
 
-/* Style pour le bouton Retour */
-#backBtn {
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-#backBtn:hover {
-  background-color: #5a6268;
-}
-
-/* Responsive - MODIFICATIONS POUR LES FILTRES */
+/* Responsive */
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
