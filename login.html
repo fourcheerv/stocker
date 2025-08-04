@@ -7,29 +7,10 @@
   <link rel="stylesheet" href="css/login.css">
   <link rel="manifest" href="/stocker/manifest.json">
   <link rel="icon" type="image/png" href="icons/favicon.ico"/>
-    <!-- Charger les dépendances en premier -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/idb/7.0.2/idb.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bcrypt.js/2.4.0/bcrypt.min.js"></script>
-  
-  <!-- Charger nos scripts ensuite -->
-  <script src="js/auth-db.js"></script>
-  <script src="js/login.js"></script>
 </head> 
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/stocker/js/service-worker.js")
-          .then((registration) => {
-            console.log("Service Worker enregistré avec succès:", registration);
-          })
-          .catch((error) => {
-            console.error("Échec de l'enregistrement du Service Worker:", error);
-          });
-      });
-    }
-  </script>
-</head>
+
 <body>
   <div class="login-container">
     <div class="login-header">
@@ -99,5 +80,22 @@
       </div>
     </div>
   </div>
+  <script src="js/auth-db.js"></script>
+  <script src="js/login.js"></script>
+  <!-- Service Worker (peut rester dans le head si nécessaire) -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/stocker/js/service-worker.js")
+          .then((registration) => {
+            console.log("Service Worker enregistré avec succès:", registration);
+          })
+          .catch((error) => {
+            console.error("Échec de l'enregistrement du Service Worker:", error);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
