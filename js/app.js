@@ -5,10 +5,9 @@ let qrReader = null;
 let isSubmitting = false;
 let currentAccount = null;
 
-// Configuration PouchDB améliorée
+// Configuration PouchDB
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
-
 
 localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
 
@@ -26,7 +25,7 @@ function updateSortieDate() {
   document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
 }
 
-// === Gestion de la session ===
+// Gestion de la session
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem('currentAccount');
   
@@ -35,7 +34,14 @@ window.addEventListener("DOMContentLoaded", () => {
     return;
   }
   
-  // Mapper le code du compte à un nom lisible
+  // Mise à jour de l'interface utilisateur
+  updateUserInterface();
+  
+  // Chargement des données Excel
+  loadExcelData();
+});
+
+function updateUserInterface() {
   const accountNames = {
     'SCT=E260329': 'SCE Informations Sportives',
     'SCT=E272329': 'SCE Support Rédaction',
@@ -53,21 +59,25 @@ window.addEventListener("DOMContentLoaded", () => {
     'Admin': 'Compte Admin'
   };
   
-  document.getElementById('currentUserLabel').textContent = 
-    accountNames[currentAccount] || currentAccount;
+  const currentServiceName = sessionStorage.getItem('currentServiceName') || accountNames[currentAccount] || currentAccount;
+  document.getElementById('currentUserLabel').textContent = currentServiceName;
+  document.getElementById('axe1').value = currentAccount;
   
-  document.getElementById('axe1').value = currentAccount === 'Invite' ? 'NEUTRE' : currentAccount;
-  loadExcelData();
-});
+  // Afficher le lien admin seulement pour l'administrateur
+  if (currentAccount === 'Admin') {
+    document.getElementById('adminLink').style.display = 'block';
+  }
+}
 
-// === Déconnexion ===
+// Déconnexion
 document.getElementById('logoutBtn').addEventListener('click', () => {
   resetForm();
   sessionStorage.removeItem('currentAccount');
+  sessionStorage.removeItem('currentServiceName');
   window.location.href = 'login.html';
 });
 
-// === Chargement Excel ===
+// Chargement Excel (reste identique)
 function loadExcelData() {
   fetch("modele/stocker_temp.xlsx")
     .then((r) => r.arrayBuffer())
@@ -86,33 +96,19 @@ function loadExcelData() {
       const codes = new Set();
       
       excelData.forEach((row) => {
-        // Pour les désignations
         const designation = row["Désignation:"] || row["Désignation"];
-        if (designation !== undefined && designation !== null) {
-          const designationStr = String(designation).trim();
-          if (designationStr !== "") {
-            designations.add(designationStr);
-          }
-        }
+        if (designation) designations.add(String(designation).trim());
         
-        // Pour les codes produits
         const code = row["Code_Produit"];
-        if (code !== undefined && code !== null) {
-          const codeStr = String(code).trim();
-          if (codeStr !== "") {
-            codes.add(codeStr);
-          }
-        }
+        if (code) codes.add(String(code).trim());
       });
       
-      // Remplir le datalist des désignations
       designations.forEach(designation => {
         const option = document.createElement("option");
         option.value = designation;
         designationList.appendChild(option);
       });
       
-      // Remplir le datalist des codes produits
       codes.forEach(code => {
         const option = document.createElement("option");
         option.value = code;
@@ -121,7 +117,7 @@ function loadExcelData() {
       
       initQRScanner();
       setupEventListeners();
-      resetForm(); // Initialise le formulaire avec la date du jour
+      resetForm();
     })
     .catch((e) => {
       console.error("Erreur chargement Excel :", e);
@@ -129,7 +125,7 @@ function loadExcelData() {
     });
 }
 
-// === Remplissage du formulaire à partir des données Excel ===
+// Remplissage du formulaire (reste identique)
 function fillFormFromExcel(match) {
   const map = {
     "Code_Produit": "code_produit",
@@ -154,44 +150,35 @@ function fillFormFromExcel(match) {
   }
 
   document.getElementById("axe1").value = currentAccount;
-  updateSortieDate(); // Met à jour la date quand on remplit via Excel
+  updateSortieDate();
 }
 
+// Écouteurs d'événements (reste identique)
 function setupEventListeners() {
-  // Écouteur pour le champ code_produit
   document.getElementById("code_produit").addEventListener("input", function() {
     const codeValue = String(this.value).trim().toLowerCase();
     if (codeValue) {
       const match = excelData.find(
         (row) => (row["Code_Produit"] || "").toString().toLowerCase() === codeValue
       );
-      if (match) {
-        fillFormFromExcel(match);
-      } else {
-        updateSortieDate(); // Mise à jour date si saisie manuelle
-      }
+      if (match) fillFormFromExcel(match);
+      else updateSortieDate();
     } else {
-      updateSortieDate(); // Mise à jour date si champ vidé
+      updateSortieDate();
     }
   });
 
-  // Écouteur pour le champ designation
   document.getElementById("designation").addEventListener("input", function() {
     const val = String(this.value).trim().toLowerCase();
     const match = excelData.find(
       (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
     );
-    if (match) {
-      fillFormFromExcel(match);
-    } else {
-      updateSortieDate(); // Mise à jour date si saisie manuelle
-    }
+    if (match) fillFormFromExcel(match);
+    else updateSortieDate();
   });
-
-  // Autres écouteurs existants...
 }
 
-// === Initialisation du scanner QR ===
+// Scanner QR (reste identique)
 function initQRScanner() {
   if (Html5Qrcode.getCameras().then) {
     Html5Qrcode.getCameras()
@@ -205,15 +192,11 @@ function initQRScanner() {
               if (!isSubmitting) {
                 document.getElementById("code_produit").value = text;
                 const product = excelData.find(item => item["Code_Produit"] === text);
-                if (product) {
-                  fillFormFromExcel(product);
-                }
+                if (product) fillFormFromExcel(product);
               }
             },
             (err) => console.warn("QR error", err)
           ).catch((err) => console.error("QR init error", err));
-        } else {
-          console.log("No cameras found");
         }
       })
       .catch(err => console.error("Camera access error:", err));
@@ -226,7 +209,7 @@ function stopQRScanner() {
   }
 }
 
-// === Gestion Photos ===
+// Gestion des photos (reste identique)
 function compresserImage(file, callback) {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -289,26 +272,19 @@ function handleFiles(fileList) {
   });
 }
 
-// Écouteurs pour les boutons photo
-document.getElementById("cameraInput").addEventListener("change", (e) =>
-  handleFiles(e.target.files)
-);
-document.getElementById("galleryInput").addEventListener("change", (e) =>
-  handleFiles(e.target.files)
-);
-document.getElementById("takePhotoBtn").addEventListener("click", () =>
-  document.getElementById("cameraInput").click()
-);
-document.getElementById("chooseGalleryBtn").addEventListener("click", () =>
-  document.getElementById("galleryInput").click()
-);
+// Écouteurs pour les photos (reste identique)
+document.getElementById("cameraInput").addEventListener("change", (e) => handleFiles(e.target.files));
+document.getElementById("galleryInput").addEventListener("change", (e) => handleFiles(e.target.files));
+document.getElementById("takePhotoBtn").addEventListener("click", () => document.getElementById("cameraInput").click());
+document.getElementById("chooseGalleryBtn").addEventListener("click", () => document.getElementById("galleryInput").click());
 
-// === Soumission du formulaire ===
+// Soumission du formulaire
 document.getElementById("stockForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   
   if (!currentAccount) {
     alert("Veuillez vous authentifier avant de soumettre le formulaire");
+    window.location.href = 'login.html';
     return;
   }
   
@@ -356,7 +332,7 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   }
 });
 
-// === Réinitialisation du formulaire ===
+// Réinitialisation
 function resetForm() {
   document.getElementById("stockForm").reset();
   imageFiles = [];
@@ -366,10 +342,9 @@ function resetForm() {
   document.getElementById("designation").value = "";
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("axe2").value = "SUP=SEMPQRLER";
-  updateSortieDate(); // Initialise la date du jour
+  updateSortieDate();
 }
 
-// === Bouton de réinitialisation ===
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (confirm("Voulez-vous vraiment réinitialiser le formulaire ?")) {
     resetForm();
