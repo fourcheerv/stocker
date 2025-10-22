@@ -184,10 +184,21 @@ function setupEventListeners() {
   
   backBtn.addEventListener('click', () => {
     const currentAccount = sessionStorage.getItem('currentAccount');
-    if (currentAccount && currentAccount !== 'Admin') {
-      window.location.href = 'index.html';
+     if (currentAccount) {
+        // Si c'est le compte Bobines, rediriger vers bobines.html
+        if (currentAccount === "BOB329") {
+            window.location.href = "bobines.html";
+        } 
+        // Si c'est Admin, rediriger vers login.html
+        else if (currentAccount === "Admin") {
+            window.location.href = "login.html";
+        } 
+        // Tous les autres comptes vont vers index.html
+        else {
+            window.location.href = "index.html";
+        }
     } else {
-      window.location.href = 'login.html';
+        window.location.href = "login.html";
     }
   });
  
