@@ -180,8 +180,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         try {
             await localDB.put(record);
-            document.getElementById("success").style.display = "block";
-            setTimeout(() => { document.getElementById("success").style.display = "none"; }, 2500);
+            alert("Stock enregistré !");
             resetForm();
         } catch (err) {
             alert("Erreur lors de l'enregistrement.");
