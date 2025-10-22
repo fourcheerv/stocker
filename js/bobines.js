@@ -3,6 +3,15 @@ let qrReader = null;
 let isSubmitting = false;
 let imageFiles = [];
 let currentAccount = null;
+// Fonction pour jouer un bip sonore
+function playBeep() {
+  const beep = document.getElementById("beep-sound");
+  if (beep) {
+    beep.currentTime = 0; // Redémarre le son à chaque déclenchement
+    beep.play().catch((err) => console.warn("Lecture du bip bloquée (autoplay) :", err));
+  }
+}
+
 
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
