@@ -3,15 +3,6 @@ let qrReader = null;
 let isSubmitting = false;
 let imageFiles = [];
 let currentAccount = null;
-// Fonction pour jouer un bip sonore
-function playBeep() {
-  const beep = document.getElementById("beep-sound");
-  if (beep) {
-    beep.currentTime = 0; // Redémarre le son à chaque déclenchement
-    beep.play().catch((err) => console.warn("Lecture du bip bloquée (autoplay) :", err));
-  }
-}
-
 
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
@@ -21,7 +12,16 @@ const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud
 localDB.sync(remoteDB, { live: true, retry: true })
   .on("error", (err) => console.error("Erreur de sync:", err));
 
-// Compression d'image (qualité abaissée à 0.6 pour alléger les fichiers)
+// Fonction bip sonore
+function playBeep() {
+  const beep = document.getElementById("beep-sound");
+  if (beep) {
+    beep.currentTime = 0;
+    beep.play().catch(() => {}); // ignore blocage autoplay
+  }
+}
+
+// Compression image (qualité 0.6)
 function compresserImage(file, callback) {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -32,8 +32,6 @@ function compresserImage(file, callback) {
       canvas.width = maxWidth;
       canvas.height = (img.height / img.width) * maxWidth;
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      // Réduction de qualité pour stabilité sync PouchDB
       canvas.toBlob(callback, "image/jpeg", 0.6);
     };
     img.src = e.target.result;
@@ -41,14 +39,13 @@ function compresserImage(file, callback) {
   reader.readAsDataURL(file);
 }
 
-// Mise à jour du compteur de photos
 function updatePhotoCount() {
   document.getElementById("photoCount").textContent = imageFiles.length;
 }
 
-// Gestion des fichiers photos
-function handleFiles(fileList) {
-  const files = Array.from(fileList);
+// Gestion des photos
+function handleFiles(list) {
+  const files = Array.from(list);
   if (imageFiles.length + files.length > 3) {
     alert("Maximum 3 photos !");
     return;
@@ -56,21 +53,18 @@ function handleFiles(fileList) {
 
   files.forEach((file) => {
     if (!file.type.startsWith("image/")) return;
-
     compresserImage(file, (blob) => {
       imageFiles.push(blob);
       const reader = new FileReader();
       reader.onload = (e) => {
         const wrapper = document.createElement("div");
         wrapper.className = "preview-image";
-
         const img = document.createElement("img");
         img.src = e.target.result;
-
-        const removeBtn = document.createElement("button");
-        removeBtn.className = "remove-button";
-        removeBtn.textContent = "×";
-        removeBtn.onclick = () => {
+        const btn = document.createElement("button");
+        btn.className = "remove-button";
+        btn.textContent = "×";
+        btn.onclick = () => {
           const idx = [...document.getElementById("previewContainer").children].indexOf(wrapper);
           if (idx !== -1) {
             imageFiles.splice(idx, 1);
@@ -78,10 +72,8 @@ function handleFiles(fileList) {
             updatePhotoCount();
           }
         };
-
-        wrapper.appendChild(img);
-        wrapper.appendChild(removeBtn);
-        document.getElementById("previewContainer").appendChild(wrapper);
+        wrapper.append(img, btn);
+        document.getElementById("previewContainer").append(wrapper);
         updatePhotoCount();
       };
       reader.readAsDataURL(blob);
@@ -89,7 +81,7 @@ function handleFiles(fileList) {
   });
 }
 
-// Initialisation du scanner QR
+// QR Scanner
 function initQRScanner() {
   if (!window.Html5Qrcode) return;
   Html5Qrcode.getCameras()
@@ -102,12 +94,13 @@ function initQRScanner() {
           (text) => {
             if (!isSubmitting && /^\d+$/.test(text)) {
               document.getElementById("code_produit").value = text;
+              playBeep(); // bip sur scan cam
             } else if (!isSubmitting && text) {
               alert("Le code scanné doit être uniquement numérique !");
             }
           },
-          () => {}
-        ).catch((err) => console.warn("Erreur de démarrage QR:", err));
+          (err) => {}
+        ).catch((err) => console.warn("QR start error:", err));
       } else {
         document.getElementById("qr-reader").innerHTML = "📷 Caméra non détectée.";
       }
@@ -119,14 +112,14 @@ function stopQRScanner() {
   if (qrReader) qrReader.stop().catch(console.warn);
 }
 
-// Réinitialisation du formulaire
+// Réinitialiser
 function resetForm() {
   document.getElementById("bobinesForm").reset();
   imageFiles = [];
   document.getElementById("previewContainer").innerHTML = "";
   updatePhotoCount();
   document.getElementById("success").style.display = "none";
-  document.getElementById("quantité_consommee").value = "1";
+  document.getElementById("quantite_consommee").value = "1";
 }
 
 // Déconnexion
@@ -135,7 +128,7 @@ function logout() {
   window.location.href = "login.html";
 }
 
-// Initialisation principale
+// Initialisation
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem("currentAccount");
   if (!currentAccount) {
@@ -143,21 +136,17 @@ window.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Configuration utilisateur
   document.getElementById("axe1").value = currentAccount;
-  document.getElementById("quantité_consommee").value = "1";
+  document.getElementById("quantite_consommee").value = "1";
   document.getElementById("currentUserLabel").textContent =
     sessionStorage.getItem("currentServiceName") || currentAccount;
 
-  // Lien admin
   const adminLink = document.getElementById("adminLink");
   adminLink.style.display = "block";
   adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
-
-  // Déconnexion
   document.getElementById("logoutBtn").addEventListener("click", logout);
 
-  // Mode Scan Bluetooth ou Caméra
+  // Sélection du mode
   const modeSelect = document.getElementById("modeScan");
   modeSelect.addEventListener("change", (e) => {
     if (e.target.value === "camera") {
@@ -166,76 +155,79 @@ window.addEventListener("DOMContentLoaded", () => {
     } else {
       document.getElementById("qr-reader").style.display = "none";
       stopQRScanner();
-      alert("Mode Bluetooth activé : scannez avec votre douchette, le code sera saisi automatiquement.");
+      alert("Mode Bluetooth activé : scannez avec la douchette.");
     }
   });
 
-  // Initialisation caméra par défaut
   initQRScanner();
 
-  // Gestion des photos
+  // Photos
   document.getElementById("takePhotoBtn").onclick = () => document.getElementById("cameraInput").click();
   document.getElementById("chooseGalleryBtn").onclick = () => document.getElementById("galleryInput").click();
   document.getElementById("cameraInput").onchange = (e) => handleFiles(e.target.files);
   document.getElementById("galleryInput").onchange = (e) => handleFiles(e.target.files);
 
-  // Soumission du formulaire
+  // Bip mode Bluetooth (saisie rapide)
+  const codeInput = document.getElementById("code_produit");
+  let lastInput = 0;
+  codeInput.addEventListener("input", () => {
+    const now = Date.now();
+    if (now - lastInput < 100) playBeep();
+    lastInput = now;
+  });
+
+  // Soumission
   document.getElementById("bobinesForm").onsubmit = async (e) => {
     e.preventDefault();
 
     const code = document.getElementById("code_produit").value.trim();
     if (!/^\d+$/.test(code)) {
-      alert("Le code produit doit être strictement composé de chiffres !");
-      isSubmitting = false;
+      alert("Le code produit doit être numérique !");
       initQRScanner();
       return;
     }
 
-    const quantité_consommee = parseInt(document.getElementById("quantité_consommee").value) || 1;
+    const quantite_consommee = parseInt(document.getElementById("quantite_consommee").value) || 1;
     const remarques = document.getElementById("remarques").value.trim();
     const axe1 = currentAccount;
 
-    // Conversion des photos
+    // Convertir les photos
     let photos = [];
-    if (imageFiles.length > 0) {
-      for (const file of imageFiles) {
-        const base64 = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        });
-        photos.push(base64);
-      }
+    for (const file of imageFiles) {
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+      photos.push(base64);
     }
 
     const record = {
       _id: new Date().toISOString(),
       type: "bobine",
       code_produit: code,
-      quantité_consommee,
+      quantite_consommee,
       remarques,
       axe1,
       photos
     };
 
-    // Enregistrement dans PouchDB avec gestion d'erreurs
     try {
       const response = await localDB.put(record);
+      if (!response.ok && !response.id) throw new Error("Erreur interne");
 
-      if (!response.ok && !response.id) throw new Error("Erreur interne.");
-      alert("Stock enregistré avec succès !");
+      playBeep(); // bip sauvegarde réussite
+      document.getElementById("success").style.display = "block";
+      alert("Stock enregistré !");
       resetForm();
 
     } catch (err) {
       console.warn("Erreur détectée:", err);
-
       if (err.message.includes("timeout") || err.message.includes("unexpected end of JSON")) {
-        alert("Photo enregistrée, mais PouchDB a signalé une erreur de réception.");
+        alert("Photo enregistrée localement, mais PouchDB a signalé une erreur.");
       } else {
         alert("Erreur réelle lors de l'enregistrement.");
-        console.error("Erreur réelle:", err);
       }
-
     } finally {
       isSubmitting = false;
       if (modeSelect.value === "camera") initQRScanner();
