@@ -125,11 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Bouton retour
-    document.getElementById("backBtn").addEventListener("click", () => {
-        window.location.href = "login.html";
-    });
-
+   
     document.getElementById("axe1").value = currentAccount;
     document.getElementById("quantite_consommee").value = "1";
     document.getElementById("currentUserLabel").textContent =
