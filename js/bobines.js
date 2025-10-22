@@ -195,7 +195,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try {
       await localDB.put(record);
-      document.getElementById("success").style.display = "block";
       alert("Stock enregistré !");
       resetForm();
     } catch (err) {
