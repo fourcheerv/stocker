@@ -161,9 +161,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try {
       const res = await localDB.put(record);
-      if (!res.ok && !res.id) throw new Error();
-      playBeep();
-    
+      if (!res.ok && !res.id) throw new Error();  
       resetForm();
     } catch (err) {
       if (err.name === "invalid_json" || err.name === "unknown_error" || err.message.includes("JSON")) {
