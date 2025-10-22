@@ -105,7 +105,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
   const adminLink = document.getElementById("adminLink");
   adminLink.style.display = "block";
-  adminLink.href = `admin.html?account=${encodeURIComponent(currentAccount)}`;
+  adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
+
 
   document.getElementById("logoutBtn").onclick = () => (sessionStorage.clear(), (window.location.href = "login.html"));
 
