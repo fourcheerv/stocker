@@ -176,69 +176,85 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
     // Soumission du formulaire
-    document.getElementById("bobinesForm").addEventListener("submit", async function(e) {
-        e.preventDefault();
+   document.getElementById("bobinesForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
 
-        if (!currentAccount) {
-            alert("Veuillez vous authentifier avant de soumettre le formulaire");
-            window.location.href = "login.html";
-            return;
+    // 1. Récupérer et valider le code produit (NUMERIQUE uniquement)
+    const code = document.getElementById("code_produit").value.trim();
+    if (!/^\d+$/.test(code)) {
+        alert("Le code produit doit être strictement composé de chiffres !");
+        isSubmitting = false;
+        initQRScanner();
+        return;
+    }
+
+    // 2. Vérifier l'authentification
+    if (!currentAccount) {
+        alert("Veuillez vous authentifier avant de soumettre le formulaire");
+        window.location.href = "login.html";
+        return;
+    }
+
+    // 3. Bloquer la double soumission
+    if (isSubmitting) return;
+    isSubmitting = true;
+    stopQRScanner();
+
+    // 4. Récupérer les autres champs
+    const quantite = parseInt(document.getElementById("quantite").value) || 1;
+    const remarques = document.getElementById("remarques").value.trim();
+    const axe1 = document.getElementById("axe1").value;
+
+    // 5. Validation
+    if (!code || !axe1) {
+        alert("Champ code ou identifiant manquant !");
+        isSubmitting = false;
+        initQRScanner();
+        return;
+    }
+
+    // 6. Gestion des photos
+    let photos = [];
+    if (imageFiles.length > 0) {
+        for (const file of imageFiles) {
+            const base64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+            photos.push(base64);
         }
+    }
 
-        if (isSubmitting) return;
-        isSubmitting = true;
-        stopQRScanner();
+    // 7. Création de l'objet à enregistrer
+    const record = {
+        _id: new Date().toISOString(),
+        type: "bobine",
+        code_produit: code,
+        quantite: quantite,
+        remarques: remarques,
+        axe1: axe1,
+        photos: photos
+    };
 
-        const code = document.getElementById("code_produit").value.trim();
-        const quantite = parseInt(document.getElementById("quantite").value) || 1;
-        const remarques = document.getElementById("remarques").value.trim();
-        const axe1 = document.getElementById("axe1").value;
+    // 8. Tentative d'enregistrement
+    try {
+        await localDB.put(record);
+        document.getElementById("success").style.display = "block";
+        setTimeout(() => {
+            document.getElementById("success").style.display = "none";
+        }, 3000);
+        alert("Stock enregistré !");
+        resetForm();
+    } catch (err) {
+        alert("Erreur lors de l'enregistrement.");
+        console.error(err);
+    } finally {
+        isSubmitting = false;
+        initQRScanner();
+    }
+});
 
-        if (!code || !axe1) {
-            alert("Champ code ou identifiant manquant !");
-            isSubmitting = false;
-            initQRScanner();
-            return;
-        }
-
-        let photos = [];
-        if (imageFiles.length > 0) {
-            for (const file of imageFiles) {
-                const base64 = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(file);
-                });
-                photos.push(base64);
-            }
-        }
-
-        const record = {
-            _id: new Date().toISOString(),
-            type: "bobine",
-            code_produit: code,
-            quantite: quantite,
-            remarques: remarques,
-            axe1: axe1,
-            photos: photos
-        };
-
-        try {
-            await localDB.put(record);
-            document.getElementById("success").style.display = "block";
-            setTimeout(() => {
-                document.getElementById("success").style.display = "none";
-            }, 3000);
-            alert("Stock enregistré !");
-            resetForm();
-        } catch (err) {
-            alert("Erreur lors de l'enregistrement.");
-            console.error(err);
-        } finally {
-            isSubmitting = false;
-            initQRScanner();
-        }
-    });
 
     // Bouton réinitialiser
     document.getElementById("resetBtn").addEventListener("click", (e) => {
