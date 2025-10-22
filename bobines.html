@@ -50,8 +50,9 @@
     <form id="bobinesForm">
         <!-- Code Produit -->
         <div class="field-group">
-            <label for="code_produit">📵 Code Produit (Scan QR):</label>
-            <input type="text" id="code_produit" name="code_produit" autocomplete="off" required/>
+            <label for="code_produit">📵 Code Produit (NUMÉRIQUE uniquement):</label>
+            <input type="number" id="code_produit" name="code_produit" autocomplete="off" required pattern="\d+" inputmode="numeric" min="0" step="1"/>
+
         </div>
 
         <!-- Quantité -->
