@@ -34,7 +34,7 @@ function updatePhotoCount() {
   document.getElementById("photoCount").textContent = imageFiles.length;
 }
 
-// Gestion photos
+// Gestion des photos
 function handleFiles(fileList) {
   const files = Array.from(fileList);
   if (imageFiles.length + files.length > 3) {
@@ -50,10 +50,8 @@ function handleFiles(fileList) {
       reader.onload = (e) => {
         const wrapper = document.createElement("div");
         wrapper.className = "preview-image";
-
         const img = document.createElement("img");
         img.src = e.target.result;
-
         const removeBtn = document.createElement("button");
         removeBtn.className = "remove-button";
         removeBtn.textContent = "×";
@@ -65,7 +63,6 @@ function handleFiles(fileList) {
             updatePhotoCount();
           }
         };
-
         wrapper.appendChild(img);
         wrapper.appendChild(removeBtn);
         document.getElementById("previewContainer").appendChild(wrapper);
@@ -108,7 +105,7 @@ function stopQRScanner() {
   }
 }
 
-// Réinitialisation
+// Réinitialisation du formulaire
 function resetForm() {
   document.getElementById("bobinesForm").reset();
   imageFiles = [];
@@ -118,6 +115,7 @@ function resetForm() {
   document.getElementById("quantité_consommee").value = "1";
 }
 
+// Déconnexion
 function logout() {
   sessionStorage.clear();
   window.location.href = "login.html";
@@ -131,28 +129,40 @@ window.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Informations utilisateur
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("quantité_consommee").value = "1";
   document.getElementById("currentUserLabel").textContent =
     sessionStorage.getItem("currentServiceName") || currentAccount;
 
-  // Lien admin
   const adminLink = document.getElementById("adminLink");
   adminLink.style.display = "block";
   adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
 
-  // Déconnexion
   document.getElementById("logoutBtn").addEventListener("click", logout);
 
-  // Scanner et photos
+  // Gestion du sélecteur de mode
+  const modeSelect = document.getElementById("modeScan");
+  modeSelect.addEventListener("change", (e) => {
+    if (e.target.value === "camera") {
+      document.getElementById("qr-reader").style.display = "block";
+      initQRScanner();
+    } else {
+      document.getElementById("qr-reader").style.display = "none";
+      stopQRScanner();
+      alert("Mode Bluetooth activé : scannez avec votre douchette, le code apparaîtra dans le champ Code Produit.");
+    }
+  });
+
+  // Initialisation caméra par défaut
   initQRScanner();
+
+  // Gestion photos
   document.getElementById("takePhotoBtn").onclick = () => document.getElementById("cameraInput").click();
   document.getElementById("chooseGalleryBtn").onclick = () => document.getElementById("galleryInput").click();
   document.getElementById("cameraInput").onchange = (e) => handleFiles(e.target.files);
   document.getElementById("galleryInput").onchange = (e) => handleFiles(e.target.files);
 
-  // Soumission formulaire
+  // Soumission du formulaire
   document.getElementById("bobinesForm").onsubmit = async (e) => {
     e.preventDefault();
 
@@ -164,7 +174,6 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Déclaration correcte
     const quantité_consommee = parseInt(document.getElementById("quantité_consommee").value) || 1;
     const remarques = document.getElementById("remarques").value.trim();
     const axe1 = currentAccount;
@@ -182,12 +191,11 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Création de l'enregistrement
     const record = {
       _id: new Date().toISOString(),
       type: "bobine",
       code_produit: code,
-      quantité_consommee, // accent conservé
+      quantité_consommee,
       remarques,
       axe1,
       photos
@@ -202,7 +210,7 @@ window.addEventListener("DOMContentLoaded", () => {
       console.error(err);
     } finally {
       isSubmitting = false;
-      initQRScanner();
+      if (modeSelect.value === "camera") initQRScanner();
     }
   };
 });
