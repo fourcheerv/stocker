@@ -14,6 +14,8 @@
     </header>
 
     <div>
+        <div id="qr-reader" style="width: 300px; margin: auto;"></div>
+
         <form id="bobinesForm">
             <label for="codebarre">Code barre (scannez ou saisissez):</label>
             <input type="text" id="codebarre" name="codebarre" autofocus required/><br>
@@ -26,6 +28,10 @@
 
             <button type="submit">Enregistrer</button>
         </form>
+         <button id="voirEnregistrementsBtn" type="button" style="margin: 2rem auto 0 auto;display:block;">
+        Voir mes enregistrements
+        </button>
+
         <div id="success" style="display: none; color: green;">Enregistrement effectué !</div>
     </div>
     <script src="bobines.js"></script>
