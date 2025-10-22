@@ -86,6 +86,9 @@ function initQRScanner() {
         .then((devices) => {
             if (devices && devices.length) {
                 qrReader = new Html5Qrcode("qr-reader");
+                function isNumeric(str) {
+                return /^\d+$/.test(str);
+                }
                 qrReader.start(
                     { facingMode: "environment" },
                     { fps: 10, qrbox: { width: 250, height: 250 } },
