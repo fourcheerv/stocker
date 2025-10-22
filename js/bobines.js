@@ -181,7 +181,7 @@ window.addEventListener("DOMContentLoaded", () => {
             _id: new Date().toISOString(),
             type: "bobine",
             code_produit: code,
-            quantite_consommee: quantite_consommee,
+            quantité_consommee: quantité_consommee,
             remarques,
             axe1,
             photos // <= conserve la photo
