@@ -116,6 +116,8 @@ function resetForm() {
     updatePhotoCount();
     document.getElementById("success").style.display = "none";
     document.getElementById("code_produit").value = "";
+    document.getElementById("quantite").value = "1"; // Réinitialiser à 1
+    document.getElementById("remarques").value = "";
     document.getElementById("axe1").value = currentAccount;
 }
 
@@ -137,6 +139,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Mise à jour de l'interface
     document.getElementById("axe1").value = currentAccount;
+    document.getElementById("quantite").value = "1"; // Valeur par défaut
     document.getElementById("currentUserLabel").textContent = 
         sessionStorage.getItem("currentServiceName") || currentAccount;
 
@@ -184,6 +187,8 @@ window.addEventListener("DOMContentLoaded", () => {
         stopQRScanner();
 
         const code = document.getElementById("code_produit").value.trim();
+        const quantite = parseInt(document.getElementById("quantite").value) || 1;
+        const remarques = document.getElementById("remarques").value.trim();
         const axe1 = document.getElementById("axe1").value;
 
         if (!code || !axe1) {
@@ -209,6 +214,8 @@ window.addEventListener("DOMContentLoaded", () => {
             _id: new Date().toISOString(),
             type: "bobine",
             code_produit: code,
+            quantite: quantite,
+            remarques: remarques,
             axe1: axe1,
             photos: photos
         };
