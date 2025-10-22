@@ -22,21 +22,18 @@
 
 <main>
     <form id="bobinesForm">
-        <div id="qr-reader" style="width: 300px; margin: 12px auto;"></div>
+        <div id="qr-reader" style="width: 280px; margin:0 auto 15px auto;"></div>
         <label for="code_produit">📵 Code Produit (Scan QR):</label>
         <input type="text" id="code_produit" name="code_produit" list="codeProduitList" autocomplete="off" required/>
         <datalist id="codeProduitList"></datalist>
-
         <button type="button" id="takePhotoBtn">Prendre une photo</button>
         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;"/>
         <div id="previewContainer"></div>
-
         <input type="hidden" id="axe1" name="axe1"/>
         <button type="submit">Enregistrer</button>
         <button type="button" id="resetBtn">Réinitialiser</button>
     </form>
-    <div id="success" style="display: none; color: green;">Enregistrement effectué !</div>
-
+    <div id="success" style="display: none; color: green; text-align:center;">Enregistrement effectué !</div>
     <a id="adminLink" style="display: none; margin:2rem auto 0 auto;text-align:center" class="admin-link" href="#">📊 Voir mes enregistrements</a>
 </main>
 <script src="bobines.js"></script>
