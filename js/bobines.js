@@ -12,17 +12,20 @@ const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud
 localDB.sync(remoteDB, { live: true, retry: true })
   .on("error", (err) => console.error("Erreur de sync:", err));
 
-// Compression d'image
+// Compression d'image (qualité abaissée à 0.6 pour alléger les fichiers)
 function compresserImage(file, callback) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = 800;
-      canvas.height = (img.height / img.width) * 800;
+      const maxWidth = 800;
+      canvas.width = maxWidth;
+      canvas.height = (img.height / img.width) * maxWidth;
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(callback, "image/jpeg", 0.7);
+
+      // Réduction de qualité pour stabilité sync PouchDB
+      canvas.toBlob(callback, "image/jpeg", 0.6);
     };
     img.src = e.target.result;
   };
@@ -34,7 +37,7 @@ function updatePhotoCount() {
   document.getElementById("photoCount").textContent = imageFiles.length;
 }
 
-// Gestion des photos
+// Gestion des fichiers photos
 function handleFiles(fileList) {
   const files = Array.from(fileList);
   if (imageFiles.length + files.length > 3) {
@@ -44,14 +47,17 @@ function handleFiles(fileList) {
 
   files.forEach((file) => {
     if (!file.type.startsWith("image/")) return;
+
     compresserImage(file, (blob) => {
       imageFiles.push(blob);
       const reader = new FileReader();
       reader.onload = (e) => {
         const wrapper = document.createElement("div");
         wrapper.className = "preview-image";
+
         const img = document.createElement("img");
         img.src = e.target.result;
+
         const removeBtn = document.createElement("button");
         removeBtn.className = "remove-button";
         removeBtn.textContent = "×";
@@ -63,6 +69,7 @@ function handleFiles(fileList) {
             updatePhotoCount();
           }
         };
+
         wrapper.appendChild(img);
         wrapper.appendChild(removeBtn);
         document.getElementById("previewContainer").appendChild(wrapper);
@@ -73,7 +80,7 @@ function handleFiles(fileList) {
   });
 }
 
-// Scanner QR
+// Initialisation du scanner QR
 function initQRScanner() {
   if (!window.Html5Qrcode) return;
   Html5Qrcode.getCameras()
@@ -91,7 +98,7 @@ function initQRScanner() {
             }
           },
           () => {}
-        ).catch((err) => console.warn("QR start error:", err));
+        ).catch((err) => console.warn("Erreur de démarrage QR:", err));
       } else {
         document.getElementById("qr-reader").innerHTML = "📷 Caméra non détectée.";
       }
@@ -100,9 +107,7 @@ function initQRScanner() {
 }
 
 function stopQRScanner() {
-  if (qrReader) {
-    qrReader.stop().catch(console.warn);
-  }
+  if (qrReader) qrReader.stop().catch(console.warn);
 }
 
 // Réinitialisation du formulaire
@@ -121,7 +126,7 @@ function logout() {
   window.location.href = "login.html";
 }
 
-// Initialisation
+// Initialisation principale
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem("currentAccount");
   if (!currentAccount) {
@@ -129,18 +134,21 @@ window.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // Configuration utilisateur
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("quantité_consommee").value = "1";
   document.getElementById("currentUserLabel").textContent =
     sessionStorage.getItem("currentServiceName") || currentAccount;
 
+  // Lien admin
   const adminLink = document.getElementById("adminLink");
   adminLink.style.display = "block";
   adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
 
+  // Déconnexion
   document.getElementById("logoutBtn").addEventListener("click", logout);
 
-  // Gestion du sélecteur de mode
+  // Mode Scan Bluetooth ou Caméra
   const modeSelect = document.getElementById("modeScan");
   modeSelect.addEventListener("change", (e) => {
     if (e.target.value === "camera") {
@@ -149,14 +157,14 @@ window.addEventListener("DOMContentLoaded", () => {
     } else {
       document.getElementById("qr-reader").style.display = "none";
       stopQRScanner();
-      alert("Mode Bluetooth activé : scannez avec votre douchette, le code apparaîtra dans le champ Code Produit.");
+      alert("Mode Bluetooth activé : scannez avec votre douchette, le code sera saisi automatiquement.");
     }
   });
 
   // Initialisation caméra par défaut
   initQRScanner();
 
-  // Gestion photos
+  // Gestion des photos
   document.getElementById("takePhotoBtn").onclick = () => document.getElementById("cameraInput").click();
   document.getElementById("chooseGalleryBtn").onclick = () => document.getElementById("galleryInput").click();
   document.getElementById("cameraInput").onchange = (e) => handleFiles(e.target.files);
@@ -178,7 +186,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const remarques = document.getElementById("remarques").value.trim();
     const axe1 = currentAccount;
 
-    // Gestion photos
+    // Conversion des photos
     let photos = [];
     if (imageFiles.length > 0) {
       for (const file of imageFiles) {
@@ -201,13 +209,24 @@ window.addEventListener("DOMContentLoaded", () => {
       photos
     };
 
+    // Enregistrement dans PouchDB avec gestion d'erreurs
     try {
-      await localDB.put(record);
-      alert("Stock enregistré !");
+      const response = await localDB.put(record);
+
+      if (!response.ok && !response.id) throw new Error("Erreur interne.");
+      alert("Stock enregistré avec succès !");
       resetForm();
+
     } catch (err) {
-      alert("Erreur lors de l'enregistrement.");
-      console.error(err);
+      console.warn("Erreur détectée:", err);
+
+      if (err.message.includes("timeout") || err.message.includes("unexpected end of JSON")) {
+        alert("Photo enregistrée, mais PouchDB a signalé une erreur de réception.");
+      } else {
+        alert("Erreur réelle lors de l'enregistrement.");
+        console.error("Erreur réelle:", err);
+      }
+
     } finally {
       isSubmitting = false;
       if (modeSelect.value === "camera") initQRScanner();
