@@ -226,6 +226,7 @@ window.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
                 document.getElementById("success").style.display = "none";
             }, 3000);
+            alert("Stock enregistré !");
             resetForm();
         } catch (err) {
             alert("Erreur lors de l'enregistrement.");
