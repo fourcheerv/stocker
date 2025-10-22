@@ -384,7 +384,7 @@ function renderTable() {
       <td>${doc.date_sortie ? formatDateForDisplay(doc.date_sortie) : formatDateForDisplay(doc._id)}</td>
       <td>${doc.code_produit || ''}</td>
       <td class="designation-cell" title="${doc.designation || ''}">${doc.designation || ''}</td>
-      <td>${doc.quantité_consommee || ''}</td>
+      <td>${doc.quantité_consommee ?? doc.quantite_consommee ?? ''}</td>
       <td>${doc.unites || ''}</td>
       <td>${doc.a_commander || ''}</td>
       <td>${doc.magasin || ''}</td>
@@ -623,7 +623,8 @@ async function saveEditedDoc(docId) {
 function formatFieldName(key) {
   const names = {
     code_produit: "Code Produit",
-    quantité_consommee: "Quantité Consommée",
+    quantité_consommee: 'Quantité Consommée',
+    quantite_consommee: 'Quantité Consommée',
     a_commander: "À Commander",
     magasin: "Magasin",
     unites: "Unités",
@@ -645,7 +646,7 @@ function exportToCSV() {
   filteredDocs.forEach(doc => {
     const row = [
       doc.code_produit || '',
-      doc.quantité_consommee || '',
+      doc.quantité_consommee ?? doc.quantite_consommee ?? '',
       doc.axe1 || '',
       doc.axe2 || ''
     ].map(field => {
@@ -894,7 +895,7 @@ function showDetails(docId) {
         <div class="detail-item"><strong>Date:</strong> ${formatDateForDisplay(doc._id)}</div>
         <div class="detail-item"><strong>Code Produit:</strong> ${doc.code_produit || '-'}</div>
         <div class="detail-item"><strong>Désignation:</strong> ${doc.designation || '-'}</div>
-        <div class="detail-item"><strong>Quantité consommée:</strong> ${doc.quantité_consommee || '-'}</div>
+        <div class="detail-item"><strong>Quantité consommée:</strong> ${doc.quantité_consommee ?? doc.quantite_consommee ?? '-'}</div>
         <div class="detail-item"><strong>Unités:</strong> ${doc.unites || '-'}</div>
         <div class="detail-item"><strong>À commander:</strong> ${doc.a_commander || '-'}</div>
         <div class="detail-item"><strong>Remarques:</strong> ${doc.remarques || '-'}</div>
