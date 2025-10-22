@@ -7,35 +7,72 @@
     <link rel="stylesheet" href="css/styles.css"/>
     <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <header>
     <div class="header-content">
-        <h1>Enregistrement Bobines</h1>
+        <h1>📦 Enregistrement Bobines</h1>
         <div class="user-info">
             <span id="currentUserLabel" class="account-info"></span>
-            <button class="logout-btn" id="logoutBtn">Déconnexion</button>
+            <button class="logout-btn" id="logoutBtn">
+                Déconnexion
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </button>
         </div>
     </div>
 </header>
 
 <main>
+    <!-- Scanner QR -->
+    <div id="qr-reader"></div>
+
+    <!-- Section Photo -->
+    <div class="photo-section">
+        <div class="photo-buttons">
+            <button type="button" id="takePhotoBtn">
+                📷 <span>Prendre une photo</span>
+            </button>
+            <button type="button" id="chooseGalleryBtn">
+                🖼️ <span>Choisir depuis la galerie</span>
+            </button>
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none"/>
+            <input type="file" id="galleryInput" accept="image/*" multiple style="display:none"/>
+        </div>
+        <p class="photo-count">Photos ajoutées: <span id="photoCount">0</span>/3</p>
+        <div id="previewContainer" class="preview-container"></div>
+    </div>
+
+    <!-- Formulaire -->
     <form id="bobinesForm">
-        <div id="qr-reader" style="width: 280px; margin:0 auto 15px auto;"></div>
-        <label for="code_produit">📵 Code Produit (Scan QR):</label>
-        <input type="text" id="code_produit" name="code_produit" list="codeProduitList" autocomplete="off" required/>
-        <datalist id="codeProduitList"></datalist>
-        <button type="button" id="takePhotoBtn">Prendre une photo</button>
-        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;"/>
-        <div id="previewContainer"></div>
+        <div class="field-group">
+            <label for="code_produit">📵 Code Produit (Scan QR):</label>
+            <input type="text" id="code_produit" name="code_produit" autocomplete="off" required/>
+        </div>
+
         <input type="hidden" id="axe1" name="axe1"/>
-        <button type="submit">Enregistrer</button>
-        <button type="button" id="resetBtn">Réinitialiser</button>
+
+        <div class="button-group">
+            <button type="submit" id="submitBtn">Enregistrer</button>
+            <button type="button" id="resetBtn">Réinitialiser</button>
+        </div>
     </form>
-    <div id="success" style="display: none; color: green; text-align:center;">Enregistrement effectué !</div>
-    <a id="adminLink" style="display: none; margin:2rem auto 0 auto;text-align:center" class="admin-link" href="#">📊 Voir mes enregistrements</a>
+
+    <div id="success" style="display: none; color: green; text-align:center; margin-top:1rem; padding:10px; background:#e6feed; border-radius:8px;">
+        ✅ Enregistrement effectué !
+    </div>
+
+    <!-- Lien vers admin -->
+    <a id="adminLink" style="display: none;" class="admin-link" href="#">📊 Voir mes enregistrements</a>
 </main>
+
+<footer>
+    <p>&copy; 2025 - Gestion de Stocks</p>
+</footer>
+
 <script src="js/bobines.js"></script>
 </body>
 </html>
