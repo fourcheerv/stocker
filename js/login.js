@@ -1,5 +1,13 @@
 // Configuration des comptes avec mots de passe
 const serviceAccounts = {
+
+  'btn-bobines': {
+        id: 'BOB329',
+        password: 'bobines2025',
+        name: 'Bobines',
+        redirect: 'bobines.html'
+    },
+
   'btn-info-sport': {
     id: 'SCT=E260329',
     password: 'sport2025',

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Enregistrement Bobines</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="css/styles.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+    <header>
+        <h1>Scan Bobine Papier</h1>
+    </header>
+
+    <div>
+        <form id="bobinesForm">
+            <label for="codebarre">Code barre (scannez ou saisissez):</label>
+            <input type="text" id="codebarre" name="codebarre" autofocus required/><br>
+            
+            <div>
+                <button type="button" id="takePhotoBtn">Prendre une photo</button>
+                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;"/>
+                <div id="previewContainer"></div>
+            </div>
+
+            <button type="submit">Enregistrer</button>
+        </form>
+        <div id="success" style="display: none; color: green;">Enregistrement effectué !</div>
+    </div>
+    <script src="bobines.js"></script>
+</body>
+</html>
