@@ -107,8 +107,7 @@ function resetForm() {
     imageFiles = [];
     document.getElementById("previewContainer").innerHTML = "";
     updatePhotoCount();
-    document.getElementById("success").style.display = "none";
-    document.getElementById("quantite_consommee").value = "1";
+    document.getElementById("quantité_consommee").value = "1";
 }
 
 function logout() {
@@ -127,7 +126,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
    
     document.getElementById("axe1").value = currentAccount;
-    document.getElementById("quantite_consommee").value = "1";
+    document.getElementById("quantité_consommee").value = "1";
     document.getElementById("currentUserLabel").textContent =
         sessionStorage.getItem("currentServiceName") || currentAccount;
 
@@ -160,7 +159,7 @@ window.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const quantite_consommee = parseInt(document.getElementById("quantite_consommee").value) || 1;
+        const quantité_consommee = parseInt(document.getElementById("quantité_consommee").value) || 1;
         const remarques = document.getElementById("remarques").value.trim();
         const axe1 = currentAccount;
 
@@ -168,7 +167,7 @@ window.addEventListener("DOMContentLoaded", () => {
             _id: new Date().toISOString(),
             type: "bobine",
             code_produit: code,
-            quantite_consommee: quantite_consommee,
+            quantité_consommee: quantité_consommee,
             remarques,
             axe1,
             photos: []
