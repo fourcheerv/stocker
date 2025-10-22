@@ -163,15 +163,29 @@ window.addEventListener("DOMContentLoaded", () => {
         const remarques = document.getElementById("remarques").value.trim();
         const axe1 = currentAccount;
 
-        const record = {
+        // Gestion des photos
+            let photos = [];
+            if (imageFiles.length > 0) {
+            for (const file of imageFiles) {
+                const base64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+                });
+                photos.push(base64);
+            }
+            }
+
+            // Création de l'objet à enregistrer
+            const record = {
             _id: new Date().toISOString(),
             type: "bobine",
             code_produit: code,
-            quantité_consommee: quantité_consommee,
+            quantite_consommee: quantite_consommee,
             remarques,
             axe1,
-            photos: []
-        };
+            photos // <= conserve la photo
+            };
 
         try {
             await localDB.put(record);
