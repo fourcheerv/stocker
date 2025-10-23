@@ -2,13 +2,12 @@ let qrReader = null;
 let isSubmitting = false;
 let imageFiles = [];
 let currentAccount = null;
-let produitsScannes = []; // Liste en session (affichage + vérif unicité)
+let produitsScannes = []; // Liste session
 
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
 localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
 
-// Bip
 function playBeep() {
   const beep = document.getElementById("beep-sound");
   if (beep) {
@@ -17,7 +16,6 @@ function playBeep() {
   }
 }
 
-// Compression d'image
 function compresserImage(file, callback) {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -70,14 +68,12 @@ function handleFiles(list) {
   });
 }
 
-// Affichage + logique scan QR/Bluetooth
 function enregistreScan(code) {
-  // Champ produit toujours affiché/agrandi sur scan
   document.getElementById("code_produit").value = code;
   document.getElementById("code_produit").classList.add("grandScan");
   setTimeout(()=>document.getElementById("code_produit").classList.remove("grandScan"), 900);
 
-  // Si code déjà scanné
+  // Un seul scan/insert par code (pour la session, donc aussi dans la base)
   const existant = produitsScannes.find(item => item.code === code);
   if (existant) {
     showScanInfo("Code barre déjà scanné, pas de mise à jour", "warning");
@@ -85,13 +81,10 @@ function enregistreScan(code) {
     return;
   }
 
-  // Quantité initiale à 1
   let quantite = 1;
-
   produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
   majAffichageListeScans();
 
-  // Enregistrement unique
   const record = JSON.parse(JSON.stringify({
     _id: new Date().toISOString(),
     type: "bobine",
@@ -127,7 +120,6 @@ function showScanInfo(msg, type="success") {
   setTimeout(() => { el.style.display = "none"; }, 2000);
 }
 
-// Scan caméra
 function initQRScanner() {
   if (!window.Html5Qrcode) return;
   Html5Qrcode.getCameras().then((devices) => {
@@ -172,12 +164,10 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("logoutBtn").onclick = () =>
     (sessionStorage.clear(), (window.location.href = "login.html"));
 
-  // Scan mode
   const mode = document.getElementById("modeScan");
   mode.onchange = (e) => (e.target.value === "camera" ? initQRScanner() : stopQRScanner());
   initQRScanner();
 
-  // Photos
   document.getElementById("takePhotoBtn").onclick = () =>
     document.getElementById("cameraInput").click();
   document.getElementById("chooseGalleryBtn").onclick = () =>
@@ -185,7 +175,6 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("cameraInput").onchange = (e) => handleFiles(e.target.files);
   document.getElementById("galleryInput").onchange = (e) => handleFiles(e.target.files);
 
-  // Bip Bluetooth (scan douchette)
   const codeField = document.getElementById("code_produit");
   let last = 0;
   codeField.addEventListener("input", () => {
@@ -197,12 +186,11 @@ window.addEventListener("DOMContentLoaded", () => {
     last = now;
   });
 
-  // Soumission formulaire (pour saisie manuelle hors scan)
   document.getElementById("bobinesForm").onsubmit = async (e) => {
     e.preventDefault();
     const code = document.getElementById("code_produit").value.trim();
     if (!/^\d+$/.test(code)) return alert("Code non valide !");
-    const quantité_consommee = parseInt(document.getElementById("quantité_consommee").value) || 1;
+    const quantité_consommee = 1; // toujours 1
     const remarques = document.getElementById("remarques").value.trim();
     const axe1 = currentAccount;
 
@@ -216,7 +204,6 @@ window.addEventListener("DOMContentLoaded", () => {
       photos.push(base64);
     }
 
-    // Si code déjà scanné en session
     if (produitsScannes.find(item => item.code === code)) {
       showScanInfo("Code barre déjà scanné, pas de mise à jour", "warning");
       playBeep();
