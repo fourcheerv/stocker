@@ -75,13 +75,16 @@ function initQRScanner() {
   Html5Qrcode.getCameras().then((devices) => {
     if (devices.length) {
       qrReader = new Html5Qrcode("qr-reader");
-      qrReader.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
+      qrReader.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
         (text) => {
           if (/^\d+$/.test(text)) {
             document.getElementById("code_produit").value = text;
             playBeep();
           }
-        });
+        }
+      );
     }
   });
 }
@@ -94,34 +97,38 @@ function resetForm() {
   imageFiles = [];
   document.getElementById("previewContainer").innerHTML = "";
   updatePhotoCount();
-  document.getElementById("success").style.display = "none";
+  const successDiv = document.getElementById("success");
+  if (successDiv) successDiv.style.display = "none";
 }
 
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem("currentAccount");
   if (!currentAccount) return (window.location.href = "login.html");
   document.getElementById("axe1").value = currentAccount;
-  document.getElementById("currentUserLabel").textContent = sessionStorage.getItem("currentServiceName") || currentAccount;
+  document.getElementById("currentUserLabel").textContent =
+    sessionStorage.getItem("currentServiceName") || currentAccount;
 
   const adminLink = document.getElementById("adminLink");
   adminLink.style.display = "block";
   adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
 
-
-  document.getElementById("logoutBtn").onclick = () => (sessionStorage.clear(), (window.location.href = "login.html"));
+  document.getElementById("logoutBtn").onclick = () =>
+    (sessionStorage.clear(), (window.location.href = "login.html"));
 
   // Scan mode
   const mode = document.getElementById("modeScan");
-  mode.onchange = (e) => e.target.value === "camera" ? initQRScanner() : stopQRScanner();
+  mode.onchange = (e) => (e.target.value === "camera" ? initQRScanner() : stopQRScanner());
   initQRScanner();
 
   // Photos
-  document.getElementById("takePhotoBtn").onclick = () => document.getElementById("cameraInput").click();
-  document.getElementById("chooseGalleryBtn").onclick = () => document.getElementById("galleryInput").click();
+  document.getElementById("takePhotoBtn").onclick = () =>
+    document.getElementById("cameraInput").click();
+  document.getElementById("chooseGalleryBtn").onclick = () =>
+    document.getElementById("galleryInput").click();
   document.getElementById("cameraInput").onchange = (e) => handleFiles(e.target.files);
   document.getElementById("galleryInput").onchange = (e) => handleFiles(e.target.files);
 
-  // Bip Bluetooth
+  // Bip Bluetooth (scan)
   const codeField = document.getElementById("code_produit");
   let last = 0;
   codeField.addEventListener("input", () => {
@@ -149,26 +156,32 @@ window.addEventListener("DOMContentLoaded", () => {
       photos.push(base64);
     }
 
-    const record = JSON.parse(JSON.stringify({
-      _id: new Date().toISOString(),
-      type: "bobine",
-      code_produit: code,
-      quantité_consommee,
-      remarques,
-      axe1,
-      photos,
-    }));
+    const record = JSON.parse(
+      JSON.stringify({
+        _id: new Date().toISOString(),
+        type: "bobine",
+        code_produit: code,
+        quantité_consommee,
+        remarques,
+        axe1,
+        photos,
+      })
+    );
 
     try {
       const res = await localDB.put(record);
-      if (!res.ok && !res.id) throw new Error();  
+      if (!res.ok && !res.id) throw new Error();
       resetForm();
     } catch (err) {
-      if (err.name === "invalid_json" || err.name === "unknown_error" || err.message.includes("JSON")) {
-        console.warn("Accent JSON contourné : enregistré localement.");
-        alert("Enregistrement réussi localement malgré erreur distante (accent).");
+      if (
+        err.name === "invalid_json" ||
+        err.name === "unknown_error" ||
+        (err.message && err.message.includes("JSON"))
+      ) {
+        alert(
+          "Enregistrement réussi localement malgré erreur distante (accent)."
+        );
       } else {
-        console.error(err);
         alert("Erreur lors de l'enregistrement !");
       }
     }
