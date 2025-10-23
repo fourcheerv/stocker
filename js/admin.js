@@ -950,6 +950,7 @@ function getAxe1Label(axe1) {
     'SCT=E860329': 'Cantine',
     'SCT=E359329': 'SMI',
     'Admin': 'Compte Admin'
+    "BOB329": "Bobines"
   };
   
   return mappings[axe1] || axe1;
