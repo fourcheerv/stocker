@@ -187,14 +187,32 @@ function getAxe1Label(axe1) {
 
 function setupEventListeners() {
   // Ajout du bouton Retour
+  if (!document.getElementById('backBtn')) {
   const backBtn = document.createElement('button');
   backBtn.id = 'backBtn';
   backBtn.textContent = 'Retour';
   backBtn.className = 'btn-secondary';
   backBtn.style.marginRight = '10px';
-  
+
   const logoutBtn = document.getElementById('logoutBtn');
   logoutBtn.parentNode.insertBefore(backBtn, logoutBtn);
+
+  backBtn.addEventListener('click', () => {
+    const currentAccount = sessionStorage.getItem('currentAccount');
+    if (currentAccount) {
+      if (currentAccount === "BOB329") {
+        window.location.href = "bobines.html";
+      } else if (currentAccount === "Admin") {
+        window.location.href = "login.html";
+      } else {
+        window.location.href = "index.html";
+      }
+    } else {
+      window.location.href = "login.html";
+    }
+  });
+}
+
   
   backBtn.addEventListener('click', () => {
     const currentAccount = sessionStorage.getItem('currentAccount');
