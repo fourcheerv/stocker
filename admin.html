@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/admin.css">
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <header>
@@ -29,6 +30,7 @@
     <div class="admin-controls">
       <button id="exportBtn">Exporter en CSV</button>
       <button id="exportToDriveBtn" class="btn-primary">Exporter en CSV et envoi par mail</button>
+     <button id="exportXlsxBobinesBtn" class="btn-primary" style="display:none">Exporter Excel & mail (bobines)</button>
       <button id="syncBtn">Synchroniser avec le serveur</button>
       <button id="deleteSelectedBtn" class="danger">Supprimer la sélection</button>
       <button id="deleteAllBtn" class="danger">Tout supprimer</button>
