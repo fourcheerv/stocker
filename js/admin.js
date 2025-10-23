@@ -949,7 +949,7 @@ function getAxe1Label(axe1) {
     'SCT=E772329': 'Coursiers',
     'SCT=E860329': 'Cantine',
     'SCT=E359329': 'SMI',
-    'Admin': 'Compte Admin'
+    'Admin': 'Compte Admin',
     "BOB329": "Bobines"
   };
   
