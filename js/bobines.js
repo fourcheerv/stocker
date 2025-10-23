@@ -2,8 +2,7 @@ let qrReader = null;
 let isSubmitting = false;
 let imageFiles = [];
 let currentAccount = null;
-// Liste session scans (pour affichage utilisateur)
-let produitsScannes = [];
+let produitsScannes = []; // Liste en session (affichage + vérif unicité)
 
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
@@ -71,17 +70,28 @@ function handleFiles(list) {
   });
 }
 
-// Enregistrement scan + affichage
+// Affichage + logique scan QR/Bluetooth
 function enregistreScan(code) {
-  // Incrémente auto la quantité
-  let quantite = parseInt(document.getElementById("quantité_consommee").value) || 0;
-  quantite++;
-  document.getElementById("quantité_consommee").value = quantite;
+  // Champ produit toujours affiché/agrandi sur scan
   document.getElementById("code_produit").value = code;
-  // Effet champ agrandi
   document.getElementById("code_produit").classList.add("grandScan");
   setTimeout(()=>document.getElementById("code_produit").classList.remove("grandScan"), 900);
-  // Ajout PouchDB/affichage local
+
+  // Si code déjà scanné
+  const existant = produitsScannes.find(item => item.code === code);
+  if (existant) {
+    showScanInfo("Code barre déjà scanné, pas de mise à jour", "warning");
+    playBeep();
+    return;
+  }
+
+  // Quantité initiale à 1
+  let quantite = 1;
+
+  produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
+  majAffichageListeScans();
+
+  // Enregistrement unique
   const record = JSON.parse(JSON.stringify({
     _id: new Date().toISOString(),
     type: "bobine",
@@ -92,8 +102,9 @@ function enregistreScan(code) {
     photos: [],
   }));
   localDB.put(record).catch(console.warn);
-  produitsScannes.push({ code, quantite, ts: record._id });
-  majAffichageListeScans();
+
+  showScanInfo("Nouveau code-barres enregistré", "success");
+  playBeep();
 }
 
 function majAffichageListeScans() {
@@ -107,7 +118,16 @@ function majAffichageListeScans() {
   });
 }
 
-// Scanner QR (scan caméra)
+function showScanInfo(msg, type="success") {
+  const el = document.getElementById("scan-info");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = type === "success" ? "#27ae60" : "#e67e22";
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 2000);
+}
+
+// Scan caméra
 function initQRScanner() {
   if (!window.Html5Qrcode) return;
   Html5Qrcode.getCameras().then((devices) => {
@@ -119,7 +139,6 @@ function initQRScanner() {
         (text) => {
           if (/^\d+$/.test(text)) {
             enregistreScan(text);
-            playBeep();
           }
         }
       );
@@ -174,15 +193,13 @@ window.addEventListener("DOMContentLoaded", () => {
     const now = Date.now();
     if (now - last < 100 && /^\d+$/.test(code)) {
       enregistreScan(code);
-      playBeep();
     }
     last = now;
   });
 
-  // Soumission formulaire manuelle (pas utilisée pour le scan instantané)
+  // Soumission formulaire (pour saisie manuelle hors scan)
   document.getElementById("bobinesForm").onsubmit = async (e) => {
     e.preventDefault();
-    // code laissé possible pour saisie manuelle
     const code = document.getElementById("code_produit").value.trim();
     if (!/^\d+$/.test(code)) return alert("Code non valide !");
     const quantité_consommee = parseInt(document.getElementById("quantité_consommee").value) || 1;
@@ -198,6 +215,16 @@ window.addEventListener("DOMContentLoaded", () => {
       });
       photos.push(base64);
     }
+
+    // Si code déjà scanné en session
+    if (produitsScannes.find(item => item.code === code)) {
+      showScanInfo("Code barre déjà scanné, pas de mise à jour", "warning");
+      playBeep();
+      return;
+    }
+
+    produitsScannes.push({ code, quantite: quantité_consommee, ts: new Date().toISOString() });
+    majAffichageListeScans();
 
     const record = JSON.parse(
       JSON.stringify({
