@@ -1021,7 +1021,7 @@ async function exportAndSendXlsxBobines() {
     ];
 
     const rawMessage = [
-      `To: sebastien.pokorski@estrepublicain.fr`,
+      `To: ervachats@ervmedia.fr`,
       `Subject: Export Excel Bobines ${dateStr}`,
       'MIME-Version: 1.0',
       `Content-Type: multipart/mixed; boundary="${boundary}"`,
