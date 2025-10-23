@@ -229,7 +229,7 @@ window.addEventListener("DOMContentLoaded", () => {
       } catch (err) {
         alert("Erreur lors de la mise à jour !");
       }
-      playBeep();
+      
       return;
     }
 
