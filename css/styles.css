@@ -593,3 +593,27 @@ header h1 {
     font-size: 1rem;
   }
 }
+#code_produit.grandScan {
+  font-size: 1.7em;
+  height: 2.2em;
+  width: 80%;
+  text-align: center;
+  background: #e9f6ff;
+  border: 2px solid #1177bb;
+  transition: all 0.2s;
+}
+
+#scan-list {
+  border: 1px solid #dbe7f9;
+  background: #f5fbff;
+  border-radius: 10px;
+  padding: 10px 18px;
+  margin-bottom: 25px;
+  box-shadow: 0 1px 6px rgba(0,61,102,0.08);
+}
+
+#scan-list ul {
+  list-style: disc inside;
+  margin-top: 8px;
+}
+

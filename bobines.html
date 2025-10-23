@@ -34,6 +34,12 @@
     <!-- QR Reader -->
     <div id="qr-reader" style="width:300px;margin:18px auto;"></div>
 
+    <!-- Liste produits scannés -->
+    <div id="scan-list" style="margin:1em 0;">
+      <strong>Derniers produits scannés :</strong>
+      <ul id="scanListUl" style="font-size:1.2em"></ul>
+    </div>
+
     <!-- Photos -->
     <div class="photo-section">
       <div class="photo-buttons">
@@ -46,7 +52,7 @@
       <div id="previewContainer" class="preview-container"></div>
     </div>
 
-    <!-- Formulaire -->
+    <!-- Formulaire principal -->
     <form id="bobinesForm">
       <div class="field-group">
         <label for="code_produit">Code Produit :</label>
@@ -71,7 +77,7 @@
       </div>
     </form>
 
-<div id="success" style="display:none;color:green;text-align:center;margin-top:1rem;">✅ Enregistrement effectué !</div>
+    <div id="success" style="display:none;color:green;text-align:center;margin-top:1rem;">✅ Enregistrement effectué !</div>
 
     <a id="adminLink" href="#" class="admin-link" style="display:none;">📊 Voir les enregistrements</a>
   </main>

@@ -2,6 +2,8 @@ let qrReader = null;
 let isSubmitting = false;
 let imageFiles = [];
 let currentAccount = null;
+// Liste session scans (pour affichage utilisateur)
+let produitsScannes = [];
 
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
@@ -69,7 +71,43 @@ function handleFiles(list) {
   });
 }
 
-// Scanner QR
+// Enregistrement scan + affichage
+function enregistreScan(code) {
+  // Incrémente auto la quantité
+  let quantite = parseInt(document.getElementById("quantité_consommee").value) || 0;
+  quantite++;
+  document.getElementById("quantité_consommee").value = quantite;
+  document.getElementById("code_produit").value = code;
+  // Effet champ agrandi
+  document.getElementById("code_produit").classList.add("grandScan");
+  setTimeout(()=>document.getElementById("code_produit").classList.remove("grandScan"), 900);
+  // Ajout PouchDB/affichage local
+  const record = JSON.parse(JSON.stringify({
+    _id: new Date().toISOString(),
+    type: "bobine",
+    code_produit: code,
+    quantité_consommee: quantite,
+    remarques: "",
+    axe1: currentAccount,
+    photos: [],
+  }));
+  localDB.put(record).catch(console.warn);
+  produitsScannes.push({ code, quantite, ts: record._id });
+  majAffichageListeScans();
+}
+
+function majAffichageListeScans() {
+  const ul = document.getElementById("scanListUl");
+  if (!ul) return;
+  ul.innerHTML = "";
+  produitsScannes.slice(-10).reverse().forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = `Produit ${item.code} — Quantité : ${item.quantite}`;
+    ul.appendChild(li);
+  });
+}
+
+// Scanner QR (scan caméra)
 function initQRScanner() {
   if (!window.Html5Qrcode) return;
   Html5Qrcode.getCameras().then((devices) => {
@@ -80,7 +118,7 @@ function initQRScanner() {
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (text) => {
           if (/^\d+$/.test(text)) {
-            document.getElementById("code_produit").value = text;
+            enregistreScan(text);
             playBeep();
           }
         }
@@ -128,18 +166,23 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("cameraInput").onchange = (e) => handleFiles(e.target.files);
   document.getElementById("galleryInput").onchange = (e) => handleFiles(e.target.files);
 
-  // Bip Bluetooth (scan)
+  // Bip Bluetooth (scan douchette)
   const codeField = document.getElementById("code_produit");
   let last = 0;
   codeField.addEventListener("input", () => {
+    const code = codeField.value.trim();
     const now = Date.now();
-    if (now - last < 100) playBeep();
+    if (now - last < 100 && /^\d+$/.test(code)) {
+      enregistreScan(code);
+      playBeep();
+    }
     last = now;
   });
 
-  // Enregistrement
+  // Soumission formulaire manuelle (pas utilisée pour le scan instantané)
   document.getElementById("bobinesForm").onsubmit = async (e) => {
     e.preventDefault();
+    // code laissé possible pour saisie manuelle
     const code = document.getElementById("code_produit").value.trim();
     if (!/^\d+$/.test(code)) return alert("Code non valide !");
     const quantité_consommee = parseInt(document.getElementById("quantité_consommee").value) || 1;
