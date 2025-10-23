@@ -79,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Masquer/montrer le bouton selon le profil
   if (currentAccount === 'BOB329') {
     document.getElementById('exportXlsxBobinesBtn').style.display = '';
+    document.getElementById('exportToDriveBtn').style.display = 'hidden';
   }
   document.getElementById('dateFilter').value = today.toISOString().split('T')[0];
   initAdmin();
