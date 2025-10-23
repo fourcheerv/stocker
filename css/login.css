@@ -216,6 +216,7 @@ body {
 .account-btn:nth-child(12) { background-color: #7f8c8d; }
 .account-btn:nth-child(13) { background-color: #27ae60; }
 .account-btn:nth-child(14) { background-color: #27ae80; }
+.account-btn:nth-child(14) { background-color: #5e1284; }
 
 
 .account-btn span {
