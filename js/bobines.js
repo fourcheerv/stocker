@@ -95,7 +95,7 @@ function enregistreScan(code) {
   }));
   localDB.put(record).catch(console.warn);
 
-  showScanInfo("Nouveau code-barres enregistré", "success");
+  showScanInfo("Nouveau code-barres enregistré ✅", "success");
   playBeep();
 }
 
@@ -116,7 +116,7 @@ function showScanInfo(msg, type="success") {
   el.textContent = msg;
   el.style.color = type === "success" ? "#27ae60" : "#e67e22";
   el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 2000);
+  setTimeout(() => { el.style.display = "none"; }, 2600);
 }
 
 function initQRScanner() {
@@ -203,13 +203,10 @@ window.addEventListener("DOMContentLoaded", () => {
       photos.push(base64);
     }
 
-    // Cherche si le code existe déjà côté localDB
-    let existingKey = null;
+    // Mise à jour si déjà scanné, sinon création
     const existing = produitsScannes.find(item => item.code === code);
     if (existing) {
-      // Mise à jour de l'entrée existante dans la base (on prend le + récent en session, mais idéalement on pourrait rechercher dans la base avec un index code+user)
       try {
-        // Cherche doc par code (filtre en localDB);
         const docs = await localDB.allDocs({ include_docs: true });
         let toUpdate = docs.rows.find(row =>
           row.doc &&
@@ -217,23 +214,23 @@ window.addEventListener("DOMContentLoaded", () => {
           row.doc.axe1 === currentAccount
         );
         if (toUpdate) {
-          // Met à jour remarques et/ou photos
           toUpdate.doc.remarques = remarques;
           toUpdate.doc.quantité_consommee = quantité_consommee;
           if (photos.length > 0) toUpdate.doc.photos = photos;
           await localDB.put(toUpdate.doc);
-          showScanInfo("Mise à jour enregistrée", "success");
+          showScanInfo("Votre modification a bien été enregistrée ✅", "success");
+          resetForm();
         } else {
-          showScanInfo("Aucune entrée existante à mettre à jour !", "warning");
+          showScanInfo("Aucune entrée trouvée à mettre à jour !", "warning");
         }
       } catch (err) {
-        alert("Erreur lors de la mise à jour !");
+        showScanInfo("Erreur lors de la mise à jour !", "warning");
       }
-      
+      playBeep();
       return;
     }
 
-    // Nouvelle entrée (scan jamais fait côté session)
+    // Si création
     produitsScannes.push({ code, quantite: quantité_consommee, ts: new Date().toISOString() });
     majAffichageListeScans();
 
@@ -252,6 +249,7 @@ window.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await localDB.put(record);
       if (!res.ok && !res.id) throw new Error();
+      showScanInfo("Nouveau code-barres enregistré ✅", "success");
       resetForm();
     } catch (err) {
       if (
@@ -263,7 +261,7 @@ window.addEventListener("DOMContentLoaded", () => {
           "Enregistrement réussi localement malgré erreur distante (accent)."
         );
       } else {
-        alert("Erreur lors de l'enregistrement !");
+        showScanInfo("Erreur lors de l'enregistrement !", "warning");
       }
     }
   };
