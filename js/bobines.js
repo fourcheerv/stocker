@@ -116,7 +116,7 @@ function showScanInfo(msg, type="success") {
   el.textContent = msg;
   el.style.color = type === "success" ? "#27ae60" : "#e67e22";
   el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 2600);
+  setTimeout(() => { el.style.display = "none"; }, 5200);
 }
 
 function initQRScanner() {
