@@ -74,14 +74,20 @@ function formatDateForDisplay(isoString) {
 
 // Initialisation
 document.addEventListener("DOMContentLoaded", () => {
-  const today = new Date();
   const currentAccount = sessionStorage.getItem('currentAccount');
-  // Masquer/montrer le bouton selon le profil
+
+  // Bobines : cacher CSV/mail standard, afficher bouton Excel
   if (currentAccount === 'BOB329') {
+    document.getElementById('exportBtn').style.display = 'none';
+    document.getElementById('exportToDriveBtn').style.display = 'none';
     document.getElementById('exportXlsxBobinesBtn').style.display = '';
-    document.getElementById('exportToDriveBtn').style.display = 'hidden';
+  } else {
+    // Afficher CSV/mail, cacher le bouton Excel bobines
+    document.getElementById('exportBtn').style.display = '';
+    document.getElementById('exportToDriveBtn').style.display = '';
+    document.getElementById('exportXlsxBobinesBtn').style.display = 'none';
   }
-  document.getElementById('dateFilter').value = today.toISOString().split('T')[0];
+  document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
   initAdmin();
 });
 
