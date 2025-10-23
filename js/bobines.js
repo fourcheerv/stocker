@@ -2,7 +2,7 @@ let qrReader = null;
 let isSubmitting = false;
 let imageFiles = [];
 let currentAccount = null;
-let produitsScannes = []; // Liste session (affiché)
+let produitsScannes = []; // cache pour affichage rapide, pas bloquant
 
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
@@ -71,32 +71,38 @@ function handleFiles(list) {
 function enregistreScan(code) {
   document.getElementById("code_produit").value = code;
   document.getElementById("code_produit").classList.add("grandScan");
-  setTimeout(()=>document.getElementById("code_produit").classList.remove("grandScan"), 900);
+  setTimeout(() => document.getElementById("code_produit").classList.remove("grandScan"), 900);
 
-  const existant = produitsScannes.find(item => item.code === code);
-  if (existant) {
-    showScanInfo("Code barre déjà scanné, pas de mise à jour", "warning");
-    playBeep();
-    return;
-  }
+  // Vérifie d'abord dans la base (ne se base pas sur la session !)
+  localDB.allDocs({ include_docs: true }).then((docs) => {
+    const existant = docs.rows.find(row =>
+      row.doc &&
+      row.doc.code_produit === code &&
+      row.doc.axe1 === currentAccount
+    );
+    if (existant) {
+      showScanInfo("Code barre déjà scanné, pas de mise à jour", "warning");
+      playBeep();
+    } else {
+      let quantite = 1;
+      produitsScannes.push({ code, quantite, ts: new Date().toISOString() }); // pour l'affichage rapide
+      majAffichageListeScans();
 
-  let quantite = 1;
-  produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
-  majAffichageListeScans();
-
-  const record = JSON.parse(JSON.stringify({
-    _id: new Date().toISOString(),
-    type: "bobine",
-    code_produit: code,
-    quantité_consommee: quantite,
-    remarques: "",
-    axe1: currentAccount,
-    photos: [],
-  }));
-  localDB.put(record).catch(console.warn);
-
-  showScanInfo("Nouveau code-barres enregistré ✅", "success");
-  playBeep();
+      const record = JSON.parse(JSON.stringify({
+        _id: new Date().toISOString(),
+        type: "bobine",
+        code_produit: code,
+        quantité_consommee: quantite,
+        remarques: "",
+        axe1: currentAccount,
+        photos: [],
+      }));
+      localDB.put(record).then(() => {
+        showScanInfo("Nouveau code-barres enregistré ✅", "success");
+        playBeep();
+      }).catch(console.warn);
+    }
+  });
 }
 
 function majAffichageListeScans() {
@@ -110,13 +116,13 @@ function majAffichageListeScans() {
   });
 }
 
-function showScanInfo(msg, type="success") {
+function showScanInfo(msg, type = "success") {
   const el = document.getElementById("scan-info");
   if (!el) return;
   el.textContent = msg;
   el.style.color = type === "success" ? "#27ae60" : "#e67e22";
   el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 5200);
+  setTimeout(() => { el.style.display = "none"; }, 2600);
 }
 
 function initQRScanner() {
@@ -203,34 +209,35 @@ window.addEventListener("DOMContentLoaded", () => {
       photos.push(base64);
     }
 
-    // Mise à jour si déjà scanné, sinon création
-    const existing = produitsScannes.find(item => item.code === code);
-    if (existing) {
-      try {
-        const docs = await localDB.allDocs({ include_docs: true });
-        let toUpdate = docs.rows.find(row =>
-          row.doc &&
-          row.doc.code_produit === code &&
-          row.doc.axe1 === currentAccount
-        );
-        if (toUpdate) {
-          toUpdate.doc.remarques = remarques;
-          toUpdate.doc.quantité_consommee = quantité_consommee;
-          if (photos.length > 0) toUpdate.doc.photos = photos;
-          await localDB.put(toUpdate.doc);
-          showScanInfo("Votre modification a bien été enregistrée ✅", "success");
-          resetForm();
-        } else {
-          showScanInfo("Aucune entrée trouvée à mettre à jour !", "warning");
-        }
-      } catch (err) {
-        showScanInfo("Erreur lors de la mise à jour !", "warning");
+    // Cherche doc EXISTANT même après retour navigation, par code+user
+    let updated = false;
+    try {
+      const docs = await localDB.allDocs({ include_docs: true });
+      let toUpdate = docs.rows.find(row =>
+        row.doc &&
+        row.doc.code_produit === code &&
+        row.doc.axe1 === currentAccount
+      );
+      if (toUpdate) {
+        toUpdate.doc.remarques = remarques;
+        toUpdate.doc.quantité_consommee = quantité_consommee;
+        if (photos.length > 0) toUpdate.doc.photos = photos;
+        await localDB.put(toUpdate.doc);
+        showScanInfo("Votre modification a bien été enregistrée ✅", "success");
+        updated = true;
+        resetForm();
       }
+    } catch (err) {
+      showScanInfo("Erreur lors de la mise à jour !", "warning");
+      playBeep();
+      return;
+    }
+    if (updated) {
       playBeep();
       return;
     }
 
-    // Si création
+    // Réellement nouveauté (aucune doc existante)
     produitsScannes.push({ code, quantite: quantité_consommee, ts: new Date().toISOString() });
     majAffichageListeScans();
 
