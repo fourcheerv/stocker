@@ -1,45 +1,12 @@
-// Variables globales
 let qrReader = null;
 let isSubmitting = false;
 let imageFiles = [];
 let currentAccount = null;
-let produitsScannes = []; // cache pour affichage rapide, pas bloquant
+let produitsScannes = [];
 
-// Configuration PouchDB
 const localDB = new PouchDB("stocks");
-let remoteDB = null;
-
-// Initialisation de la connexion distante avec session
-function setupRemoteDB() {
-  remoteDB = new PouchDB("https://couchdb.monproprecloud.fr/stocks", {
-    fetch: (url, opts) => {
-      opts.credentials = "include";
-      return PouchDB.fetch(url, opts);
-    }
-  });
-  
-  localDB.sync(remoteDB, { live: true, retry: true })
-    .on("error", (err) => {
-      console.error("Erreur de synchronisation:", err);
-      if (err.status === 401) {
-        alert("Session expirée, veuillez vous reconnecter");
-        window.location.href = 'login.html';
-      }
-    });
-}
-
-function logout() {
-  fetch("https://couchdb.monproprecloud.fr/_session", {
-    method: "DELETE",
-    credentials: "include"
-  }).then(() => {
-    sessionStorage.clear();
-    window.location.href = 'login.html';
-  }).catch(() => {
-    sessionStorage.clear();
-    window.location.href = 'login.html';
-  });
-}
+const remoteDB = new PouchDB("https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks");
+localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
 
 function playBeep() {
   const beep = document.getElementById("beep-sound");
@@ -72,11 +39,8 @@ function updatePhotoCount() {
 
 function handleFiles(list) {
   const files = Array.from(list);
-  if (imageFiles.length + files.length > 3) {
-    return alert("Maximum 3 photos !");
-  }
-
-  files.forEach(file => {
+  if (imageFiles.length + files.length > 3) return alert("Maximum 3 photos !");
+  files.forEach((file) => {
     if (!file.type.startsWith("image/")) return;
     compresserImage(file, (blob) => {
       imageFiles.push(blob);
@@ -88,9 +52,9 @@ function handleFiles(list) {
         img.src = e.target.result;
         const btn = document.createElement("button");
         btn.className = "remove-button";
-        btn.textContent = "x";
+        btn.textContent = "×";
         btn.onclick = () => {
-          const idx = [...wrap.parentNode.children].appOf(wrap);
+          const idx = [...wrap.parentNode.children].indexOf(wrap);
           imageFiles.splice(idx, 1);
           wrap.remove();
           updatePhotoCount();
@@ -105,45 +69,39 @@ function handleFiles(list) {
 }
 
 function enregistreScan(code) {
-  document.getElementById("codeproduit").value = code;
-  document.getElementById("codeproduit").classList.add("grandScan");
-  setTimeout(() => {
-    document.getElementById("codeproduit").classList.remove("grandScan");
-  }, 900);
+  document.getElementById("code_produit").value = code;
+  document.getElementById("code_produit").classList.add("grandScan");
+  setTimeout(() => document.getElementById("code_produit").classList.remove("grandScan"), 900);
 
-  // Vérifie d'abord dans la base (ne se base pas sur la session !)
-  localDB.allDocs({ include_docs: true })
-    .then(docs => {
-      const existant = docs.rows.find(row => 
-        row.doc && 
-        row.doc.codeproduit === code && 
-        row.doc.axe1 === currentAccount
-      );
+  localDB.allDocs({ include_docs: true }).then((docs) => {
+    const existant = docs.rows.find(row =>
+      row.doc &&
+      row.doc.code_produit === code &&
+      row.doc.axe1 === currentAccount
+    );
+    if (existant) {
+      showScanInfo("Code barre déjà scanné, pas de mise à jour", "warning");
+      playBeep();
+    } else {
+      let quantite = 1;
+      produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
+      majAffichageListeScans();
 
-      if (existant) {
-        showScanInfo("Code barre déjà scanné, pas de mise à jour", "warning");
+      const record = JSON.parse(JSON.stringify({
+        _id: new Date().toISOString(),
+        type: "bobine",
+        code_produit: code,
+        quantité_consommee: quantite,
+        remarques: "",
+        axe1: currentAccount,
+        photos: [],
+      }));
+      localDB.put(record).then(() => {
+        showScanInfo("Nouveau code-barres enregistré ✅", "success");
         playBeep();
-      } else {
-        let quantite = 1;
-        produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
-        majAffichageListeScans();
-
-        const record = JSON.parse(JSON.stringify({
-          _id: new Date().toISOString(),
-          type: "bobine",
-          codeproduit: code,
-          quantitconsommee: quantite,
-          remarques: "",
-          axe1: currentAccount,
-          photos: []
-        }));
-
-        localDB.put(record).then(() => {
-          showScanInfo("Nouveau code-barres enregistré ✓", "success");
-          playBeep();
-        }).catch(console.warn);
-      }
-    });
+      }).catch(console.warn);
+    }
+  });
 }
 
 function majAffichageListeScans() {
@@ -152,7 +110,7 @@ function majAffichageListeScans() {
   ul.innerHTML = "";
   produitsScannes.slice(-10).reverse().forEach(item => {
     const li = document.createElement("li");
-    li.textContent = `Produit: ${item.code} | Quantité: ${item.quantite}`;
+    li.textContent = `Produit ${item.code} — Quantité : ${item.quantite}`;
     ul.appendChild(li);
   });
 }
@@ -168,14 +126,14 @@ function showScanInfo(msg, type = "success") {
 
 function initQRScanner() {
   if (!window.Html5Qrcode) return;
-  Html5Qrcode.getCameras().then(devices => {
+  Html5Qrcode.getCameras().then((devices) => {
     if (devices.length) {
       qrReader = new Html5Qrcode("qr-reader");
       qrReader.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (text) => {
-          if (/^\d{13}$/.test(text)) {
+          if (/^\d+$/.test(text)) {
             enregistreScan(text);
           }
         }
@@ -183,11 +141,8 @@ function initQRScanner() {
     }
   });
 }
-
 function stopQRScanner() {
-  if (qrReader) {
-    qrReader.stop().catch(() => {});
-  }
+  if (qrReader) qrReader.stop().catch(() => {});
 }
 
 function resetForm() {
@@ -199,62 +154,55 @@ function resetForm() {
   if (successDiv) successDiv.style.display = "none";
 }
 
-// Initialisation
 window.addEventListener("DOMContentLoaded", () => {
-  currentAccount = sessionStorage.getItem('currentAccount');
-  const authenticated = sessionStorage.getItem('authenticated');
-
-  if (!currentAccount || !authenticated) {
-    return window.location.href = 'login2.html';
-  }
-
-  setupRemoteDB();
-  
+  currentAccount = sessionStorage.getItem("currentAccount");
+  if (!currentAccount) return (window.location.href = "login.html");
   document.getElementById("axe1").value = currentAccount;
-  document.getElementById('currentUserLabel').textContent = 
-    sessionStorage.getItem('currentServiceName') || currentAccount;
+  document.getElementById("currentUserLabel").textContent =
+    sessionStorage.getItem("currentServiceName") || currentAccount;
 
-  const adminLink = document.getElementById('adminLink');
-  adminLink.style.display = 'block';
+  const adminLink = document.getElementById("adminLink");
+  adminLink.style.display = "block";
   adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
 
-  document.getElementById('logoutBtn').onclick = logout;
+  document.getElementById("logoutBtn").onclick = () =>
+    (sessionStorage.clear(), (window.location.href = "login.html"));
 
   const mode = document.getElementById("modeScan");
-  mode.onchange = (e) => {
-    e.target.value === "camera" ? initQRScanner() : stopQRScanner();
-  };
-
+  mode.onchange = (e) => (e.target.value === "camera" ? initQRScanner() : stopQRScanner());
   initQRScanner();
 
-  document.getElementById("takePhotoBtn").onclick = () => document.getElementById("cameraInput").click();
-  document.getElementById("chooseGalleryBtn").onclick = () => document.getElementById("galleryInput").click();
+  document.getElementById("takePhotoBtn").onclick = () =>
+    document.getElementById("cameraInput").click();
+  document.getElementById("chooseGalleryBtn").onclick = () =>
+    document.getElementById("galleryInput").click();
   document.getElementById("cameraInput").onchange = (e) => handleFiles(e.target.files);
   document.getElementById("galleryInput").onchange = (e) => handleFiles(e.target.files);
 
-  const codeField = document.getElementById("codeproduit");
-  let last = 0;
-  codeField.addEventListener("input", () => {
-    const code = codeField.value.trim();
-    const now = Date.now();
-    if (now - last > 100 && /^\d{13}$/.test(code)) {
-      enregistreScan(code);
-      last = now;
+  const codeField = document.getElementById("code_produit");
+  // Correction : Uniquement déclenche sur Enter
+  codeField.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      const code = codeField.value.trim();
+      if (/^\d+$/.test(code)) {
+        enregistreScan(code);
+        codeField.value = ""; // Efface le champ après
+      }
+      e.preventDefault();
     }
   });
 
   document.getElementById("bobinesForm").onsubmit = async (e) => {
     e.preventDefault();
-    const code = document.getElementById("codeproduit").value.trim();
-    if (!/^\d{13}$/.test(code)) return alert("Code non valide !");
-
-    const quantitconsommee = 1;
+    const code = document.getElementById("code_produit").value.trim();
+    if (!/^\d+$/.test(code)) return alert("Code non valide !");
+    const quantité_consommee = 1;
     const remarques = document.getElementById("remarques").value.trim();
     const axe1 = currentAccount;
-    const photos = [];
 
+    const photos = [];
     for (const f of imageFiles) {
-      const base64 = await new Promise(ok => {
+      const base64 = await new Promise((ok) => {
         const r = new FileReader();
         r.onload = () => ok(r.result);
         r.readAsDataURL(f);
@@ -265,18 +213,17 @@ window.addEventListener("DOMContentLoaded", () => {
     let updated = false;
     try {
       const docs = await localDB.allDocs({ include_docs: true });
-      let toUpdate = docs.rows.find(row => 
-        row.doc && 
-        row.doc.codeproduit === code && 
+      let toUpdate = docs.rows.find(row =>
+        row.doc &&
+        row.doc.code_produit === code &&
         row.doc.axe1 === currentAccount
       );
-
       if (toUpdate) {
         toUpdate.doc.remarques = remarques;
-        toUpdate.doc.quantitconsommee = quantitconsommee;
+        toUpdate.doc.quantité_consommee = quantité_consommee;
         if (photos.length > 0) toUpdate.doc.photos = photos;
         await localDB.put(toUpdate.doc);
-        showScanInfo("Votre modification a bien été enregistrée ✓", "success");
+        showScanInfo("Votre modification a bien été enregistrée ✅", "success");
         updated = true;
         resetForm();
       }
@@ -285,33 +232,40 @@ window.addEventListener("DOMContentLoaded", () => {
       playBeep();
       return;
     }
-
     if (updated) {
       playBeep();
       return;
     }
 
-    produitsScannes.push({ code, quantite: quantitconsommee, ts: new Date().toISOString() });
+    produitsScannes.push({ code, quantite: quantité_consommee, ts: new Date().toISOString() });
     majAffichageListeScans();
 
-    const record = JSON.parse(JSON.stringify({
-      _id: new Date().toISOString(),
-      type: "bobine",
-      codeproduit: code,
-      quantitconsommee,
-      remarques,
-      axe1,
-      photos
-    }));
+    const record = JSON.parse(
+      JSON.stringify({
+        _id: new Date().toISOString(),
+        type: "bobine",
+        code_produit: code,
+        quantité_consommee,
+        remarques,
+        axe1,
+        photos,
+      })
+    );
 
     try {
       const res = await localDB.put(record);
-      if (!res.ok || !res.id) throw new Error();
-      showScanInfo("Nouveau code-barres enregistré ✓", "success");
+      if (!res.ok && !res.id) throw new Error();
+      showScanInfo("Nouveau code-barres enregistré ✅", "success");
       resetForm();
     } catch (err) {
-      if (err.name === "invalid_json" || err.name === "unknown_error" || err.message.includes("JSON")) {
-        alert("Enregistrement réussi localement malgré erreur distante (accent).");
+      if (
+        err.name === "invalid_json" ||
+        err.name === "unknown_error" ||
+        (err.message && err.message.includes("JSON"))
+      ) {
+        alert(
+          "Enregistrement réussi localement malgré erreur distante (accent)."
+        );
       } else {
         showScanInfo("Erreur lors de l'enregistrement !", "warning");
       }
