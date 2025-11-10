@@ -74,7 +74,7 @@ function logout() {
 }
 
 // Gestion de la session au chargement
-indow.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener("DOMContentLoaded", async () => {
   currentAccount = sessionStorage.getItem('currentAccount');
   const authenticated = sessionStorage.getItem('authenticated');
   
