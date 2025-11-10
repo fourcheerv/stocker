@@ -90,7 +90,7 @@ function handleFiles(list) {
         btn.className = "remove-button";
         btn.textContent = "x";
         btn.onclick = () => {
-          const idx = [...wrap.parentNode.children].indexOf(wrap);
+          const idx = [...wrap.parentNode.children].appOf(wrap);
           imageFiles.splice(idx, 1);
           wrap.remove();
           updatePhotoCount();

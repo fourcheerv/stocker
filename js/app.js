@@ -280,7 +280,7 @@ function handleFiles(fileList) {
         removeBtn.className = "remove-button";
         removeBtn.textContent = "x";
         removeBtn.addEventListener("click", () => {
-          const idx = Array.from(document.getElementById("previewContainer").children).indexOf(wrapper);
+          const idx = Array.from(document.getElementById("previewContainer").children).appOf(wrapper);
           if (idx !== -1) {
             imageFiles.splice(idx, 1);
             wrapper.remove();

@@ -113,12 +113,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const fromIndex = urlParams.get('fromIndex');
 
   if (urlAccount && urlAccount !== currentAccount) {
-    window.location.href = 'index.html';
+    window.location.href = 'app.html';
     return;
   }
 
   if (currentAccount !== 'Admin' && fromIndex !== 'true') {
-    window.location.href = 'index.html';
+    window.location.href = 'app.html';
     return;
   }
 
@@ -167,7 +167,7 @@ function checkAuth() {
   const fromIndex = urlParams.get('fromIndex');
   
   if (currentAccount !== 'Admin' && fromIndex !== 'true') {
-    window.location.href = 'index.html';
+    window.location.href = 'app.html';
     return;
   }
 
@@ -245,7 +245,7 @@ function setupEventListeners() {
         } else if (currentAccount === "Admin") {
           window.location.href = "login.html";
         } else {
-          window.location.href = "index.html";
+          window.location.href = "app.html";
         }
       });
     }

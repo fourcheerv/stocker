@@ -8,67 +8,67 @@ const serviceAccounts = {
   'btn-info-sport': {
     id: 'SCT=E260329',
     name: 'SCE Informations Sportives',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-support-redac': {
     id: 'SCT=E272329',
     name: 'SCE Support Rédaction',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-maintenance': {
     id: 'SCT=E370329',
     name: 'Maintenance Machines',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-rotatives': {
     id: 'SCT=E382329',
     name: 'Service Rotatives',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-expedition': {
     id: 'SCT=E390329',
     name: 'Service Expédition',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-direction': {
     id: 'SCT=E500329',
     name: 'Direction Vente',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-ler': {
     id: 'SCT=E730329',
     name: 'LER Charges',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-travaux': {
     id: 'SCT=E736329',
     name: 'Service Travaux',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-achats': {
     id: 'SCT=E760329',
     name: 'Achats Magasin',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-manutention': {
     id: 'SCT=E762329',
     name: 'Manutention Papier',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-coursiers': {
     id: 'SCT=E772329',
     name: 'Coursiers',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-cantine': {
     id: 'SCT=E860329',
     name: 'Cantine',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-smi': {
     id: 'SCT=E359329',
     name: 'SMI',
-    redirect: 'index.html'
+    redirect: 'app.html'
   },
   'btn-admin': {
     id: 'Admin',
@@ -90,11 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Animation des boutons
   const accountButtons = document.querySelectorAll('.account-btn');
   setTimeout(() => {
-    accountButtons.forEach((btn, index) => {
+    accountButtons.forEach((btn, app) => {
       setTimeout(() => {
         btn.style.opacity = '1';
         btn.style.transform = 'translateY(0)';
-      }, 100 * index);
+      }, 100 * app);
     });
   }, 500);
   
