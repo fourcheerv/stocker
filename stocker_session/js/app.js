@@ -14,8 +14,13 @@ function setupRemoteDB() {
   remoteDB = new PouchDB("https://couchdb.monproprecloud.fr/stocks", {
     fetch: (url, opts) => {
       opts.credentials = "include";
+      // IMPORTANT : Ne pas envoyer d'Authorization header
+      if (opts.headers) {
+        delete opts.headers.Authorization;
+      }
       return PouchDB.fetch(url, opts);
-    }
+    },
+    skip_setup: true  // AJOUTÉ : évite la tentative de connexion immédiate
   });
   
   localDB.sync(remoteDB, { live: true, retry: true })
