@@ -2,7 +2,7 @@ let qrReader = null;
 let isSubmitting = false;
 let imageFiles = [];
 let currentAccount = null;
-let produitsScannes = [];
+let produitsScannes = []; // cache pour affichage rapide, pas bloquant
 
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks");
@@ -73,6 +73,7 @@ function enregistreScan(code) {
   document.getElementById("code_produit").classList.add("grandScan");
   setTimeout(() => document.getElementById("code_produit").classList.remove("grandScan"), 900);
 
+  // Vérifie d'abord dans la base (ne se base pas sur la session !)
   localDB.allDocs({ include_docs: true }).then((docs) => {
     const existant = docs.rows.find(row =>
       row.doc &&
@@ -84,7 +85,7 @@ function enregistreScan(code) {
       playBeep();
     } else {
       let quantite = 1;
-      produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
+      produitsScannes.push({ code, quantite, ts: new Date().toISOString() }); // pour l'affichage rapide
       majAffichageListeScans();
 
       const record = JSON.parse(JSON.stringify({
@@ -180,16 +181,14 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("galleryInput").onchange = (e) => handleFiles(e.target.files);
 
   const codeField = document.getElementById("code_produit");
-  // Correction : Uniquement déclenche sur Enter
-  codeField.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-      const code = codeField.value.trim();
-      if (/^\d+$/.test(code)) {
-        enregistreScan(code);
-        codeField.value = ""; // Efface le champ après
-      }
-      e.preventDefault();
+  let last = 0;
+  codeField.addEventListener("input", () => {
+    const code = codeField.value.trim();
+    const now = Date.now();
+    if (now - last < 100 && /^\d+$/.test(code)) {
+      enregistreScan(code);
     }
+    last = now;
   });
 
   document.getElementById("bobinesForm").onsubmit = async (e) => {
@@ -210,6 +209,7 @@ window.addEventListener("DOMContentLoaded", () => {
       photos.push(base64);
     }
 
+    // Cherche doc EXISTANT même après retour navigation, par code+user
     let updated = false;
     try {
       const docs = await localDB.allDocs({ include_docs: true });
@@ -237,6 +237,7 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Réellement nouveauté (aucune doc existante)
     produitsScannes.push({ code, quantite: quantité_consommee, ts: new Date().toISOString() });
     majAffichageListeScans();
 
