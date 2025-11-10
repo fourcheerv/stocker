@@ -7,9 +7,26 @@ let currentAccount = null;
 
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
-const remoteDB = new PouchDB("https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks");
+let remoteDB = null;
 
-localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
+// Initialisation de la connexion distante avec session
+function setupRemoteDB() {
+  remoteDB = new PouchDB("https://couchdb.monproprecloud.fr/stocks", {
+    fetch: (url, opts) => {
+      opts.credentials = "include";
+      return PouchDB.fetch(url, opts);
+    }
+  });
+  
+  localDB.sync(remoteDB, { live: true, retry: true })
+    .on("error", (err) => {
+      console.error("Erreur de synchronisation:", err);
+      if (err.status === 401) {
+        alert("Session expirée, veuillez vous reconnecter");
+        window.location.href = 'login.html';
+      }
+    });
+}
 
 // Fonction utilitaire pour la date
 function formatToDateTimeLocal(date) {
@@ -27,11 +44,9 @@ function updateSortieDate() {
 
 function updateUIForUserRole() {
   const adminLink = document.getElementById('adminLink');
-  
   if (currentAccount) {
     adminLink.style.display = 'block';
     adminLink.textContent = '📊 Voir mes enregistrements';
-    // Ajout du paramètre fromIndex
     adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
   } else {
     adminLink.style.display = 'none';
@@ -39,48 +54,57 @@ function updateUIForUserRole() {
 }
 
 function logout() {
-  sessionStorage.removeItem('currentAccount');
-  sessionStorage.removeItem('currentServiceName');
-  window.location.href = 'login.html';
+  fetch("https://couchdb.monproprecloud.fr/_session", {
+    method: "DELETE",
+    credentials: "include"
+  }).then(() => {
+    sessionStorage.removeItem('currentAccount');
+    sessionStorage.removeItem('currentServiceName');
+    sessionStorage.removeItem('authenticated');
+    window.location.href = 'login.html';
+  }).catch(() => {
+    sessionStorage.clear();
+    window.location.href = 'login.html';
+  });
 }
 
-// Gestion de la session
+// Gestion de la session au chargement
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem('currentAccount');
+  const authenticated = sessionStorage.getItem('authenticated');
   
-  if (!currentAccount) {
+  if (!currentAccount || !authenticated) {
     window.location.href = 'login.html';
     return;
   }
   
-  // Mise à jour de l'interface utilisateur
-  updateUIForUserRole(); 
+  setupRemoteDB();
+  updateUIForUserRole();
   updateUserInterface();
-  
-  // Chargement des données Excel
   loadExcelData();
 
- const logoutBtn = document.getElementById('logoutBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', logout);
-  }  
+  }
 });
 
 function updateUserInterface() {
-  const currentAccount = sessionStorage.getItem('currentAccount');
-  const currentServiceName = sessionStorage.getItem('currentServiceName') || getAxe1Label(currentAccount);
+  const currentServiceName = sessionStorage.getItem('currentServiceName');
+  if (currentServiceName) {
+    const userLabel = document.getElementById('currentUserLabel');
+    if (userLabel) {
+      userLabel.textContent = currentServiceName;
+    }
+  }
   
-  // Mettre à jour l'affichage du compte
-  document.getElementById('currentUserLabel').textContent = currentServiceName;
-  
-  // Afficher le bouton Retour seulement si nécessaire
   const backBtn = document.getElementById('backBtn');
   if (backBtn) {
     backBtn.style.display = currentAccount === 'Admin' ? 'none' : 'block';
   }
 }
 
-// Chargement Excel (reste identique)
+// Chargement Excel
 function loadExcelData() {
   fetch("modele/stocker_temp.xlsx")
     .then((r) => r.arrayBuffer())
@@ -101,7 +125,6 @@ function loadExcelData() {
       excelData.forEach((row) => {
         const designation = row["Désignation:"] || row["Désignation"];
         if (designation) designations.add(String(designation).trim());
-        
         const code = row["Code_Produit"];
         if (code) codes.add(String(code).trim());
       });
@@ -128,7 +151,7 @@ function loadExcelData() {
     });
 }
 
-// Remplissage du formulaire (reste identique)
+// Remplissage du formulaire
 function fillFormFromExcel(match) {
   const map = {
     "Code_Produit": "code_produit",
@@ -156,7 +179,7 @@ function fillFormFromExcel(match) {
   updateSortieDate();
 }
 
-// Écouteurs d'événements (reste identique)
+// Écouteurs d'événements
 function setupEventListeners() {
   document.getElementById("code_produit").addEventListener("input", function() {
     const codeValue = String(this.value).trim().toLowerCase();
@@ -181,9 +204,9 @@ function setupEventListeners() {
   });
 }
 
-// Scanner QR (reste identique)
+// Scanner QR
 function initQRScanner() {
-  if (Html5Qrcode.getCameras().then) {
+  if (typeof Html5Qrcode !== 'undefined' && Html5Qrcode.getCameras) {
     Html5Qrcode.getCameras()
       .then(devices => {
         if (devices && devices.length) {
@@ -212,7 +235,7 @@ function stopQRScanner() {
   }
 }
 
-// Gestion des photos (reste identique)
+// Gestion des photos
 function compresserImage(file, callback) {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -230,7 +253,10 @@ function compresserImage(file, callback) {
 }
 
 function updatePhotoCount() {
-  document.getElementById("photoCount").textContent = imageFiles.length;
+  const photoCountEl = document.getElementById("photoCount");
+  if (photoCountEl) {
+    photoCountEl.textContent = imageFiles.length;
+  }
 }
 
 function handleFiles(fileList) {
@@ -248,14 +274,11 @@ function handleFiles(fileList) {
       reader.onload = (e) => {
         const wrapper = document.createElement("div");
         wrapper.className = "preview-image";
-
         const img = document.createElement("img");
         img.src = e.target.result;
-
         const removeBtn = document.createElement("button");
         removeBtn.className = "remove-button";
         removeBtn.textContent = "x";
-
         removeBtn.addEventListener("click", () => {
           const idx = Array.from(document.getElementById("previewContainer").children).indexOf(wrapper);
           if (idx !== -1) {
@@ -264,7 +287,6 @@ function handleFiles(fileList) {
             updatePhotoCount();
           }
         });
-
         wrapper.appendChild(img);
         wrapper.appendChild(removeBtn);
         document.getElementById("previewContainer").appendChild(wrapper);
@@ -275,81 +297,104 @@ function handleFiles(fileList) {
   });
 }
 
-// Écouteurs pour les photos (reste identique)
-document.getElementById("cameraInput").addEventListener("change", (e) => handleFiles(e.target.files));
-document.getElementById("galleryInput").addEventListener("change", (e) => handleFiles(e.target.files));
-document.getElementById("takePhotoBtn").addEventListener("click", () => document.getElementById("cameraInput").click());
-document.getElementById("chooseGalleryBtn").addEventListener("click", () => document.getElementById("galleryInput").click());
+// Écouteurs pour les photos
+const cameraInput = document.getElementById("cameraInput");
+const galleryInput = document.getElementById("galleryInput");
+const takePhotoBtn = document.getElementById("takePhotoBtn");
+const chooseGalleryBtn = document.getElementById("chooseGalleryBtn");
+
+if (cameraInput) cameraInput.addEventListener("change", (e) => handleFiles(e.target.files));
+if (galleryInput) galleryInput.addEventListener("change", (e) => handleFiles(e.target.files));
+if (takePhotoBtn) takePhotoBtn.addEventListener("click", () => cameraInput.click());
+if (chooseGalleryBtn) chooseGalleryBtn.addEventListener("click", () => galleryInput.click());
 
 // Soumission du formulaire
-document.getElementById("stockForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  
-  if (!currentAccount) {
-    alert("Veuillez vous authentifier avant de soumettre le formulaire");
-    window.location.href = 'login.html';
-    return;
-  }
-  
-  if (isSubmitting) return;
-  isSubmitting = true;
+const stockForm = document.getElementById("stockForm");
+if (stockForm) {
+  stockForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  stopQRScanner();
+    if (!currentAccount) {
+      alert("Veuillez vous authentifier avant de soumettre le formulaire");
+      window.location.href = 'login.html';
+      return;
+    }
 
-  const form = new FormData(e.target);
-  const record = { 
-    _id: new Date().toISOString(), 
-    photos: [],
-    axe1: currentAccount
-  };
+    if (isSubmitting) return;
+    isSubmitting = true;
 
-  form.forEach((val, key) => {
-    if (key === "date_sortie") {
-      record[key] = new Date(val).toISOString();
-    } else {
-      record[key] = val;
+    stopQRScanner();
+
+    const form = new FormData(e.target);
+    const record = { 
+      _id: new Date().toISOString(), 
+      photos: [],
+      axe1: currentAccount
+    };
+
+    form.forEach((val, key) => {
+      if (key === "date_sortie") {
+        record[key] = new Date(val).toISOString();
+      } else {
+        record[key] = val;
+      }
+    });
+
+    if (imageFiles.length > 0) {
+      for (const file of imageFiles) {
+        const base64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+        record.photos.push(base64);
+      }
+    }
+
+    try {
+      await localDB.put(record);
+      alert("Stock enregistré !");
+      resetForm();
+    } catch (err) {
+      console.error("Erreur sauvegarde :", err);
+      alert("Erreur lors de l'enregistrement.");
+    } finally {
+      isSubmitting = false;
+      initQRScanner();
     }
   });
-
-  if (imageFiles.length > 0) {
-    for (const file of imageFiles) {
-      const base64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-      });
-      record.photos.push(base64);
-    }
-  }
-
-  try {
-    await localDB.put(record);
-    alert("Stock enregistré !");
-    resetForm();
-  } catch (err) {
-    console.error("Erreur sauvegarde :", err);
-    alert("Erreur lors de l'enregistrement.");
-  } finally {
-    isSubmitting = false;
-    initQRScanner();
-  }
-});
+}
 
 // Réinitialisation
 function resetForm() {
-  document.getElementById("stockForm").reset();
+  const stockForm = document.getElementById("stockForm");
+  if (stockForm) {
+    stockForm.reset();
+  }
   imageFiles = [];
-  document.getElementById("previewContainer").innerHTML = "";
+  const previewContainer = document.getElementById("previewContainer");
+  if (previewContainer) {
+    previewContainer.innerHTML = "";
+  }
   updatePhotoCount();
-  document.getElementById("code_produit").value = "";
-  document.getElementById("designation").value = "";
-  document.getElementById("axe1").value = currentAccount;
-  document.getElementById("axe2").value = "SUP=SEMPQRLER";
+  
+  const codeProduit = document.getElementById("code_produit");
+  const designation = document.getElementById("designation");
+  const axe1 = document.getElementById("axe1");
+  const axe2 = document.getElementById("axe2");
+  
+  if (codeProduit) codeProduit.value = "";
+  if (designation) designation.value = "";
+  if (axe1) axe1.value = currentAccount;
+  if (axe2) axe2.value = "SUP=SEMPQRLER";
   updateSortieDate();
 }
 
-document.getElementById("resetBtn").addEventListener("click", () => {
-  if (confirm("Voulez-vous vraiment réinitialiser le formulaire ?")) {
-    resetForm();
-  }
-});
+const resetBtn = document.getElementById("resetBtn");
+if (resetBtn) {
+  resetBtn.addEventListener("click", () => {
+    if (confirm("Voulez-vous vraiment réinitialiser le formulaire ?")) {
+      resetForm();
+    }
+  });
+}
