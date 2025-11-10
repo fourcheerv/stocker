@@ -205,7 +205,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const authenticated = sessionStorage.getItem('authenticated');
 
   if (!currentAccount || !authenticated) {
-    return window.location.href = 'login2.html';
+    return window.location.href = 'login.html';
   }
 
   setupRemoteDB();
