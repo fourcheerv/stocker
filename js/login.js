@@ -3,72 +3,72 @@ const serviceAccounts = {
   'btn-bobines': {
     id: 'BOB329',
     name: 'Bobines',
-    redirect: 'bobines2.html'
+    redirect: 'bobines.html'
   },
   'btn-info-sport': {
     id: 'SCT=E260329',
     name: 'SCE Informations Sportives',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-support-redac': {
     id: 'SCT=E272329',
     name: 'SCE Support Rédaction',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-maintenance': {
     id: 'SCT=E370329',
     name: 'Maintenance Machines',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-rotatives': {
     id: 'SCT=E382329',
     name: 'Service Rotatives',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-expedition': {
     id: 'SCT=E390329',
     name: 'Service Expédition',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-direction': {
     id: 'SCT=E500329',
     name: 'Direction Vente',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-ler': {
     id: 'SCT=E730329',
     name: 'LER Charges',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-travaux': {
     id: 'SCT=E736329',
     name: 'Service Travaux',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-achats': {
     id: 'SCT=E760329',
     name: 'Achats Magasin',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-manutention': {
     id: 'SCT=E762329',
     name: 'Manutention Papier',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-coursiers': {
     id: 'SCT=E772329',
     name: 'Coursiers',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-cantine': {
     id: 'SCT=E860329',
     name: 'Cantine',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-smi': {
     id: 'SCT=E359329',
     name: 'SMI',
-    redirect: 'index2.html'
+    redirect: 'index.html'
   },
   'btn-admin': {
     id: 'Admin',
@@ -90,11 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Animation des boutons
   const accountButtons = document.querySelectorAll('.account-btn');
   setTimeout(() => {
-    accountButtons.forEach((btn, index2) => {
+    accountButtons.forEach((btn, index) => {
       setTimeout(() => {
         btn.style.opacity = '1';
         btn.style.transform = 'translateY(0)';
-      }, 100 * index2);
+      }, 100 * index);
     });
   }, 500);
   
