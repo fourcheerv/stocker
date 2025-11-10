@@ -20,15 +20,24 @@ function setupRemoteDB() {
       }
       return PouchDB.fetch(url, opts);
     },
-    skip_setup: true  // AJOUTÉ : évite la tentative de connexion immédiate
+    skip_setup: true
   });
   
   localDB.sync(remoteDB, { live: true, retry: true })
+    .on("change", (info) => {
+      console.log("Sync change:", info);
+    })
+    .on("paused", () => {
+      console.log("Sync paused");
+    })
+    .on("active", () => {
+      console.log("Sync active");
+    })
     .on("error", (err) => {
       console.error("Erreur de synchronisation:", err);
-      if (err.status === 401) {
+      if (err.status === 401 || err.name === 'unauthorized') {
         alert("Session expirée, veuillez vous reconnecter");
-        window.location.href = 'login.html';
+        logout();
       }
     });
 }
@@ -44,16 +53,19 @@ function formatToDateTimeLocal(date) {
 }
 
 function updateSortieDate() {
-  document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
+  const dateSortie = document.getElementById("date_sortie");
+  if (dateSortie) {
+    dateSortie.value = formatToDateTimeLocal(new Date());
+  }
 }
 
 function updateUIForUserRole() {
   const adminLink = document.getElementById('adminLink');
-  if (currentAccount) {
+  if (adminLink && currentAccount) {
     adminLink.style.display = 'block';
     adminLink.textContent = '📊 Voir mes enregistrements';
     adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
-  } else {
+  } else if (adminLink) {
     adminLink.style.display = 'none';
   }
 }
@@ -63,9 +75,7 @@ function logout() {
     method: "DELETE",
     credentials: "include"
   }).then(() => {
-    sessionStorage.removeItem('currentAccount');
-    sessionStorage.removeItem('currentServiceName');
-    sessionStorage.removeItem('authenticated');
+    sessionStorage.clear();
     window.location.href = 'login.html';
   }).catch(() => {
     sessionStorage.clear();
@@ -77,31 +87,27 @@ function logout() {
 window.addEventListener("DOMContentLoaded", async () => {
   currentAccount = sessionStorage.getItem('currentAccount');
   const authenticated = sessionStorage.getItem('authenticated');
+  const currentServiceName = sessionStorage.getItem('currentServiceName');
+  
+  console.log('Session check:', {
+    authenticated,
+    currentAccount,
+    currentServiceName
+  });
   
   if (!currentAccount || !authenticated) {
-    window.location.href = 'login.html';
-    return;
-  }
-
-  // TESTER si la session CouchDB est active
-  try {
-    const sessionTest = await fetch("https://couchdb.monproprecloud.fr/_session", {
-      credentials: "include"
-    });
-    const sessionData = await sessionTest.json();
-    console.log("Session CouchDB active:", sessionData);
-    
-    if (!sessionData.userCtx || !sessionData.userCtx.name) {
-      alert("Session CouchDB expirée");
-      window.location.href = 'login.html';
-      return;
-    }
-  } catch (err) {
-    console.error("Erreur session:", err);
+    console.log('Not authenticated, redirecting to login');
     window.location.href = 'login.html';
     return;
   }
   
+  // Afficher le nom du service
+  const userLabel = document.getElementById('currentUserLabel');
+  if (userLabel && currentServiceName) {
+    userLabel.textContent = currentServiceName;
+  }
+  
+  // Initialiser la connexion distante
   setupRemoteDB();
   updateUIForUserRole();
   updateUserInterface();
@@ -138,10 +144,14 @@ function loadExcelData() {
       excelData = XLSX.utils.sheet_to_json(sheet);
       
       const designationList = document.getElementById("designationList");
-      designationList.innerHTML = '';
+      if (designationList) {
+        designationList.innerHTML = '';
+      }
       
       const codeList = document.getElementById("codeProduitList");
-      codeList.innerHTML = '';
+      if (codeList) {
+        codeList.innerHTML = '';
+      }
       
       const designations = new Set();
       const codes = new Set();
@@ -153,17 +163,21 @@ function loadExcelData() {
         if (code) codes.add(String(code).trim());
       });
       
-      designations.forEach(designation => {
-        const option = document.createElement("option");
-        option.value = designation;
-        designationList.appendChild(option);
-      });
+      if (designationList) {
+        designations.forEach(designation => {
+          const option = document.createElement("option");
+          option.value = designation;
+          designationList.appendChild(option);
+        });
+      }
       
-      codes.forEach(code => {
-        const option = document.createElement("option");
-        option.value = code;
-        codeList.appendChild(option);
-      });
+      if (codeList) {
+        codes.forEach(code => {
+          const option = document.createElement("option");
+          option.value = code;
+          codeList.appendChild(option);
+        });
+      }
       
       initQRScanner();
       setupEventListeners();
@@ -191,41 +205,55 @@ function fillFormFromExcel(match) {
 
   for (const [excelKey, formId] of Object.entries(map)) {
     if (match[excelKey] !== undefined) {
-      document.getElementById(formId).value = match[excelKey];
+      const element = document.getElementById(formId);
+      if (element) {
+        element.value = match[excelKey];
+      }
     }
   }
 
-  if (!match["axe2"] || match["axe2"].trim() === "") {
-    document.getElementById("axe2").value = "SUP=SEMPQRLER";
+  const axe2Element = document.getElementById("axe2");
+  if (axe2Element && (!match["axe2"] || match["axe2"].trim() === "")) {
+    axe2Element.value = "SUP=SEMPQRLER";
   }
 
-  document.getElementById("axe1").value = currentAccount;
+  const axe1Element = document.getElementById("axe1");
+  if (axe1Element) {
+    axe1Element.value = currentAccount;
+  }
+  
   updateSortieDate();
 }
 
 // Écouteurs d'événements
 function setupEventListeners() {
-  document.getElementById("code_produit").addEventListener("input", function() {
-    const codeValue = String(this.value).trim().toLowerCase();
-    if (codeValue) {
+  const codeProduitInput = document.getElementById("code_produit");
+  if (codeProduitInput) {
+    codeProduitInput.addEventListener("input", function() {
+      const codeValue = String(this.value).trim().toLowerCase();
+      if (codeValue) {
+        const match = excelData.find(
+          (row) => (row["Code_Produit"] || "").toString().toLowerCase() === codeValue
+        );
+        if (match) fillFormFromExcel(match);
+        else updateSortieDate();
+      } else {
+        updateSortieDate();
+      }
+    });
+  }
+
+  const designationInput = document.getElementById("designation");
+  if (designationInput) {
+    designationInput.addEventListener("input", function() {
+      const val = String(this.value).trim().toLowerCase();
       const match = excelData.find(
-        (row) => (row["Code_Produit"] || "").toString().toLowerCase() === codeValue
+        (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
       );
       if (match) fillFormFromExcel(match);
       else updateSortieDate();
-    } else {
-      updateSortieDate();
-    }
-  });
-
-  document.getElementById("designation").addEventListener("input", function() {
-    const val = String(this.value).trim().toLowerCase();
-    const match = excelData.find(
-      (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
-    );
-    if (match) fillFormFromExcel(match);
-    else updateSortieDate();
-  });
+    });
+  }
 }
 
 // Scanner QR
@@ -240,9 +268,12 @@ function initQRScanner() {
             { fps: 10, qrbox: { width: 250, height: 250 } },
             (text) => {
               if (!isSubmitting) {
-                document.getElementById("code_produit").value = text;
-                const product = excelData.find(item => item["Code_Produit"] === text);
-                if (product) fillFormFromExcel(product);
+                const codeProduitInput = document.getElementById("code_produit");
+                if (codeProduitInput) {
+                  codeProduitInput.value = text;
+                  const product = excelData.find(item => item["Code_Produit"] === text);
+                  if (product) fillFormFromExcel(product);
+                }
               }
             },
             (err) => console.warn("QR error", err)
@@ -304,16 +335,22 @@ function handleFiles(fileList) {
         removeBtn.className = "remove-button";
         removeBtn.textContent = "x";
         removeBtn.addEventListener("click", () => {
-          const idx = Array.from(document.getElementById("previewContainer").children).appOf(wrapper);
-          if (idx !== -1) {
-            imageFiles.splice(idx, 1);
-            wrapper.remove();
-            updatePhotoCount();
+          const previewContainer = document.getElementById("previewContainer");
+          if (previewContainer) {
+            const idx = Array.from(previewContainer.children).indexOf(wrapper);
+            if (idx !== -1) {
+              imageFiles.splice(idx, 1);
+              wrapper.remove();
+              updatePhotoCount();
+            }
           }
         });
         wrapper.appendChild(img);
         wrapper.appendChild(removeBtn);
-        document.getElementById("previewContainer").appendChild(wrapper);
+        const previewContainer = document.getElementById("previewContainer");
+        if (previewContainer) {
+          previewContainer.appendChild(wrapper);
+        }
         updatePhotoCount();
       };
       reader.readAsDataURL(blob);
@@ -422,3 +459,5 @@ if (resetBtn) {
     }
   });
 }
+
+
