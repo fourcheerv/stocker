@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>🗞️ Gestion des Bobines</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@7.3.1/dist/pouchdb.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1>🗞️ Gestion des Bobines</h1>
+      <div class="user-info">
+        <span id="currentUserLabel"></span>
+        <button id="logoutBtn" class="logout-btn">Déconnexion</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Bip audio -->
+  <audio id="beep-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+
+  <main>
+    <div class="field-group" style="text-align:center;">
+      <label for="modeScan">🎛️ Mode de scan :</label>
+      <select id="modeScan">
+        <option value="camera" selected>Caméra</option>
+        <option value="bluetooth">Scanner Bluetooth</option>
+      </select>
+    </div>
+
+    <div id="qr-reader" style="width:300px;margin:18px auto;"></div>
+
+    <div id="scan-list" style="margin:1em 0;">
+      <strong>Derniers produits scannés :</strong>
+      <ul id="scanListUl" style="font-size:1.2em"></ul>
+      <div id="scan-info" style="margin: .7em 0; display: none; font-weight:500; text-align:center;"></div>
+    </div>
+
+    <div class="photo-section">
+      <div class="photo-buttons">
+        <button id="takePhotoBtn">📷 Photo</button>
+        <button id="chooseGalleryBtn">🖼️ Choisir depuis la galerie</button>
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
+        <input type="file" id="galleryInput" accept="image/*" multiple style="display:none;">
+      </div>
+      <p>Photos ajoutées : <span id="photoCount">0</span>/3</p>
+      <div id="previewContainer" class="preview-container"></div>
+    </div>
+
+    <form id="bobinesForm">
+      <div class="field-group">
+        <label for="code_produit">Code Produit :</label>
+        <input type="number" id="code_produit" required />
+      </div>
+      <div class="field-group">
+        <label for="quantité_consommee">Quantité consommée :</label>
+        <input type="number" id="quantité_consommee" value="1" min="1" required />
+      </div>
+      <div class="field-group">
+        <label for="remarques">Remarques :</label>
+        <textarea id="remarques" rows="3" placeholder="Remarques optionnelles..."></textarea>
+      </div>
+      <input type="hidden" id="axe1" />
+      <div class="button-group">
+        <button type="submit">Enregistrer</button>
+        <button type="button" id="resetBtn">Réinitialiser</button>
+      </div>
+    </form>
+
+    <div id="success" style="display:none;color:green;text-align:center;margin-top:1rem;">✅ Enregistrement effectué !</div>
+    <a id="adminLink" href="#" class="admin-link" style="display:none;">📊 Voir les enregistrements</a>
+  </main>
+
+  <footer>
+    <p>&copy; 🗞️ 2025 - Application Bobines</p>
+  </footer>
+
+  <script src="js/bobines2.js"></script>
+</body>
+</html>
