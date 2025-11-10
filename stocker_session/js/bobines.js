@@ -205,13 +205,17 @@ function resetForm() {
 }
 
 // Initialisation
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
   currentAccount = sessionStorage.getItem('currentAccount');
   const authenticated = sessionStorage.getItem('authenticated');
-
+  
   if (!currentAccount || !authenticated) {
-    return window.location.href = 'login.html';
+    window.location.href = 'login.html';
+    return;
   }
+
+  // ATTENDRE avant de configurer remoteDB
+  await new Promise(resolve => setTimeout(resolve, 500));
 
   setupRemoteDB();
   

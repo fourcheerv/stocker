@@ -74,7 +74,7 @@ function logout() {
 }
 
 // Gestion de la session au chargement
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
   currentAccount = sessionStorage.getItem('currentAccount');
   const authenticated = sessionStorage.getItem('authenticated');
   
@@ -82,6 +82,9 @@ window.addEventListener("DOMContentLoaded", () => {
     window.location.href = 'login.html';
     return;
   }
+
+  // ATTENDRE avant de configurer remoteDB
+  await new Promise(resolve => setTimeout(resolve, 500));
   
   setupRemoteDB();
   updateUIForUserRole();
