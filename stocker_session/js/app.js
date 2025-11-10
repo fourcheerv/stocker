@@ -74,7 +74,7 @@ function logout() {
 }
 
 // Gestion de la session au chargement
-window.addEventListener("DOMContentLoaded", async () => {
+indow.addEventListener("DOMContentLoaded", async () => {
   currentAccount = sessionStorage.getItem('currentAccount');
   const authenticated = sessionStorage.getItem('authenticated');
   
@@ -83,8 +83,24 @@ window.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // ATTENDRE avant de configurer remoteDB
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // TESTER si la session CouchDB est active
+  try {
+    const sessionTest = await fetch("https://couchdb.monproprecloud.fr/_session", {
+      credentials: "include"
+    });
+    const sessionData = await sessionTest.json();
+    console.log("Session CouchDB active:", sessionData);
+    
+    if (!sessionData.userCtx || !sessionData.userCtx.name) {
+      alert("Session CouchDB expirée");
+      window.location.href = 'login.html';
+      return;
+    }
+  } catch (err) {
+    console.error("Erreur session:", err);
+    window.location.href = 'login.html';
+    return;
+  }
   
   setupRemoteDB();
   updateUIForUserRole();
