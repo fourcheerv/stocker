@@ -1,16 +1,15 @@
+// Vérifier si le compte dans l'URL correspond au compte connecté
+const urlParams = new URLSearchParams(window.location.search);
+const urlAccount = urlParams.get('account');
+const currentAccount = sessionStorage.getItem('currentAccount');
+
+if (urlAccount && urlAccount !== currentAccount) {
+  window.location.href = 'index.html';
+}
+
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
-let remoteDB = null;
-
-// Initialisation de la connexion distante avec session
-function setupRemoteDB() {
-  remoteDB = new PouchDB("https://couchdb.monproprecloud.fr/stocks", {
-    fetch: (url, opts) => {
-      opts.credentials = "include";
-      return PouchDB.fetch(url, opts);
-    }
-  });
-}
+const remoteDB = new PouchDB("https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks");
 
 // Variables globales
 let allDocs = [];
@@ -23,17 +22,22 @@ let selectedDocs = new Set();
 // Gestionnaire de modales
 const modalManager = {
   currentModal: null,
+
   openModal: function(content, isEdit = false) {
     this.closeCurrent();
+    
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.id = isEdit ? 'editModal' : 'detailsModal';
     modal.innerHTML = content;
+    
     document.body.appendChild(modal);
     this.currentModal = modal;
     modal.style.display = 'flex';
+
     return modal;
   },
+
   closeCurrent: function() {
     if (this.currentModal) {
       this.currentModal.remove();
@@ -45,6 +49,7 @@ const modalManager = {
 // Fonctions utilitaires pour la gestion des dates
 function formatToDateTimeLocal(date) {
   if (!date) return '';
+  
   const d = new Date(date);
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -56,6 +61,7 @@ function formatToDateTimeLocal(date) {
 
 function formatDateForDisplay(isoString) {
   if (!isoString) return '';
+  
   const date = new Date(isoString);
   return date.toLocaleDateString('fr-FR', {
     day: '2-digit',
@@ -66,74 +72,21 @@ function formatDateForDisplay(isoString) {
   });
 }
 
-function formatDateForFilename(date) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0')
-  ].join('-');
-}
-
-function toBase64(str) {
-  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => {
-    return String.fromCharCode(parseInt(p1, 16));
-  }));
-}
-
-function chunkSplit(str, length) {
-  return str.match(new RegExp(`.{1,${length}}`, 'g')).join("\r\n");
-}
-
-// Fonction logout avec session CouchDB
-function logout() {
-  fetch("https://couchdb.monproprecloud.fr/_session", {
-    method: "DELETE",
-    credentials: "include"
-  }).then(() => {
-    sessionStorage.clear();
-    window.location.href = 'login.html';
-  }).catch(() => {
-    sessionStorage.clear();
-    window.location.href = 'login.html';
-  });
-}
-
 // Initialisation
 document.addEventListener("DOMContentLoaded", () => {
   const currentAccount = sessionStorage.getItem('currentAccount');
-  const authenticated = sessionStorage.getItem('authenticated');
 
-  if (!currentAccount || !authenticated) {
-    window.location.href = 'login.html';
-    return;
-  }
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlAccount = urlParams.get('account');
-  const fromIndex = urlParams.get('fromIndex');
-
-  if (urlAccount && urlAccount !== currentAccount) {
-    window.location.href = 'index.html';
-    return;
-  }
-
-  if (currentAccount !== 'Admin' && fromIndex !== 'true') {
-    window.location.href = 'index.html';
-    return;
-  }
-
-  setupRemoteDB();
-
+  // Bobines : cacher CSV/mail standard, afficher bouton Excel
   if (currentAccount === 'BOB329') {
     document.getElementById('exportBtn').style.display = 'none';
     document.getElementById('exportToDriveBtn').style.display = 'none';
     document.getElementById('exportXlsxBobinesBtn').style.display = '';
   } else {
+    // Afficher CSV/mail, cacher le bouton Excel bobines
     document.getElementById('exportBtn').style.display = '';
     document.getElementById('exportToDriveBtn').style.display = '';
     document.getElementById('exportXlsxBobinesBtn').style.display = 'none';
   }
-
   document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
   initAdmin();
 });
@@ -146,11 +99,12 @@ function initAdmin() {
   const urlParams = new URLSearchParams(window.location.search);
   const fromIndex = urlParams.get('fromIndex');
 
+
   if (fromIndex === 'true') {
+    // Forcer le filtre sur le compte courant
     document.getElementById('filterSelect').value = currentAccount;
     document.getElementById('filterSelect').disabled = true;
-    document.getElementById('currentServiceLabel').textContent = 
-      `Mes enregistrements (${getAxe1Label(currentAccount)})`;
+    document.getElementById('currentServiceLabel').textContent = `Mes enregistrements (${getAxe1Label(currentAccount)})`;
   }
 
   loadData();
@@ -163,9 +117,13 @@ function checkAuth() {
     return;
   }
 
+  // Nouvelle vérification pour l'accès à admin.html
   const urlParams = new URLSearchParams(window.location.search);
   const fromIndex = urlParams.get('fromIndex');
   
+  // Autoriser l'accès si:
+  // 1. C'est un admin OU
+  // 2. On vient de index.html (paramètre fromIndex=true)
   if (currentAccount !== 'Admin' && fromIndex !== 'true') {
     window.location.href = 'index.html';
     return;
@@ -180,30 +138,29 @@ function applyAccountFilter(account) {
   const urlParams = new URLSearchParams(window.location.search);
   const fromIndex = urlParams.get('fromIndex');
 
+  // Ajouter la classe has-value au container du select
   const filterContainer = filterSelect.closest('.filter-container');
   
   if (fromIndex === 'true') {
     filterSelect.value = account;
     filterSelect.disabled = true;
     currentServiceLabel.textContent = `Mes enregistrements (${getAxe1Label(account)})`;
-    if (filterContainer) filterContainer.classList.add('has-value');
+    filterContainer.classList.add('has-value');
   } else if (account === 'Admin') {
     filterSelect.disabled = false;
     filterSelect.value = '';
     currentServiceLabel.textContent = 'Tous les comptes (mode Admin)';
-    if (filterContainer) filterContainer.classList.remove('has-value');
+    filterContainer.classList.remove('has-value');
   } else {
     filterSelect.value = account;
     filterSelect.disabled = true;
     currentServiceLabel.textContent = getAxe1Label(account);
-    if (filterContainer) filterContainer.classList.add('has-value');
+    filterContainer.classList.add('has-value');
   }
   
+  // Mettre à jour le label de l'utilisateur connecté en haut à droite
   const currentServiceName = sessionStorage.getItem('currentServiceName');
-  const userLabel = document.getElementById('currentUserLabel');
-  if (userLabel) {
-    userLabel.textContent = currentServiceName || getAxe1Label(account);
-  }
+  document.getElementById('currentUserLabel').textContent = currentServiceName || getAxe1Label(account);
 }
 
 function getAxe1Label(axe1) {
@@ -224,79 +181,108 @@ function getAxe1Label(axe1) {
     'Admin': 'Compte Admin',
     "BOB329": "Bobines"
   };
+  
   return mappings[axe1] || axe1;
 }
 
 function setupEventListeners() {
+  // Ajout du bouton Retour
   if (!document.getElementById('backBtn')) {
-    const backBtn = document.createElement('button');
-    backBtn.id = 'backBtn';
-    backBtn.textContent = 'Retour';
-    backBtn.className = 'btn-secondary';
-    backBtn.style.marginRight = '10px';
+  const backBtn = document.createElement('button');
+  backBtn.id = 'backBtn';
+  backBtn.textContent = 'Retour';
+  backBtn.className = 'btn-secondary';
+  backBtn.style.marginRight = '10px';
 
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-      logoutBtn.parentNode.insertBefore(backBtn, logoutBtn);
-      backBtn.addEventListener('click', () => {
-        const currentAccount = sessionStorage.getItem('currentAccount');
-        if (currentAccount === "BOB329") {
-          window.location.href = "bobines.html";
-        } else if (currentAccount === "Admin") {
-          window.location.href = "login.html";
-        } else {
-          window.location.href = "index.html";
-        }
-      });
-    }
-  }
-  
-  const els = {
-    logoutBtn: logout,
-    exportBtn: exportToCSV,
-    syncBtn: syncWithServer,
-    deleteSelectedBtn: confirmDeleteSelected,
-    deleteAllBtn: confirmDeleteAll,
-    resetFiltersBtn: resetFilters,
-    exportToDriveBtn: exportAndSendEmail,
-    exportXlsxBobinesBtn: exportAndSendXlsxBobines
-  };
-  
-  for (const [id, fn] of Object.entries(els)) {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('click', fn);
-  }
+  const logoutBtn = document.getElementById('logoutBtn');
+  logoutBtn.parentNode.insertBefore(backBtn, logoutBtn);
 
-  const filters = ['searchInput', 'filterSelect', 'dateFilter', 'commandeFilter', 'magasinFilter'];
-  filters.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener(id === 'searchInput' ? 'input' : 'change', () => {
-        currentPage = 1;
-        filterData();
-      });
+  backBtn.addEventListener('click', () => {
+    const currentAccount = sessionStorage.getItem('currentAccount');
+    if (currentAccount) {
+      if (currentAccount === "BOB329") {
+        window.location.href = "bobines.html";
+      } else if (currentAccount === "Admin") {
+        window.location.href = "login.html";
+      } else {
+        window.location.href = "index.html";
+      }
+    } else {
+      window.location.href = "login.html";
     }
   });
-
-  ['firstPageBtn', 'prevPageBtn', 'nextPageBtn', 'lastPageBtn'].forEach((id, i) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('click', () => 
-        goToPage([1, currentPage - 1, currentPage + 1, totalPages][i])
-      );
-    }
-  });
-  
-  const selectAll = document.getElementById('selectAll');
-  if (selectAll) selectAll.addEventListener('change', toggleSelectAll);
-  
-  const dataTable = document.getElementById('dataTable');
-  if (dataTable) dataTable.addEventListener('click', handleTableClick);
 }
+
+  
+  backBtn.addEventListener('click', () => {
+    const currentAccount = sessionStorage.getItem('currentAccount');
+     if (currentAccount) {
+        // Si c'est le compte Bobines, rediriger vers bobines.html
+        if (currentAccount === "BOB329") {
+            window.location.href = "bobines.html";
+        } 
+        // Si c'est Admin, rediriger vers login.html
+        else if (currentAccount === "Admin") {
+            window.location.href = "login.html";
+        } 
+        // Tous les autres comptes vont vers index.html
+        else {
+            window.location.href = "index.html";
+        }
+    } else {
+        window.location.href = "login.html";
+    }
+  });
+ 
+  
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+  document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+  document.getElementById('syncBtn').addEventListener('click', syncWithServer);
+  document.getElementById('deleteSelectedBtn').addEventListener('click', confirmDeleteSelected);
+  document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
+  document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+  document.getElementById('exportToDriveBtn').addEventListener('click', exportAndSendEmail);
+
+  document.getElementById('searchInput').addEventListener('input', () => {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('filterSelect').addEventListener('change', () => {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('dateFilter').addEventListener('change', () => {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('commandeFilter').addEventListener('change', () => {
+    currentPage = 1;
+    filterData();
+  });
+  
+  document.getElementById('magasinFilter').addEventListener('change', () => {
+    currentPage = 1;
+    filterData();
+  });
+
+  document.getElementById('firstPageBtn').addEventListener('click', () => goToPage(1));
+  document.getElementById('prevPageBtn').addEventListener('click', () => goToPage(currentPage - 1));
+  document.getElementById('nextPageBtn').addEventListener('click', () => goToPage(currentPage + 1));
+  document.getElementById('lastPageBtn').addEventListener('click', () => goToPage(totalPages));
+  
+  document.getElementById('selectAll').addEventListener('change', toggleSelectAll);
+  document.getElementById('dataTable').addEventListener('click', handleTableClick);
+}
+
+
 
 function handleTableClick(e) {
   const target = e.target;
   const docId = target.dataset.id;
+
   if (!docId) return;
 
   if (target.classList.contains('view-btn')) {
@@ -334,13 +320,13 @@ async function loadData() {
       .map(row => row.doc)
       .filter(doc => !doc._id.startsWith('_design'))
       .sort((a, b) => new Date(b._id) - new Date(a._id));
+    
     filterData();
   } catch (error) {
     console.error("Erreur lors du chargement:", error);
     alert("Erreur lors du chargement des données");
   }
 }
-
 
 function filterData() {
   const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
