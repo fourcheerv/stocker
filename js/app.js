@@ -7,7 +7,7 @@ let currentAccount = null;
 
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
-const remoteDB = new PouchDB("https://admin:M,jvcmHSdl54!@couchdb.monproprecloud.fr/stocks");
+const remoteDB = new PouchDB("https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks");
 
 localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
 
