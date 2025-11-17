@@ -22,7 +22,7 @@ function setupRemoteDB() {
     },
     skip_setup: true
   });
-  
+
   localDB.sync(remoteDB, { live: true, retry: true })
     .on("change", (info) => {
       console.log("Sync change:", info);
@@ -35,11 +35,11 @@ function setupRemoteDB() {
     })
     .on('error', function (err) {
       console.error("Erreur de synchronisation :", err);
-  if (err.status === 401 && err.name === "unauthorized") {
-    alert("Session expirée, veuillez vous reconnecter");
-    // logout(); // <--- Mets cette ligne en commentaire pour debug
-      console.log("⚠️ Débogage : la fonction logout() serait appelée ici !");
-  }
+      if (err.status === 401 && err.name === "unauthorized") {
+        alert("Session expirée, veuillez vous reconnecter");
+        // logout(); // <--- Mets cette ligne en commentaire pour debug
+        console.log("⚠️ Débogage : la fonction logout() serait appelée ici !");
+      }
     });
 }
 
@@ -89,25 +89,25 @@ window.addEventListener("DOMContentLoaded", async () => {
   currentAccount = sessionStorage.getItem('currentAccount');
   const authenticated = sessionStorage.getItem('authenticated');
   const currentServiceName = sessionStorage.getItem('currentServiceName');
-  
+
   console.log('Session check:', {
     authenticated,
     currentAccount,
     currentServiceName
   });
-  
+
   if (!currentAccount || !authenticated) {
     console.log('Not authenticated, redirecting to login');
     window.location.href = 'login.html';
     return;
   }
-  
+
   // Afficher le nom du service
   const userLabel = document.getElementById('currentUserLabel');
   if (userLabel && currentServiceName) {
     userLabel.textContent = currentServiceName;
   }
-  
+
   // Initialiser la connexion distante
   setupRemoteDB();
   updateUIForUserRole();
@@ -128,7 +128,7 @@ function updateUserInterface() {
       userLabel.textContent = currentServiceName;
     }
   }
-  
+
   const backBtn = document.getElementById('backBtn');
   if (backBtn) {
     backBtn.style.display = currentAccount === 'Admin' ? 'none' : 'block';
@@ -143,27 +143,27 @@ function loadExcelData() {
       const workbook = XLSX.read(data, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       excelData = XLSX.utils.sheet_to_json(sheet);
-      
+
       const designationList = document.getElementById("designationList");
       if (designationList) {
         designationList.innerHTML = '';
       }
-      
+
       const codeList = document.getElementById("codeProduitList");
       if (codeList) {
         codeList.innerHTML = '';
       }
-      
+
       const designations = new Set();
       const codes = new Set();
-      
+
       excelData.forEach((row) => {
         const designation = row["Désignation:"] || row["Désignation"];
         if (designation) designations.add(String(designation).trim());
         const code = row["Code_Produit"];
         if (code) codes.add(String(code).trim());
       });
-      
+
       if (designationList) {
         designations.forEach(designation => {
           const option = document.createElement("option");
@@ -171,7 +171,7 @@ function loadExcelData() {
           designationList.appendChild(option);
         });
       }
-      
+
       if (codeList) {
         codes.forEach(code => {
           const option = document.createElement("option");
@@ -179,7 +179,7 @@ function loadExcelData() {
           codeList.appendChild(option);
         });
       }
-      
+
       initQRScanner();
       setupEventListeners();
       resetForm();
@@ -222,7 +222,7 @@ function fillFormFromExcel(match) {
   if (axe1Element) {
     axe1Element.value = currentAccount;
   }
-  
+
   updateSortieDate();
 }
 
@@ -439,12 +439,12 @@ function resetForm() {
     previewContainer.innerHTML = "";
   }
   updatePhotoCount();
-  
+
   const codeProduit = document.getElementById("code_produit");
   const designation = document.getElementById("designation");
   const axe1 = document.getElementById("axe1");
   const axe2 = document.getElementById("axe2");
-  
+
   if (codeProduit) codeProduit.value = "";
   if (designation) designation.value = "";
   if (axe1) axe1.value = currentAccount;
@@ -460,5 +460,3 @@ if (resetBtn) {
     }
   });
 }
-
-
