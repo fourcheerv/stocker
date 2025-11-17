@@ -1,80 +1,20 @@
 // Configuration des comptes (SANS mots de passe)
 const serviceAccounts = {
-  'btn-bobines': {
-    id: 'BOB329',
-    name: 'Bobines',
-    redirect: 'bobines.html'
-  },
-  'btn-info-sport': {
-    id: 'SCT=E260329',
-    name: 'SCE Informations Sportives',
-    redirect: 'app.html'
-  },
-  'btn-support-redac': {
-    id: 'SCT=E272329',
-    name: 'SCE Support Rédaction',
-    redirect: 'app.html'
-  },
-  'btn-maintenance': {
-    id: 'SCT=E370329',
-    name: 'Maintenance Machines',
-    redirect: 'app.html'
-  },
-  'btn-rotatives': {
-    id: 'SCT=E382329',
-    name: 'Service Rotatives',
-    redirect: 'app.html'
-  },
-  'btn-expedition': {
-    id: 'SCT=E390329',
-    name: 'Service Expédition',
-    redirect: 'app.html'
-  },
-  'btn-direction': {
-    id: 'SCT=E500329',
-    name: 'Direction Vente',
-    redirect: 'app.html'
-  },
-  'btn-ler': {
-    id: 'SCT=E730329',
-    name: 'LER Charges',
-    redirect: 'app.html'
-  },
-  'btn-travaux': {
-    id: 'SCT=E736329',
-    name: 'Service Travaux',
-    redirect: 'app.html'
-  },
-  'btn-achats': {
-    id: 'SCT=E760329',
-    name: 'Achats Magasin',
-    redirect: 'app.html'
-  },
-  'btn-manutention': {
-    id: 'SCT=E762329',
-    name: 'Manutention Papier',
-    redirect: 'app.html'
-  },
-  'btn-coursiers': {
-    id: 'SCT=E772329',
-    name: 'Coursiers',
-    redirect: 'app.html'
-  },
-  'btn-cantine': {
-    id: 'SCT=E860329',
-    name: 'Cantine',
-    redirect: 'app.html'
-  },
-  'btn-smi': {
-    id: 'SCT=E359329',
-    name: 'SMI',
-    redirect: 'app.html'
-  },
-  'btn-admin': {
-    id: 'Admin',
-    name: 'Administrateur',
-    redirect: 'admin.html'
-  }
+  'btn-bobines': { id: 'BOB329', name: 'Bobines', redirect: 'bobines.html' },
+  'btn-info-sport': { id: 'SCT=E260329', name: 'SCE Informations Sportives', redirect: 'app.html' },
+  'btn-support-redac': { id: 'SCT=E272329', name: 'SCE Support Rédaction', redirect: 'app.html' },
+  'btn-maintenance': { id: 'SCT=E370329', name: 'Maintenance Machines', redirect: 'app.html' },
+  'btn-rotatives': { id: 'SCT=E382329', name: 'Service Rotatives', redirect: 'app.html' },
+  'btn-expedition': { id: 'SCT=E390329', name: 'Service Expédition', redirect: 'app.html' },
+  'btn-direction': { id: 'SCT=E500329', name: 'Direction Vente', redirect: 'app.html' },
+  'btn-ler': { id: 'SCT=E730329', name: 'LER Charges', redirect: 'app.html' },
+  'btn-travaux': { id: 'SCT=E736329', name: 'Service Travaux', redirect: 'app.html' },
+  'btn-achats': { id: 'SCT=E760329', name: 'Achats Magasin', redirect: 'app.html' },
+  'btn-manutention': { id: 'SCT=E762329', name: 'Manutention Papier', redirect: 'app.html' },
+  'btn-coursiers': { id: 'SCT=E772329', name: 'Coursiers', redirect: 'app.html' },
+  'btn-cantine': { id: 'SCT=E860329', name: 'Cantine', redirect: 'app.html' },
+  'btn-smi': { id: 'SCT=E359329', name: 'SMI', redirect: 'app.html' },
+  'btn-admin': { id: 'Admin', name: 'Administrateur', redirect: 'admin.html' }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -84,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginBtn = document.getElementById('loginBtn');
   const errorMsg = document.getElementById('errorMsg');
   const selectedServiceTitle = document.getElementById('selectedServiceTitle');
-  
   let selectedService = null;
 
   // Animation des boutons
@@ -97,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 100 * app);
     });
   }, 500);
-  
+
   accountButtons.forEach(btn => {
     btn.style.opacity = '0';
     btn.style.transform = 'translateY(20px)';
@@ -127,13 +66,19 @@ document.addEventListener('DOMContentLoaded', () => {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: `name=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-        credentials: "include"
+        credentials: "include" // CRUCIAL pour le cookie!
       });
-      
+
+      // Debug header réponse
+      const setCookie = response.headers.get("Set-Cookie");
+      console.log("Set-Cookie reçu par le navigateur :", setCookie);
+
+      const data = await response.json();
+      console.log("Réponse CouchDB /_session :", data);
+
       if (response.ok) {
         return { success: true };
       } else {
-        const data = await response.json();
         return { success: false, error: data.reason || "Authentification échouée" };
       }
     } catch (error) {
@@ -148,22 +93,30 @@ document.addEventListener('DOMContentLoaded', () => {
       errorMsg.textContent = "Veuillez sélectionner un service";
       return;
     }
-    
+
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
-    
+
     if (!password) {
       errorMsg.textContent = "Veuillez entrer votre mot de passe";
       return;
     }
-    
+
     loginBtn.disabled = true;
     loginBtn.textContent = "Connexion...";
     errorMsg.textContent = "";
-    
+
     // Authentification CouchDB
     const result = await loginCouchDB(username, password);
-    
+
+    // Vérifie dans la console si le cookie a été reçu
+    setTimeout(() => {
+      if (!document.cookie.includes("AuthSession")) {
+        console.warn("⚠️ Cookie AuthSession non présent dans le navigateur après login.");
+        alert("Attention : le cookie AuthSession n'est pas reçu côté navigateur ! Vérifiez la config CORS CouchDB, HTTPS, headers.");
+      }
+    }, 1000);
+
     if (result.success) {
       sessionStorage.setItem('currentAccount', selectedService.id);
       sessionStorage.setItem('currentServiceName', selectedService.name);
