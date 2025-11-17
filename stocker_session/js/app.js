@@ -33,12 +33,13 @@ function setupRemoteDB() {
     .on("active", () => {
       console.log("Sync active");
     })
-    .on("error", (err) => {
-      console.error("Erreur de synchronisation:", err);
-      if (err.status === 401 || err.name === 'unauthorized') {
-        alert("Session expirée, veuillez vous reconnecter");
-        logout();
-      }
+    .on('error', function (err) {
+      console.error("Erreur de synchronisation :", err);
+  if (err.status === 401 && err.name === "unauthorized") {
+    alert("Session expirée, veuillez vous reconnecter");
+    // logout(); // <--- Mets cette ligne en commentaire pour debug
+      console.log("⚠️ Débogage : la fonction logout() serait appelée ici !");
+  }
     });
 }
 
