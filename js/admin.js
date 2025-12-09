@@ -787,7 +787,7 @@ async function exportAndSendEmail() {
           ];
 
           const rawMessage = [
-            `To: sebastien.pokorski@estrepublicain.fr`,
+            `To: ervachats@ervmedia.fr`,
             `Subject: Export Stocks ${dateStr}${magasinFilter ? ` (${magasinFilter})` : ''}`,
             'MIME-Version: 1.0',
             `Content-Type: multipart/mixed; boundary="${boundary}"`,
