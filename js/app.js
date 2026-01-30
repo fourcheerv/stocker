@@ -211,9 +211,10 @@ function initQRScanner() {
             { fps: 10, qrbox: { width: 250, height: 250 } },
             (text) => {
               if (!isSubmitting) {
-                document.getElementById("code_produit").value = text;
-                const product = excelData.find(item => (item["Code_Produit"] || "").toString().toLowerCase() === text.toLowerCase());
-                if (product) fillFormFromExcel(product);
+                const codeInput = document.getElementById("code_produit");
+                codeInput.value = text;
+                // Déclencher l'événement input pour remplir les autres champs
+                codeInput.dispatchEvent(new Event("input", { bubbles: true }));
               }
             },
             (err) => console.warn("QR error", err)
