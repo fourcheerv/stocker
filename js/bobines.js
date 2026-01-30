@@ -57,25 +57,44 @@ function compresserImage(file, callback) {
 
 function updatePhotoCount() {
   document.getElementById("photoCount").textContent = imageFiles.length;
+  // Désactiver les boutons photo si 3 photos atteintes
+  const takePhotoBtn = document.getElementById("takePhotoBtn");
+  const chooseGalleryBtn = document.getElementById("chooseGalleryBtn");
+  const isDisabled = imageFiles.length >= 3;
+  if (takePhotoBtn) takePhotoBtn.disabled = isDisabled;
+  if (chooseGalleryBtn) chooseGalleryBtn.disabled = isDisabled;
+  if (takePhotoBtn) takePhotoBtn.style.opacity = isDisabled ? "0.5" : "1";
+  if (chooseGalleryBtn) chooseGalleryBtn.style.opacity = isDisabled ? "0.5" : "1";
 }
 
 function handleFiles(list) {
   const files = Array.from(list);
-  if (imageFiles.length + files.length > 3) return alert("Maximum 3 photos !");
+  if (imageFiles.length >= 3) {
+    alert("Maximum 3 photos atteint !");
+    return;
+  }
+  if (imageFiles.length + files.length > 3) {
+    alert(`Maximum 3 photos ! Vous pouvez ajouter ${3 - imageFiles.length} photo(s) seulement.`);
+    return;
+  }
   files.forEach((file) => {
     if (!file.type.startsWith("image/")) return;
     compresserImage(file, (blob) => {
-      imageFiles.push(blob);
       const reader = new FileReader();
       reader.onload = (e) => {
+        // Ajouter l'objet avec dataUrl et flag
+        imageFiles.push({ dataUrl: e.target.result, existing: false });
+        
         const wrap = document.createElement("div");
         wrap.className = "preview-image";
         const img = document.createElement("img");
         img.src = e.target.result;
         const btn = document.createElement("button");
+        btn.type = "button";
         btn.className = "remove-button";
         btn.textContent = "×";
-        btn.onclick = () => {
+        btn.onclick = (ev) => {
+          ev.preventDefault();
           const idx = [...wrap.parentNode.children].indexOf(wrap);
           imageFiles.splice(idx, 1);
           wrap.remove();
@@ -160,16 +179,21 @@ function loadFromHistory(code) {
         imageFiles = [];
         document.getElementById("previewContainer").innerHTML = "";
         existing.doc.photos.forEach((photoBase64) => {
+          // IMPORTANT : ajouter les photos existantes à imageFiles
+          imageFiles.push({ dataUrl: photoBase64, existing: true });
+          
           const wrapper = document.createElement("div");
           wrapper.className = "preview-image";
           const img = document.createElement("img");
           img.src = photoBase64;
           const btn = document.createElement("button");
+          btn.type = "button";
           btn.className = "remove-button";
           btn.textContent = "×";
           btn.onclick = (ev) => {
             ev.preventDefault();
             const idx = [...wrapper.parentNode.children].indexOf(wrapper);
+            imageFiles.splice(idx, 1);
             wrapper.remove();
             updatePhotoCount();
           };
@@ -189,27 +213,43 @@ function majAffichageListeScans() {
   const ul = document.getElementById("scanListUl");
   if (!ul) return;
   ul.innerHTML = "";
-  produitsScannes
-    .slice(-10)
-    .reverse()
-    .forEach((item) => {
-      const li = document.createElement("li");
-      const link = document.createElement("a");
-      link.href = "#";
-      link.textContent = `Produit ${item.code} — Quantité : ${item.quantite}`;
-      link.style.cursor = "pointer";
-      link.style.color = "#0c81b4";
-      link.style.textDecoration = "underline";
-      
-      link.onclick = (e) => {
-        e.preventDefault();
-        // Appeler la fonction loadFromHistory au lieu de enregistreScan
-        loadFromHistory(item.code);
-      };
-      
-      li.appendChild(link);
-      ul.appendChild(li);
-    });
+  
+  // Récupérer tous les documents pour chercher les photos existantes
+  localDB.allDocs({ include_docs: true }).then((docs) => {
+    produitsScannes
+      .slice(-10)
+      .reverse()
+      .forEach((item) => {
+        const li = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = "#";
+        
+        // Vérifier si ce code a des photos existantes
+        const existingDoc = docs.rows.find(
+          (row) =>
+            row.doc &&
+            row.doc.code_produit === item.code &&
+            row.doc.axe1 === currentAccount &&
+            row.doc.photos &&
+            row.doc.photos.length > 0
+        );
+        
+        const photoIndicator = existingDoc ? "📸 " : "";
+        link.textContent = `${photoIndicator}Produit ${item.code} — Quantité : ${item.quantite}`;
+        link.style.cursor = "pointer";
+        link.style.color = "#0c81b4";
+        link.style.textDecoration = "underline";
+        
+        link.onclick = (e) => {
+          e.preventDefault();
+          // Appeler la fonction loadFromHistory au lieu de enregistreScan
+          loadFromHistory(item.code);
+        };
+        
+        li.appendChild(link);
+        ul.appendChild(li);
+      });
+  });
 }
 
 function showScanInfo(msg, type = "success") {
@@ -335,14 +375,21 @@ window.addEventListener("DOMContentLoaded", () => {
     const remarques = document.getElementById("remarques").value.trim();
     const axe1 = currentAccount;
 
+    // Convertir imageFiles en base64 strings
     const photos = [];
     for (const f of imageFiles) {
-      const base64 = await new Promise((ok) => {
-        const r = new FileReader();
-        r.onload = () => ok(r.result);
-        r.readAsDataURL(f);
-      });
-      photos.push(base64);
+      // Si c'est un objet avec dataUrl (existant ou nouveau)
+      if (f.dataUrl) {
+        photos.push(f.dataUrl);
+      } else {
+        // Sinon, c'est un blob (ancien format)
+        const base64 = await new Promise((ok) => {
+          const r = new FileReader();
+          r.onload = () => ok(r.result);
+          r.readAsDataURL(f);
+        });
+        photos.push(base64);
+      }
     }
 
     let updated = false;
