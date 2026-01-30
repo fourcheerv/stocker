@@ -9,6 +9,17 @@
   <link rel="icon" type="image/png" href="icons/favicon.ico"/>
   <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/idb/7.0.2/idb.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bcrypt.js/2.4.0/bcrypt.min.js"></script>-->
+  <script>
+  const passwordInput = document.getElementById("passwordInput");
+  const togglePassword = document.getElementById("togglePassword");
+
+  togglePassword.addEventListener("click", () => {
+    const isPassword = passwordInput.type === "password";
+    passwordInput.type = isPassword ? "text" : "password";
+    togglePassword.textContent = isPassword ? "🙈" : "👁️";
+  });
+</script>
+
 </head> 
 
 <body>
@@ -76,7 +87,14 @@
       
       <div id="passwordSection" class="password-section" style="display: none;">
         <h3 id="selectedServiceTitle">Service sélectionné</h3>
+       
+        <div class="password-wrapper">
         <input type="password" id="passwordInput" placeholder="Mot de passe" autocomplete="current-password">
+        <button type="button" id="togglePassword" class="toggle-password">
+        👁️
+        </button>
+        </div>
+        
         <button id="loginBtn" class="login-btn">Se connecter</button>
         <p id="errorMsg" class="error-message"></p>
       </div>
