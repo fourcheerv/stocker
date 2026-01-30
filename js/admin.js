@@ -900,9 +900,34 @@ async function exportAndSendEmail() {
             'Content-Transfer-Encoding: base64',
             '',
             chunkSplit(toBase64(csvContent), 76),
-            '',
-            `--${boundary}--`
+            ''
           ];
+
+          // Ajouter les photos comme pièces jointes
+          let photoIndex = 1;
+          for (const doc of filteredDocs) {
+            if (doc.photos && Array.isArray(doc.photos)) {
+              for (const photo of doc.photos) {
+                if (photo) {
+                  // Extraire le base64 si c'est une data URL
+                  const base64Data = photo.startsWith('data:image') ? photo.split(',')[1] : photo;
+                  const imageExt = photo.includes('jpeg') || photo.includes('jpg') ? 'jpg' : 'png';
+                  const photoFilename = `photo_${photoIndex}.${imageExt}`;
+                  
+                  mimeParts.push(`--${boundary}`);
+                  mimeParts.push(`Content-Type: image/${imageExt}`);
+                  mimeParts.push(`Content-Disposition: attachment; filename="${photoFilename}"`);
+                  mimeParts.push('Content-Transfer-Encoding: base64');
+                  mimeParts.push('');
+                  mimeParts.push(chunkSplit(base64Data, 76));
+                  mimeParts.push('');
+                  photoIndex++;
+                }
+              }
+            }
+          }
+
+          mimeParts.push(`--${boundary}--`);
 
           const rawMessage = [
             `To: ervachats@ervmedia.fr`,
@@ -1160,9 +1185,34 @@ async function exportAndSendXlsxBobines() {
       'Content-Transfer-Encoding: base64',
       '',
       chunkSplit(wbout, 76),
-      '',
-      `--${boundary}--`
+      ''
     ];
+
+    // Ajouter les photos comme pièces jointes
+    let photoIndex = 1;
+    for (const doc of bobinesDocs) {
+      if (doc.photos && Array.isArray(doc.photos)) {
+        for (const photo of doc.photos) {
+          if (photo) {
+            // Extraire le base64 si c'est une data URL
+            const base64Data = photo.startsWith('data:image') ? photo.split(',')[1] : photo;
+            const imageExt = photo.includes('jpeg') || photo.includes('jpg') ? 'jpg' : 'png';
+            const photoFilename = `photo_${photoIndex}.${imageExt}`;
+            
+            mimeParts.push(`--${boundary}`);
+            mimeParts.push(`Content-Type: image/${imageExt}`);
+            mimeParts.push(`Content-Disposition: attachment; filename="${photoFilename}"`);
+            mimeParts.push('Content-Transfer-Encoding: base64');
+            mimeParts.push('');
+            mimeParts.push(chunkSplit(base64Data, 76));
+            mimeParts.push('');
+            photoIndex++;
+          }
+        }
+      }
+    }
+
+    mimeParts.push(`--${boundary}--`);
 
     const rawMessage = [
       `To: ervachats@ervmedia.fr`,
