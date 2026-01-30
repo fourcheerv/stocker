@@ -162,8 +162,18 @@ document.addEventListener('DOMContentLoaded', () => {
  const passwordInput = document.getElementById("passwordInput");
   const togglePassword = document.getElementById("togglePassword");
 
-  togglePassword.addEventListener("click", () => {
-    const isPassword = passwordInput.type === "password";
-    passwordInput.type = isPassword ? "text" : "password";
-    togglePassword.textContent = isPassword ? "🙈" : "👁️";
-  });
+
+document.addEventListener("click", function (e) {
+  if (e.target.id === "togglePassword") {
+    const passwordInput = document.getElementById("passwordInput");
+
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      e.target.textContent = "🙈";
+    } else {
+      passwordInput.type = "password";
+      e.target.textContent = "👁️";
+    }
+  }
+});
+
