@@ -18,6 +18,7 @@ let currentPage = 1;
 const itemsPerPage = 10;
 let totalPages = 1;
 let selectedDocs = new Set();
+let editModalPhotos = []; // Photos temporaires pendant l'édition
 
 // Gestionnaire de modales
 const modalManager = {
@@ -47,6 +48,23 @@ const modalManager = {
 };
 
 // Fonctions utilitaires pour la gestion des dates
+// Fonction pour compresser les images (identique à app.js)
+function compresserImage(file, callback) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = (img.height / img.width) * 800;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(callback, 'image/jpeg', 0.7);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function formatToDateTimeLocal(date) {
   if (!date) return '';
   
@@ -560,12 +578,31 @@ async function syncWithServer() {
 }
 
 function setupEditModal(doc) {
+  // Réinitialiser les photos temporaires
+  editModalPhotos = [];
+  
   const modalContent = `
     <div class="edit-modal-content">
       <span class="close-btn">&times;</span>
       <h2>Modifier l'entrée</h2>
       <form id="editForm">
         ${generateEditFields(doc)}
+        
+        <div class="photo-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+          <h3 style="margin-bottom: 10px;">📸 Photos</h3>
+          <div class="photo-buttons">
+            <button type="button" id="takePhotoBtnModal">
+              <span style="font-size: 1.2em;">📸</span> Prendre une photo
+            </button>
+            <button type="button" id="chooseGalleryBtnModal">
+              <span style="font-size: 1.2em;">🖼️</span> Choisir depuis la galerie
+            </button>
+            <input type="file" id="cameraInputModal" accept="image/*" capture="environment" style="display:none;">
+            <input type="file" id="galleryInputModal" accept="image/*" multiple style="display:none;">
+          </div>
+          <p class="photo-count">Photos : <span id="photoCountModal">${doc.photos ? doc.photos.length : 0}</span>/3</p>
+          <div id="previewContainerModal" class="preview-container"></div>
+        </div>
       </form>
       <div class="modal-actions">
         <button id="saveEditBtn" class="btn-primary">Enregistrer</button>
@@ -576,24 +613,45 @@ function setupEditModal(doc) {
   
   const modal = modalManager.openModal(modalContent, true);
 
+  // Initialiser les photos existantes
+  if (doc.photos && doc.photos.length > 0) {
+    editModalPhotos = doc.photos.map(photoBase64 => ({ dataUrl: photoBase64, existing: true }));
+    renderModalPhotoPreviews();
+  }
+
+  // Écouteurs pour les boutons de photo
+  modal.querySelector('#cameraInputModal').addEventListener('change', (e) => handleModalFiles(e.target.files));
+  modal.querySelector('#galleryInputModal').addEventListener('change', (e) => handleModalFiles(e.target.files));
+  modal.querySelector('#takePhotoBtnModal').addEventListener('click', (e) => {
+    e.preventDefault();
+    modal.querySelector('#cameraInputModal').click();
+  });
+  modal.querySelector('#chooseGalleryBtnModal').addEventListener('click', (e) => {
+    e.preventDefault();
+    modal.querySelector('#galleryInputModal').click();
+  });
+
   modal.querySelector('.close-btn').addEventListener('click', () => {
+    editModalPhotos = [];
     modalManager.closeCurrent();
   });
   
   modal.querySelector('#cancelEditBtn').addEventListener('click', () => {
+    editModalPhotos = [];
     modalManager.closeCurrent();
   });
 
   modal.querySelector('#saveEditBtn').addEventListener('click', async (e) => {
     e.preventDefault();
     await saveEditedDoc(doc._id);
+    editModalPhotos = [];
     modalManager.closeCurrent();
   });
 }
 
 function generateEditFields(doc) {
   let fields = '';
-  const excludedFields = ['_id', '_rev', 'axe1'];
+  const excludedFields = ['_id', '_rev', 'axe1', 'photos'];
   
   for (const [key, value] of Object.entries(doc)) {
     if (excludedFields.includes(key) || key.startsWith('_')) continue;
@@ -642,6 +700,13 @@ async function saveEditedDoc(docId) {
       }
     });
     
+    // Sauvegarder les photos modifiées
+    if (editModalPhotos.length > 0) {
+      doc.photos = editModalPhotos.map(photo => photo.dataUrl || photo);
+    } else {
+      doc.photos = [];
+    }
+    
     await localDB.put(doc);
     alert('Modifications enregistrées avec succès');
     loadData();
@@ -649,6 +714,59 @@ async function saveEditedDoc(docId) {
     console.error("Erreur lors de la mise à jour:", error);
     alert("Erreur lors de la mise à jour");
   }
+}
+
+function handleModalFiles(fileList) {
+  const files = Array.from(fileList);
+  if (editModalPhotos.length + files.length > 3) {
+    alert("Maximum 3 photos !");
+    return;
+  }
+
+  files.forEach((file) => {
+    if (!file.type.startsWith('image/')) return;
+    compresserImage(file, (blob) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        editModalPhotos.push({ dataUrl: e.target.result, existing: false });
+        renderModalPhotoPreviews();
+      };
+      reader.readAsDataURL(blob);
+    });
+  });
+}
+
+function renderModalPhotoPreviews() {
+  const container = document.getElementById('previewContainerModal');
+  const count = document.getElementById('photoCountModal');
+  
+  if (!container || !count) return;
+  
+  container.innerHTML = '';
+  count.textContent = editModalPhotos.length;
+  
+  editModalPhotos.forEach((photo, index) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'preview-image';
+
+    const img = document.createElement('img');
+    img.src = photo.dataUrl || photo;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'remove-button';
+    removeBtn.textContent = 'x';
+
+    removeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      editModalPhotos.splice(index, 1);
+      renderModalPhotoPreviews();
+    });
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(removeBtn);
+    container.appendChild(wrapper);
+  });
 }
 
 function formatFieldName(key) {
