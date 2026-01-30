@@ -144,6 +144,7 @@ main {
 .photo-section {
   background: rgba(240, 240, 240, 0.5);
   padding: 20px;
+  margin-top: 40px;
   border-radius: var(--border-radius);
   margin-bottom: 30px;
   border: 2px dashed rgba(0, 61, 102, 0.2);

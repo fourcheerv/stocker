@@ -212,7 +212,7 @@ function initQRScanner() {
             (text) => {
               if (!isSubmitting) {
                 document.getElementById("code_produit").value = text;
-                const product = excelData.find(item => item["Code_Produit"] === text);
+                const product = excelData.find(item => (item["Code_Produit"] || "").toString().toLowerCase() === text.toLowerCase());
                 if (product) fillFormFromExcel(product);
               }
             },
