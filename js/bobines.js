@@ -4,9 +4,19 @@ let imageFiles = [];
 let currentAccount = null;
 let produitsScannes = [];
 
+/* =======================
+   DATABASE
+======================= */
+
 const localDB = new PouchDB("stocks");
-const remoteDB = new PouchDB("https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks");
+const remoteDB = new PouchDB(
+  "https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks"
+);
 localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
+
+/* =======================
+   UTILITAIRES
+======================= */
 
 function playBeep() {
   const beep = document.getElementById("beep-sound");
@@ -15,6 +25,18 @@ function playBeep() {
     beep.play().catch(() => {});
   }
 }
+
+function focusScannerInput() {
+  const input = document.getElementById("code_produit");
+  if (input) {
+    input.focus();
+    input.select();
+  }
+}
+
+/* =======================
+   PHOTOS
+======================= */
 
 function compresserImage(file, callback) {
   const reader = new FileReader();
@@ -68,26 +90,33 @@ function handleFiles(list) {
   });
 }
 
+/* =======================
+   SCAN
+======================= */
+
 function enregistreScan(code) {
-  document.getElementById("code_produit").value = code;
-  document.getElementById("code_produit").classList.add("grandScan");
-  setTimeout(() => document.getElementById("code_produit").classList.remove("grandScan"), 900);
+  const input = document.getElementById("code_produit");
+  input.value = code;
+  input.classList.add("grandScan");
+  setTimeout(() => input.classList.remove("grandScan"), 800);
 
   localDB.allDocs({ include_docs: true }).then((docs) => {
-    const existant = docs.rows.find(row =>
-      row.doc &&
-      row.doc.code_produit === code &&
-      row.doc.axe1 === currentAccount
+    const existant = docs.rows.find(
+      (row) =>
+        row.doc &&
+        row.doc.code_produit === code &&
+        row.doc.axe1 === currentAccount
     );
+
     if (existant) {
-      showScanInfo("Code barre déjà scanné, pas de mise à jour", "warning");
+      showScanInfo("Code barre déjà scanné", "warning");
       playBeep();
     } else {
-      let quantite = 1;
+      const quantite = 1;
       produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
       majAffichageListeScans();
 
-      const record = JSON.parse(JSON.stringify({
+      const record = {
         _id: new Date().toISOString(),
         type: "bobine",
         code_produit: code,
@@ -95,24 +124,31 @@ function enregistreScan(code) {
         remarques: "",
         axe1: currentAccount,
         photos: [],
-      }));
+      };
+
       localDB.put(record).then(() => {
         showScanInfo("Nouveau code-barres enregistré ✅", "success");
         playBeep();
-      }).catch(console.warn);
+      });
     }
   });
+
+  input.value = "";
+  focusScannerInput();
 }
 
 function majAffichageListeScans() {
   const ul = document.getElementById("scanListUl");
   if (!ul) return;
   ul.innerHTML = "";
-  produitsScannes.slice(-10).reverse().forEach(item => {
-    const li = document.createElement("li");
-    li.textContent = `Produit ${item.code} — Quantité : ${item.quantite}`;
-    ul.appendChild(li);
-  });
+  produitsScannes
+    .slice(-10)
+    .reverse()
+    .forEach((item) => {
+      const li = document.createElement("li");
+      li.textContent = `Produit ${item.code} — Quantité : ${item.quantite}`;
+      ul.appendChild(li);
+    });
 }
 
 function showScanInfo(msg, type = "success") {
@@ -121,73 +157,98 @@ function showScanInfo(msg, type = "success") {
   el.textContent = msg;
   el.style.color = type === "success" ? "#27ae60" : "#e67e22";
   el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 2600);
+  setTimeout(() => (el.style.display = "none"), 2600);
 }
+
+/* =======================
+   CAMÉRA
+======================= */
 
 function initQRScanner() {
   if (!window.Html5Qrcode) return;
-  Html5Qrcode.getCameras().then((devices) => {
-    if (devices.length) {
-      qrReader = new Html5Qrcode("qr-reader");
-      qrReader.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (text) => {
-          if (/^\d+$/.test(text)) {
-            enregistreScan(text);
-          }
-        }
-      );
-    }
+  document.getElementById("qr-reader").style.display = "block";
+
+  Html5Qrcode.getCameras().then(() => {
+    qrReader = new Html5Qrcode("qr-reader");
+    qrReader.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (text) => /^\d+$/.test(text) && enregistreScan(text)
+    );
   });
 }
+
 function stopQRScanner() {
+  document.getElementById("qr-reader").style.display = "none";
   if (qrReader) qrReader.stop().catch(() => {});
 }
+
+/* =======================
+   RESET
+======================= */
 
 function resetForm() {
   document.getElementById("bobinesForm").reset();
   imageFiles = [];
   document.getElementById("previewContainer").innerHTML = "";
   updatePhotoCount();
-  const successDiv = document.getElementById("success");
-  if (successDiv) successDiv.style.display = "none";
+  focusScannerInput();
 }
+
+/* =======================
+   INIT
+======================= */
 
 window.addEventListener("DOMContentLoaded", () => {
   currentAccount = sessionStorage.getItem("currentAccount");
   if (!currentAccount) return (window.location.href = "login.html");
+
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("currentUserLabel").textContent =
     sessionStorage.getItem("currentServiceName") || currentAccount;
 
   const adminLink = document.getElementById("adminLink");
   adminLink.style.display = "block";
-  adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(currentAccount)}`;
+  adminLink.href = `admin.html?fromIndex=true&account=${encodeURIComponent(
+    currentAccount
+  )}`;
 
-  document.getElementById("logoutBtn").onclick = () =>
-    (sessionStorage.clear(), (window.location.href = "login.html"));
+  document.getElementById("logoutBtn").onclick = () => {
+    sessionStorage.clear();
+    window.location.href = "login.html";
+  };
 
   const mode = document.getElementById("modeScan");
-  mode.onchange = (e) => (e.target.value === "camera" ? initQRScanner() : stopQRScanner());
-  initQRScanner();
+  const qrDiv = document.getElementById("qr-reader");
+
+  // 🔥 BLUETOOTH PAR DÉFAUT
+  mode.value = "bluetooth";
+  qrDiv.style.display = "none";
+  focusScannerInput();
+
+  mode.onchange = () => {
+    if (mode.value === "camera") {
+      initQRScanner();
+    } else {
+      stopQRScanner();
+      focusScannerInput();
+    }
+  };
 
   document.getElementById("takePhotoBtn").onclick = () =>
     document.getElementById("cameraInput").click();
   document.getElementById("chooseGalleryBtn").onclick = () =>
     document.getElementById("galleryInput").click();
-  document.getElementById("cameraInput").onchange = (e) => handleFiles(e.target.files);
-  document.getElementById("galleryInput").onchange = (e) => handleFiles(e.target.files);
+  document.getElementById("cameraInput").onchange = (e) =>
+    handleFiles(e.target.files);
+  document.getElementById("galleryInput").onchange = (e) =>
+    handleFiles(e.target.files);
 
   const codeField = document.getElementById("code_produit");
-  // Correction : Uniquement déclenche sur Enter
-  codeField.addEventListener("keydown", function(e) {
+  codeField.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       const code = codeField.value.trim();
-      if (/^\d+$/.test(code)) {
-        enregistreScan(code);
-        codeField.value = ""; // Efface le champ après
-      }
+      if (/^\d+$/.test(code)) enregistreScan(code);
       e.preventDefault();
     }
   });
@@ -213,62 +274,45 @@ window.addEventListener("DOMContentLoaded", () => {
     let updated = false;
     try {
       const docs = await localDB.allDocs({ include_docs: true });
-      let toUpdate = docs.rows.find(row =>
-        row.doc &&
-        row.doc.code_produit === code &&
-        row.doc.axe1 === currentAccount
+      const toUpdate = docs.rows.find(
+        (row) =>
+          row.doc &&
+          row.doc.code_produit === code &&
+          row.doc.axe1 === currentAccount
       );
       if (toUpdate) {
         toUpdate.doc.remarques = remarques;
         toUpdate.doc.quantité_consommee = quantité_consommee;
-        if (photos.length > 0) toUpdate.doc.photos = photos;
+        if (photos.length) toUpdate.doc.photos = photos;
         await localDB.put(toUpdate.doc);
-        showScanInfo("Votre modification a bien été enregistrée ✅", "success");
+        showScanInfo("Modification enregistrée ✅", "success");
         updated = true;
         resetForm();
       }
-    } catch (err) {
-      showScanInfo("Erreur lors de la mise à jour !", "warning");
-      playBeep();
-      return;
-    }
-    if (updated) {
+    } catch {
+      showScanInfo("Erreur lors de la mise à jour", "warning");
       playBeep();
       return;
     }
 
-    produitsScannes.push({ code, quantite: quantité_consommee, ts: new Date().toISOString() });
-    majAffichageListeScans();
+    if (updated) return;
 
-    const record = JSON.parse(
-      JSON.stringify({
-        _id: new Date().toISOString(),
-        type: "bobine",
-        code_produit: code,
-        quantité_consommee,
-        remarques,
-        axe1,
-        photos,
-      })
-    );
+    const record = {
+      _id: new Date().toISOString(),
+      type: "bobine",
+      code_produit: code,
+      quantité_consommee,
+      remarques,
+      axe1,
+      photos,
+    };
 
     try {
-      const res = await localDB.put(record);
-      if (!res.ok && !res.id) throw new Error();
+      await localDB.put(record);
       showScanInfo("Nouveau code-barres enregistré ✅", "success");
       resetForm();
-    } catch (err) {
-      if (
-        err.name === "invalid_json" ||
-        err.name === "unknown_error" ||
-        (err.message && err.message.includes("JSON"))
-      ) {
-        alert(
-          "Enregistrement réussi localement malgré erreur distante (accent)."
-        );
-      } else {
-        showScanInfo("Erreur lors de l'enregistrement !", "warning");
-      }
+    } catch {
+      showScanInfo("Erreur lors de l'enregistrement", "warning");
     }
   };
 });
