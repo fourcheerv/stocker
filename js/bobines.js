@@ -116,6 +116,7 @@ function enregistreScan(code) {
       produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
       majAffichageListeScans();
 
+      // ENREGISTREMENT AUTOMATIQUE IMMÉDIAT (scan direct)
       const record = {
         _id: new Date().toISOString(),
         type: "bobine",
@@ -127,7 +128,7 @@ function enregistreScan(code) {
       };
 
       localDB.put(record).then(() => {
-        showScanInfo("Nouveau code-barres enregistré ✅", "success");
+        showScanInfo("Code barre enregistré ✅ - Ajouter photos si besoin", "success");
         playBeep();
       });
     }
@@ -135,6 +136,53 @@ function enregistreScan(code) {
 
   input.value = "";
   focusScannerInput();
+}
+
+// Fonction SÉPARÉE pour charger depuis l'historique (sans enregistrement automatique)
+function loadFromHistory(code) {
+  const input = document.getElementById("code_produit");
+  input.value = code;
+  input.focus();
+  
+  // Charger les données existantes
+  localDB.allDocs({ include_docs: true }).then((docs) => {
+    const existing = docs.rows.find(
+      (row) =>
+        row.doc &&
+        row.doc.code_produit === code &&
+        row.doc.axe1 === currentAccount
+    );
+    if (existing && existing.doc) {
+      // Remplir les remarques
+      document.getElementById("remarques").value = existing.doc.remarques || "";
+      // Charger les photos existantes
+      if (existing.doc.photos && existing.doc.photos.length > 0) {
+        imageFiles = [];
+        document.getElementById("previewContainer").innerHTML = "";
+        existing.doc.photos.forEach((photoBase64) => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "preview-image";
+          const img = document.createElement("img");
+          img.src = photoBase64;
+          const btn = document.createElement("button");
+          btn.className = "remove-button";
+          btn.textContent = "×";
+          btn.onclick = (ev) => {
+            ev.preventDefault();
+            const idx = [...wrapper.parentNode.children].indexOf(wrapper);
+            wrapper.remove();
+            updatePhotoCount();
+          };
+          wrapper.append(img, btn);
+          document.getElementById("previewContainer").append(wrapper);
+        });
+        updatePhotoCount();
+      }
+      showScanInfo(`Code ${code} chargé - Ajouter photos et cliquer "Enregistrer"`, "success");
+    } else {
+      showScanInfo(`Code ${code} mis en place - Ajouter photos et enregistrer`, "success");
+    }
+  });
 }
 
 function majAffichageListeScans() {
@@ -146,7 +194,20 @@ function majAffichageListeScans() {
     .reverse()
     .forEach((item) => {
       const li = document.createElement("li");
-      li.textContent = `Produit ${item.code} — Quantité : ${item.quantite}`;
+      const link = document.createElement("a");
+      link.href = "#";
+      link.textContent = `Produit ${item.code} — Quantité : ${item.quantite}`;
+      link.style.cursor = "pointer";
+      link.style.color = "#0c81b4";
+      link.style.textDecoration = "underline";
+      
+      link.onclick = (e) => {
+        e.preventDefault();
+        // Appeler la fonction loadFromHistory au lieu de enregistreScan
+        loadFromHistory(item.code);
+      };
+      
+      li.appendChild(link);
       ul.appendChild(li);
     });
 }
@@ -188,7 +249,8 @@ function stopQRScanner() {
 ======================= */
 
 function resetForm() {
-  document.getElementById("bobinesForm").reset();
+  // NE PAS réinitialiser code_produit pour permettre de continuer à ajouter des photos au même code
+  document.getElementById("remarques").value = "";
   imageFiles = [];
   document.getElementById("previewContainer").innerHTML = "";
   updatePhotoCount();
@@ -244,6 +306,18 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("galleryInput").onchange = (e) =>
     handleFiles(e.target.files);
 
+  // Bouton réinitialiser (vide TOUT incluant le code)
+  const resetBtn = document.getElementById("resetBtn");
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      document.getElementById("bobinesForm").reset();
+      imageFiles = [];
+      document.getElementById("previewContainer").innerHTML = "";
+      updatePhotoCount();
+      focusScannerInput();
+    };
+  }
+
   const codeField = document.getElementById("code_produit");
   codeField.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -283,13 +357,23 @@ window.addEventListener("DOMContentLoaded", () => {
       if (toUpdate) {
         toUpdate.doc.remarques = remarques;
         toUpdate.doc.quantité_consommee = quantité_consommee;
-        if (photos.length) toUpdate.doc.photos = photos;
+        // AJOUT : fusionner les photos (ajouter les nouvelles aux existantes)
+        if (photos.length) {
+          if (!toUpdate.doc.photos) toUpdate.doc.photos = [];
+          toUpdate.doc.photos = toUpdate.doc.photos.concat(photos);
+          // Limiter à 3 photos max
+          if (toUpdate.doc.photos.length > 3) {
+            toUpdate.doc.photos = toUpdate.doc.photos.slice(0, 3);
+            showScanInfo("Maximum 3 photos ! Les photos supplémentaires ont été ignorées", "warning");
+          }
+        }
         await localDB.put(toUpdate.doc);
-        showScanInfo("Modification enregistrée ✅", "success");
+        showScanInfo("Enregistrement mis à jour ✅", "success");
         updated = true;
         resetForm();
       }
-    } catch {
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour:", err);
       showScanInfo("Erreur lors de la mise à jour", "warning");
       playBeep();
       return;
