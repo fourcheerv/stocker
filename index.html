@@ -45,7 +45,15 @@
   </header>
 
   <main>
-    <div id="qr-reader"></div>
+    <div class="field-group" style="text-align:center;">
+      <label for="modeScan">🎛️ Mode de scan :</label>
+      <select id="modeScan">
+        <option value="bluetooth" selected>Scanner Bluetooth</option>
+        <option value="camera">Caméra</option>
+      </select>
+    </div>
+
+    <div id="qr-reader" style="width:300px;margin:18px auto;"></div>
 
     <div class="photo-section">
       <div class="photo-buttons">

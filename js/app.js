@@ -118,7 +118,23 @@ function loadExcelData() {
         codeList.appendChild(option);
       });
       
-      initQRScanner();
+      // Gestion du mode de scan (Bluetooth par défaut)
+      const mode = document.getElementById("modeScan");
+      const qrDiv = document.getElementById("qr-reader");
+      
+      mode.value = "bluetooth";
+      qrDiv.style.display = "none";
+      focusScannerInput();
+      
+      mode.onchange = () => {
+        if (mode.value === "camera") {
+          initQRScanner();
+        } else {
+          stopQRScanner();
+          focusScannerInput();
+        }
+      };
+      
       setupEventListeners();
       resetForm();
     })
@@ -204,6 +220,10 @@ function initQRScanner() {
       })
       .catch(err => console.error("Camera access error:", err));
   }
+}
+
+function focusScannerInput() {
+  document.getElementById("code_produit").focus();
 }
 
 function stopQRScanner() {
