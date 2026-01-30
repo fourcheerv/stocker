@@ -123,7 +123,7 @@ function loadExcelData() {
       const qrDiv = document.getElementById("qr-reader");
       
       mode.value = "bluetooth";
-      qrDiv.style.display = "none";
+      qrDiv.classList.remove("active");
       focusScannerInput();
       
       mode.onchange = () => {
@@ -200,7 +200,7 @@ function setupEventListeners() {
 // Scanner QR (reste identique)
 function initQRScanner() {
   const qrDiv = document.getElementById("qr-reader");
-  qrDiv.style.display = "block";
+  qrDiv.classList.add("active");
   if (Html5Qrcode.getCameras().then) {
     Html5Qrcode.getCameras()
       .then(devices => {
@@ -232,6 +232,8 @@ function stopQRScanner() {
   if (qrReader) {
     qrReader.stop().catch(err => console.error("Failed to stop QR scanner", err));
   }
+  const qrDiv = document.getElementById("qr-reader");
+  qrDiv.classList.remove("active");
 }
 
 // Gestion des photos (reste identique)

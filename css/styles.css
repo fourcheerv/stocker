@@ -126,11 +126,18 @@ main {
 #qr-reader {
   width: 100%;
   max-width: 500px;
-  margin: 0 auto 25px;
+  height: 400px;
+  margin: 20px auto 40px;
   border-radius: var(--border-radius);
   overflow: hidden;
   box-shadow: var(--box-shadow);
-  border: none;
+  border: 2px solid var(--primary-color);
+  background: #000;
+  display: none;
+}
+
+#qr-reader.active {
+  display: block;
 }
 
 /* Photo Section */
