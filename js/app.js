@@ -199,6 +199,8 @@ function setupEventListeners() {
 
 // Scanner QR (reste identique)
 function initQRScanner() {
+  const qrDiv = document.getElementById("qr-reader");
+  qrDiv.style.display = "block";
   if (Html5Qrcode.getCameras().then) {
     Html5Qrcode.getCameras()
       .then(devices => {
