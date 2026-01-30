@@ -652,6 +652,8 @@ function setupEditModal(doc) {
 function generateEditFields(doc) {
   let fields = '';
   const excludedFields = ['_id', '_rev', 'axe1', 'photos'];
+  // Vérifier si c'est une bobine
+  const isBobine = doc.axe1 === 'BOB329' || doc.type === 'bobine';
   
   for (const [key, value] of Object.entries(doc)) {
     if (excludedFields.includes(key) || key.startsWith('_')) continue;
@@ -659,7 +661,7 @@ function generateEditFields(doc) {
     fields += `
       <div class="form-group">
         <label for="edit_${key}">${formatFieldName(key)}:</label>
-        ${getInputField(key, value)}
+        ${getInputField(key, value, isBobine)}
       </div>
     `;
   }
@@ -667,13 +669,25 @@ function generateEditFields(doc) {
   return fields;
 }
 
-function getInputField(key, value) {
+function getInputField(key, value, isBobine = false) {
   if (key === 'a_commander') {
     return `
       <select id="edit_${key}" class="form-control">
         <option value="Oui" ${value === 'Oui' ? 'selected' : ''}>Oui</option>
         <option value="Non" ${value === 'Non' ? 'selected' : ''}>Non</option>
       </select>
+    `;
+  } else if (key === 'unites') {
+    // Pour les bobines, défaut "bobine", sinon vide
+    const defaultValue = isBobine ? 'bobine' : (value || '');
+    return `
+      <input type="text" id="edit_${key}" class="form-control" value="${defaultValue}">
+    `;
+  } else if (key === 'magasin') {
+    // Pour les bobines, défaut "EN-MP", sinon vide
+    const defaultValue = isBobine ? 'EN-MP' : (value || '');
+    return `
+      <input type="text" id="edit_${key}" class="form-control" value="${defaultValue}">
     `;
   } else if (key === 'date_sortie') {
     return `<input type="datetime-local" id="edit_${key}" class="form-control" value="${formatToDateTimeLocal(value)}">`;
