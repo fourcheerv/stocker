@@ -1216,7 +1216,7 @@ async function exportAndSendXlsxBobines() {
             const imageExt = photo.includes('jpeg') || photo.includes('jpg') ? 'jpg' : 'png';
             
             // Nouveau format de nom : photo_[index]_[code_produit].[extension]
-            const photoFilename = `photo_${photoIndex}_${codeProduit}.${imageExt}`;
+            const photoFilename = `photo_${photoIndex}_numero-bobine_${codeProduit}.${imageExt}`;
             
             mimeParts.push(`--${boundary}`);
             mimeParts.push(`Content-Type: image/${imageExt}`);
