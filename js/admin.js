@@ -1206,12 +1206,17 @@ async function exportAndSendXlsxBobines() {
     let photoIndex = 1;
     for (const doc of bobinesDocs) {
       if (doc.photos && Array.isArray(doc.photos)) {
+        // Récupérer le code produit pour cette bobine spécifique
+        const codeProduit = doc.code_produit || doc.codeproduit || "sans-code";
+        
         for (const photo of doc.photos) {
           if (photo) {
             // Extraire le base64 si c'est une data URL
             const base64Data = photo.startsWith('data:image') ? photo.split(',')[1] : photo;
             const imageExt = photo.includes('jpeg') || photo.includes('jpg') ? 'jpg' : 'png';
-            const photoFilename = `photo_${photoIndex}.${imageExt}`;
+            
+            // Nouveau format de nom : photo_[index]_[code_produit].[extension]
+            const photoFilename = `photo_${photoIndex}_${codeProduit}.${imageExt}`;
             
             mimeParts.push(`--${boundary}`);
             mimeParts.push(`Content-Type: image/${imageExt}`);
@@ -1220,6 +1225,7 @@ async function exportAndSendXlsxBobines() {
             mimeParts.push('');
             mimeParts.push(chunkSplit(base64Data, 76));
             mimeParts.push('');
+            
             photoIndex++;
           }
         }
