@@ -139,12 +139,15 @@ function enregistreScan(code) {
   // === CONTRÔLE 16 DIGITS ===
   if (!/^\d{16}$/.test(code)) {
     showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
-    playBeep();
+    playBeep(); // 🔴 Bip pour code invalide (unique bip d'erreur)
     document.getElementById("code_produit").value = "";
     focusScannerInput();
     return;
   }
   // ===========================
+  
+  // ✅ PAS DE BIP POUR SCAN RÉUSSI - SILENCE RADIO !
+  // (aucun bip ici)
   
   const input = document.getElementById("code_produit");
   input.value = code;
@@ -160,8 +163,8 @@ function enregistreScan(code) {
     );
 
     if (existant) {
-      showScanInfo("Code barre déjà scanné", "warning");
-      playBeep();
+      showScanInfo("⚠️ Code barre déjà scanné", "warning");
+      // PAS DE BIP NON PLUS - uniquement message visuel
     } else {
       const quantite = 1;
       produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
@@ -179,10 +182,17 @@ function enregistreScan(code) {
       };
 
       localDB.put(record).then(() => {
-        showScanInfo("Code barre enregistré ✅ - Ajouter photos si besoin", "success");
-        playBeep();
+        showScanInfo("✅ Code barre enregistré - Ajouter photos si besoin", "success");
+        // PAS DE BIP - uniquement message visuel
+      }).catch(() => {
+        showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
+        playBeep(); // 🔴 Bip UNIQUEMENT pour erreur technique
       });
     }
+  }).catch((err) => {
+    console.error("Erreur DB:", err);
+    showScanInfo("❌ Erreur de connexion", "warning");
+    playBeep(); // 🔴 Bip UNIQUEMENT pour erreur technique
   });
 
   input.value = "";
