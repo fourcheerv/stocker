@@ -735,7 +735,10 @@ tr:hover {
   font-size: 1.4rem;
 }
 
-
+.photo-indicator {
+  text-align: center;
+  font-size: 1.1rem;
+}
 
 /* Détails */
 .detail-grid {
@@ -783,10 +786,7 @@ tr:hover {
   transform: scale(1.05);
 }
 
-.photo-indicator {
-  text-align: center;
-  font-size: 1.1rem;
-}
+
 
 /* Modal d'édition */
 .edit-modal-content {

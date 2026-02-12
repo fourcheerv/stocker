@@ -450,8 +450,6 @@ function renderTable() {
       </td>
     `;
 
-
-
     tableBody.appendChild(row);
   });
 
