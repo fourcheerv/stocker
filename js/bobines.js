@@ -59,7 +59,6 @@ function compresserImage(file, callback) {
 
 function updatePhotoCount() {
   document.getElementById("photoCount").textContent = imageFiles.length;
-  // Désactiver les boutons photo si 3 photos atteintes
   const takePhotoBtn = document.getElementById("takePhotoBtn");
   const chooseGalleryBtn = document.getElementById("chooseGalleryBtn");
   const isDisabled = imageFiles.length >= 3;
@@ -72,14 +71,13 @@ function updatePhotoCount() {
 function handleFiles(list) {
   const files = Array.from(list);
   
-  // === NOUVEAU : Limite de taille (5MB) ===
+  // Limite de taille (5MB)
   for (const file of files) {
     if (file.size > 5 * 1024 * 1024) {
       alert(`Photo trop volumineuse : ${(file.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`);
       return;
     }
   }
-  // ========================================
   
   if (imageFiles.length >= 3) {
     alert("Maximum 3 photos atteint !");
@@ -94,7 +92,6 @@ function handleFiles(list) {
     compresserImage(file, (blob) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        // Ajouter l'objet avec dataUrl et flag
         imageFiles.push({ dataUrl: e.target.result, existing: false });
         
         const wrap = document.createElement("div");
@@ -126,7 +123,7 @@ function handleFiles(list) {
 ======================= */
 
 function enregistreScan(code) {
-  // === ANTI-DOUBLON CAMÉRA ===
+  // Anti-doublon caméra
   const now = Date.now();
   if (code === dernierScanCode && now - dernierScanTime < 2000) {
     console.log("Scan ignoré (trop rapide)");
@@ -134,21 +131,17 @@ function enregistreScan(code) {
   }
   dernierScanCode = code;
   dernierScanTime = now;
-  // ============================
   
-  // === CONTRÔLE 16 DIGITS ===
+  // Contrôle 16 digits
   if (!/^\d{16}$/.test(code)) {
     showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
-    playBeep(); // 🔴 Bip pour code invalide (unique bip d'erreur)
+    playBeep();
     document.getElementById("code_produit").value = "";
     focusScannerInput();
     return;
   }
-  // ===========================
   
-  // ✅ PAS DE BIP POUR SCAN RÉUSSI - SILENCE RADIO !
-  // (aucun bip ici)
-  
+  // PAS DE BIP POUR SCAN RÉUSSI
   const input = document.getElementById("code_produit");
   input.value = code;
   input.classList.add("grandScan");
@@ -164,13 +157,20 @@ function enregistreScan(code) {
 
     if (existant) {
       showScanInfo("⚠️ Code barre déjà scanné", "warning");
-      // PAS DE BIP NON PLUS - uniquement message visuel
     } else {
       const quantite = 1;
-      produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
+      
+      // === AMÉLIORATION : Éviter les doublons dans l'historique ===
+      const existingIndex = produitsScannes.findIndex(item => item.code === code);
+      if (existingIndex !== -1) {
+        produitsScannes[existingIndex].quantite += 1;
+      } else {
+        produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
+      }
+      // ===========================================================
+      
       majAffichageListeScans();
 
-      // ENREGISTREMENT AUTOMATIQUE IMMÉDIAT (scan direct)
       const record = {
         _id: new Date().toISOString(),
         type: "bobine",
@@ -183,37 +183,33 @@ function enregistreScan(code) {
 
       localDB.put(record).then(() => {
         showScanInfo("✅ Code barre enregistré - Ajouter photos si besoin", "success");
-        // PAS DE BIP - uniquement message visuel
       }).catch(() => {
         showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
-        playBeep(); // 🔴 Bip UNIQUEMENT pour erreur technique
+        playBeep();
       });
     }
   }).catch((err) => {
     console.error("Erreur DB:", err);
     showScanInfo("❌ Erreur de connexion", "warning");
-    playBeep(); // 🔴 Bip UNIQUEMENT pour erreur technique
+    playBeep();
   });
 
   input.value = "";
   focusScannerInput();
 }
 
-// Fonction SÉPARÉE pour charger depuis l'historique (sans enregistrement automatique)
 function loadFromHistory(code) {
-  // === AJOUT : Contrôle 16 digits même pour le chargement historique ===
+  // Contrôle 16 digits pour le chargement
   if (!/^\d{16}$/.test(code)) {
     showScanInfo("⚠️ Code non conforme (pas 16 chiffres) - Chargement impossible", "warning");
     playBeep();
     return;
   }
-  // ===================================================================
   
   const input = document.getElementById("code_produit");
   input.value = code;
   input.focus();
   
-  // Charger les données existantes
   localDB.allDocs({ include_docs: true }).then((docs) => {
     const existing = docs.rows.find(
       (row) =>
@@ -222,10 +218,9 @@ function loadFromHistory(code) {
         row.doc.axe1 === currentAccount
     );
     if (existing && existing.doc) {
-      // Remplir les remarques
       document.getElementById("remarques").value = existing.doc.remarques || "";
       
-      // === CORRECTION : Fusion des photos au lieu d'écrasement ===
+      // Fusion des photos
       const existingUrls = new Set(imageFiles.map(f => f.dataUrl));
       
       if (existing.doc.photos && existing.doc.photos.length > 0) {
@@ -254,7 +249,6 @@ function loadFromHistory(code) {
         });
         updatePhotoCount();
       }
-      // ============================================================
       
       showScanInfo(`Code ${code} chargé - Ajouter photos et cliquer "Enregistrer"`, "success");
     } else {
@@ -268,9 +262,8 @@ function majAffichageListeScans() {
   if (!ul) return;
   ul.innerHTML = "";
   
-  // Récupérer tous les documents pour chercher les photos existantes
   localDB.allDocs({ include_docs: true }).then((docs) => {
-    // === FILTRAGE : Ne garder que les codes à 16 chiffres ===
+    // Filtrer les codes à 16 chiffres
     const codesValides = produitsScannes.filter(item => /^\d{16}$/.test(item.code));
     
     codesValides
@@ -281,7 +274,6 @@ function majAffichageListeScans() {
         const link = document.createElement("a");
         link.href = "#";
         
-        // Vérifier si ce code a des photos existantes
         const existingDoc = docs.rows.find(
           (row) =>
             row.doc &&
@@ -299,7 +291,6 @@ function majAffichageListeScans() {
         
         link.onclick = (e) => {
           e.preventDefault();
-          // Appeler la fonction loadFromHistory au lieu de enregistreScan
           loadFromHistory(item.code);
         };
         
@@ -332,14 +323,12 @@ function initQRScanner() {
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 250, height: 250 } },
       (text) => {
-        // === CONTRÔLE 16 DIGITS ===
         if (/^\d{16}$/.test(text)) {
           enregistreScan(text);
         } else {
           showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
           playBeep();
         }
-        // ===========================
       }
     );
   });
@@ -354,7 +343,6 @@ function stopQRScanner() {
    RESET
 ======================= */
 
-// === CORRECTION : reset avec paramètre keepCode ===
 function resetForm(keepCode = true) {
   if (!keepCode) {
     document.getElementById("code_produit").value = "";
@@ -365,7 +353,6 @@ function resetForm(keepCode = true) {
   updatePhotoCount();
   focusScannerInput();
 }
-// =================================================
 
 /* =======================
    INIT
@@ -393,7 +380,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const mode = document.getElementById("modeScan");
   const qrDiv = document.getElementById("qr-reader");
 
-  // 🔥 BLUETOOTH PAR DÉFAUT
   mode.value = "bluetooth";
   qrDiv.style.display = "none";
   focusScannerInput();
@@ -416,17 +402,12 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("galleryInput").onchange = (e) =>
     handleFiles(e.target.files);
 
-  // Bouton réinitialiser (vide TOUT incluant le code)
   const resetBtn = document.getElementById("resetBtn");
   if (resetBtn) {
     resetBtn.onclick = () => {
       document.getElementById("bobinesForm").reset();
-      imageFiles = [];
-      document.getElementById("previewContainer").innerHTML = "";
-      updatePhotoCount();
-      // === CORRECTION : Le bouton reset vide le code ===
-      document.getElementById("code_produit").value = "";
-      focusScannerInput();
+      // === CORRECTION : Utiliser resetForm(false) pour vider le code ===
+      resetForm(false);
     };
   }
 
@@ -436,7 +417,6 @@ window.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter") {
       const code = codeField.value.trim();
       
-      // === CONTRÔLE 16 DIGITS (validation unique) ===
       if (!/^\d{16}$/.test(code)) {
         showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
         playBeep();
@@ -445,7 +425,6 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
       
-      // ✅ Code valide - on enregistre directement
       enregistreScan(code);
       e.preventDefault();
     }
@@ -455,7 +434,6 @@ window.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     const code = document.getElementById("code_produit").value.trim();
 
-    // === CONTRÔLE 16 DIGITS (validation unique) ===
     if (!/^\d{16}$/.test(code)) {
       showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
       playBeep();
@@ -466,14 +444,11 @@ window.addEventListener("DOMContentLoaded", () => {
     const remarques = document.getElementById("remarques").value.trim();
     const axe1 = currentAccount;
 
-    // Convertir imageFiles en base64 strings
     const photos = [];
     for (const f of imageFiles) {
-      // Si c'est un objet avec dataUrl (existant ou nouveau)
       if (f.dataUrl) {
         photos.push(f.dataUrl);
       } else {
-        // Sinon, c'est un blob (ancien format)
         const base64 = await new Promise((ok) => {
           const r = new FileReader();
           r.onload = () => ok(r.result);
@@ -495,11 +470,9 @@ window.addEventListener("DOMContentLoaded", () => {
       if (toUpdate) {
         toUpdate.doc.remarques = remarques;
         toUpdate.doc.quantité_consommee = quantité_consommee;
-        // AJOUT : fusionner les photos (ajouter les nouvelles aux existantes)
         if (photos.length) {
           if (!toUpdate.doc.photos) toUpdate.doc.photos = [];
           toUpdate.doc.photos = toUpdate.doc.photos.concat(photos);
-          // Limiter à 3 photos max
           if (toUpdate.doc.photos.length > 3) {
             toUpdate.doc.photos = toUpdate.doc.photos.slice(0, 3);
             showScanInfo("Maximum 3 photos ! Les photos supplémentaires ont été ignorées", "warning");
@@ -508,8 +481,7 @@ window.addEventListener("DOMContentLoaded", () => {
         await localDB.put(toUpdate.doc);
         showScanInfo("Enregistrement mis à jour ✅", "success");
         updated = true;
-        // === CORRECTION : Après mise à jour, on garde le code par défaut ===
-        resetForm(true); // Garde le code
+        resetForm(true);
       }
     } catch (err) {
       console.error("Erreur lors de la mise à jour:", err);
@@ -533,8 +505,7 @@ window.addEventListener("DOMContentLoaded", () => {
     try {
       await localDB.put(record);
       showScanInfo("Nouveau code-barres enregistré ✅", "success");
-      // === CORRECTION : Après nouvel enregistrement, on garde le code par défaut ===
-      resetForm(true); // Garde le code
+      resetForm(true);
     } catch {
       showScanInfo("Erreur lors de l'enregistrement", "warning");
     }
