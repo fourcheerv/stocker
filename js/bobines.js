@@ -114,7 +114,7 @@ function handleFiles(list) {
 ======================= */
 
 function enregistreScan(code) {
-     // === NOUVEAU : Contrôle des 16 digits ===
+  // === CONTRÔLE 16 DIGITS ===
   if (!/^\d{16}$/.test(code)) {
     showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
     playBeep();
@@ -122,7 +122,8 @@ function enregistreScan(code) {
     focusScannerInput();
     return;
   }
-  // ========================================
+  // ===========================
+  
   const input = document.getElementById("code_produit");
   input.value = code;
   input.classList.add("grandScan");
@@ -168,6 +169,14 @@ function enregistreScan(code) {
 
 // Fonction SÉPARÉE pour charger depuis l'historique (sans enregistrement automatique)
 function loadFromHistory(code) {
+  // === AJOUT : Contrôle 16 digits même pour le chargement historique ===
+  if (!/^\d{16}$/.test(code)) {
+    showScanInfo("⚠️ Code non conforme (pas 16 chiffres) - Chargement impossible", "warning");
+    playBeep();
+    return;
+  }
+  // ===================================================================
+  
   const input = document.getElementById("code_produit");
   input.value = code;
   input.focus();
@@ -284,14 +293,14 @@ function initQRScanner() {
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 250, height: 250 } },
       (text) => {
-        // === NOUVEAU : Contrôle des 16 digits ===
+        // === CONTRÔLE 16 DIGITS ===
         if (/^\d{16}$/.test(text)) {
           enregistreScan(text);
         } else {
           showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
           playBeep();
         }
-        // ========================================
+        // ===========================
       }
     );
   });
@@ -381,17 +390,18 @@ window.addEventListener("DOMContentLoaded", () => {
   codeField.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       const code = codeField.value.trim();
-       // === NOUVEAU : Contrôle des 16 digits ===
-       if (!/^\d{16}$/.test(code)) {
-         showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
-         playBeep();
-         codeField.value = "";
-         e.preventDefault();
-         return;
-       }
-    // ========================================
       
-      if (/^\d+$/.test(code)) enregistreScan(code);
+      // === CONTRÔLE 16 DIGITS (validation unique) ===
+      if (!/^\d{16}$/.test(code)) {
+        showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
+        playBeep();
+        codeField.value = "";
+        e.preventDefault();
+        return;
+      }
+      
+      // ✅ Code valide - on enregistre directement
+      enregistreScan(code);
       e.preventDefault();
     }
   });
@@ -400,15 +410,13 @@ window.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     const code = document.getElementById("code_produit").value.trim();
 
-    // === MODIFIÉ : Validation plus stricte ===
-     if (!/^\d{16}$/.test(code)) {
-    showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
-    playBeep();
-    return;
-     }
-  // =========================================
-     
-    if (!/^\d+$/.test(code)) return alert("Code non valide !");
+    // === CONTRÔLE 16 DIGITS (validation unique) ===
+    if (!/^\d{16}$/.test(code)) {
+      showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
+      playBeep();
+      return;
+    }
+    
     const quantité_consommee = 1;
     const remarques = document.getElementById("remarques").value.trim();
     const axe1 = currentAccount;
