@@ -427,7 +427,8 @@ function renderTable() {
   paginatedDocs.forEach(doc => {
     const row = document.createElement('tr');
     const isSelected = selectedDocs.has(doc._id);
-    
+    const hasPhotos = Array.isArray(doc.photos) && doc.photos.length > 0;
+
     row.innerHTML = `
       <td><input type="checkbox" class="row-checkbox" data-id="${doc._id}" ${isSelected ? 'checked' : ''}></td>
       <td>${doc.date_sortie ? formatDateForDisplay(doc.date_sortie) : formatDateForDisplay(doc._id)}</td>
@@ -439,9 +440,7 @@ function renderTable() {
       <td>${doc.magasin || ''}</td>
       <td>${getAxe1Label(doc.axe1)}</td>
       <td>${doc.axe2 || ''}</td>
-       <td class="photo-indicator">
-    ${hasPhotos ? '📷' : ''}
-      </td>
+       <td class="photo-indicator">${hasPhotos ? '📷' : ''}</td>
       <td>
         <div class="action-buttons-container">
           <button class="view-btn" data-id="${doc._id}">👁️</button>
