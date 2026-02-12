@@ -439,6 +439,9 @@ function renderTable() {
       <td>${doc.magasin || ''}</td>
       <td>${getAxe1Label(doc.axe1)}</td>
       <td>${doc.axe2 || ''}</td>
+       <td class="photo-indicator">
+    ${hasPhotos ? '📷' : ''}
+      </td>
       <td>
         <div class="action-buttons-container">
           <button class="view-btn" data-id="${doc._id}">👁️</button>
@@ -447,6 +450,8 @@ function renderTable() {
         </div>
       </td>
     `;
+
+
 
     tableBody.appendChild(row);
   });

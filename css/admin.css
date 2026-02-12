@@ -783,6 +783,11 @@ tr:hover {
   transform: scale(1.05);
 }
 
+.photo-indicator {
+  text-align: center;
+  font-size: 1.1rem;
+}
+
 /* Modal d'édition */
 .edit-modal-content {
   background: white;
