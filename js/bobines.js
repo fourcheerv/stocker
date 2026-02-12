@@ -3,6 +3,8 @@ let isSubmitting = false;
 let imageFiles = [];
 let currentAccount = null;
 let produitsScannes = [];
+let dernierScanTime = 0;
+let dernierScanCode = "";
 
 /* =======================
    DATABASE
@@ -69,6 +71,16 @@ function updatePhotoCount() {
 
 function handleFiles(list) {
   const files = Array.from(list);
+  
+  // === NOUVEAU : Limite de taille (5MB) ===
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`Photo trop volumineuse : ${(file.size / 1024 / 1024).toFixed(1)}MB (max 5MB)`);
+      return;
+    }
+  }
+  // ========================================
+  
   if (imageFiles.length >= 3) {
     alert("Maximum 3 photos atteint !");
     return;
@@ -114,6 +126,16 @@ function handleFiles(list) {
 ======================= */
 
 function enregistreScan(code) {
+  // === ANTI-DOUBLON CAMÉRA ===
+  const now = Date.now();
+  if (code === dernierScanCode && now - dernierScanTime < 2000) {
+    console.log("Scan ignoré (trop rapide)");
+    return;
+  }
+  dernierScanCode = code;
+  dernierScanTime = now;
+  // ============================
+  
   // === CONTRÔLE 16 DIGITS ===
   if (!/^\d{16}$/.test(code)) {
     showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
@@ -192,34 +214,38 @@ function loadFromHistory(code) {
     if (existing && existing.doc) {
       // Remplir les remarques
       document.getElementById("remarques").value = existing.doc.remarques || "";
-      // Charger les photos existantes
+      
+      // === CORRECTION : Fusion des photos au lieu d'écrasement ===
+      const existingUrls = new Set(imageFiles.map(f => f.dataUrl));
+      
       if (existing.doc.photos && existing.doc.photos.length > 0) {
-        imageFiles = [];
-        document.getElementById("previewContainer").innerHTML = "";
         existing.doc.photos.forEach((photoBase64) => {
-          // IMPORTANT : ajouter les photos existantes à imageFiles
-          imageFiles.push({ dataUrl: photoBase64, existing: true });
-          
-          const wrapper = document.createElement("div");
-          wrapper.className = "preview-image";
-          const img = document.createElement("img");
-          img.src = photoBase64;
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "remove-button";
-          btn.textContent = "×";
-          btn.onclick = (ev) => {
-            ev.preventDefault();
-            const idx = [...wrapper.parentNode.children].indexOf(wrapper);
-            imageFiles.splice(idx, 1);
-            wrapper.remove();
-            updatePhotoCount();
-          };
-          wrapper.append(img, btn);
-          document.getElementById("previewContainer").append(wrapper);
+          if (!existingUrls.has(photoBase64)) {
+            imageFiles.push({ dataUrl: photoBase64, existing: true });
+            
+            const wrapper = document.createElement("div");
+            wrapper.className = "preview-image";
+            const img = document.createElement("img");
+            img.src = photoBase64;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "remove-button";
+            btn.textContent = "×";
+            btn.onclick = (ev) => {
+              ev.preventDefault();
+              const idx = [...wrapper.parentNode.children].indexOf(wrapper);
+              imageFiles.splice(idx, 1);
+              wrapper.remove();
+              updatePhotoCount();
+            };
+            wrapper.append(img, btn);
+            document.getElementById("previewContainer").append(wrapper);
+          }
         });
         updatePhotoCount();
       }
+      // ============================================================
+      
       showScanInfo(`Code ${code} chargé - Ajouter photos et cliquer "Enregistrer"`, "success");
     } else {
       showScanInfo(`Code ${code} mis en place - Ajouter photos et enregistrer`, "success");
@@ -234,7 +260,10 @@ function majAffichageListeScans() {
   
   // Récupérer tous les documents pour chercher les photos existantes
   localDB.allDocs({ include_docs: true }).then((docs) => {
-    produitsScannes
+    // === FILTRAGE : Ne garder que les codes à 16 chiffres ===
+    const codesValides = produitsScannes.filter(item => /^\d{16}$/.test(item.code));
+    
+    codesValides
       .slice(-10)
       .reverse()
       .forEach((item) => {
@@ -315,14 +344,18 @@ function stopQRScanner() {
    RESET
 ======================= */
 
-function resetForm() {
-  // NE PAS réinitialiser code_produit pour permettre de continuer à ajouter des photos au même code
+// === CORRECTION : reset avec paramètre keepCode ===
+function resetForm(keepCode = true) {
+  if (!keepCode) {
+    document.getElementById("code_produit").value = "";
+  }
   document.getElementById("remarques").value = "";
   imageFiles = [];
   document.getElementById("previewContainer").innerHTML = "";
   updatePhotoCount();
   focusScannerInput();
 }
+// =================================================
 
 /* =======================
    INIT
@@ -381,6 +414,8 @@ window.addEventListener("DOMContentLoaded", () => {
       imageFiles = [];
       document.getElementById("previewContainer").innerHTML = "";
       updatePhotoCount();
+      // === CORRECTION : Le bouton reset vide le code ===
+      document.getElementById("code_produit").value = "";
       focusScannerInput();
     };
   }
@@ -463,7 +498,8 @@ window.addEventListener("DOMContentLoaded", () => {
         await localDB.put(toUpdate.doc);
         showScanInfo("Enregistrement mis à jour ✅", "success");
         updated = true;
-        resetForm();
+        // === CORRECTION : Après mise à jour, on garde le code par défaut ===
+        resetForm(true); // Garde le code
       }
     } catch (err) {
       console.error("Erreur lors de la mise à jour:", err);
@@ -487,7 +523,8 @@ window.addEventListener("DOMContentLoaded", () => {
     try {
       await localDB.put(record);
       showScanInfo("Nouveau code-barres enregistré ✅", "success");
-      resetForm();
+      // === CORRECTION : Après nouvel enregistrement, on garde le code par défaut ===
+      resetForm(true); // Garde le code
     } catch {
       showScanInfo("Erreur lors de l'enregistrement", "warning");
     }
