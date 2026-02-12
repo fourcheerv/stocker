@@ -377,27 +377,6 @@ window.addEventListener("DOMContentLoaded", () => {
     window.location.href = "login.html";
   };
 
-    // === Cacher certains champs si compte bobines ===
-  if (currentAccount === "BOB329") {
-    const idsToHide = [
-      "designation",
-      "a_commander",
-      "axe1",       // champ visible
-      "axe2",
-      "unites",
-      "magasin"
-    ];
-
-    idsToHide.forEach(id => {
-      const field = document.getElementById(id);
-      if (field) {
-        const container = field.closest(".form-group") || field.parentElement;
-        (container || field).style.display = "none";
-      }
-    });
-  }
-  // ================================================
-
   const mode = document.getElementById("modeScan");
   const qrDiv = document.getElementById("qr-reader");
 
