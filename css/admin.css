@@ -708,31 +708,33 @@ tr:hover {
   position: relative;
   background-color: #fff;
   border-radius: var(--border-radius);
-  padding: 1.5rem 1.5rem 1rem;
+  padding: 1.5rem;
   max-width: 600px;
   width: 100%;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-  text-align: center; /* pour centrer le titre */
-  margin: 0 1rem;
+  box-shadow: var(--box-shadow);
+  text-align: left;           /* tout aligné à gauche */
 }
 
-/* Titre du modal d'édition */
+/* Ligne croix + titre alignés à gauche */
+.edit-modal-content .close-btn,
 .edit-modal-content h2 {
-  margin: 0;
-  padding: 0.5rem 2rem; /* laisse de la place pour la croix à gauche */
-  font-size: 1.4rem;
+  display: inline-block;
+  vertical-align: middle;
 }
 
-/* Croix en haut à gauche du titre dans le modal d'édition */
 .edit-modal-content .close-btn {
-  position: absolute;
-  left: 0.75rem;   /* haut gauche */
-  top: 0.7rem;
+  margin-right: 0.5rem;       /* petit espace entre croix et texte */
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--color-error);
   line-height: 1;
 }
+
+.edit-modal-content h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
 
 
 /* Détails */
