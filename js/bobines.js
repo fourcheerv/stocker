@@ -154,21 +154,20 @@ function enregistreScan(code) {
         row.doc.code_produit === code &&
         row.doc.axe1 === currentAccount
     );
-
-    if (existant) {
+   // suppression du controle de doublons dans la base de données
+    /*if (existant) {
       showScanInfo("⚠️ Code barre déjà scanné", "warning");
-    } else {
+    } else {*/
       const quantite = 1;
       
-      // === AMÉLIORATION : Éviter les doublons dans l'historique ===
+      // === Éviter les doublons dans l'historique ===
       const existingIndex = produitsScannes.findIndex(item => item.code === code);
       if (existingIndex !== -1) {
         produitsScannes[existingIndex].quantite += 1;
       } else {
         produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
       }
-      // ===========================================================
-      
+         
       majAffichageListeScans();
 
       const record = {
@@ -187,12 +186,13 @@ function enregistreScan(code) {
         showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
         playBeep();
       });
-    }
+    // suppression du controle de doublons dans la base de données 
+    /*}
   }).catch((err) => {
     console.error("Erreur DB:", err);
     showScanInfo("❌ Erreur de connexion", "warning");
     playBeep();
-  });
+  });*/
 
   input.value = "";
   focusScannerInput();
