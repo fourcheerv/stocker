@@ -196,7 +196,7 @@ function enregistreScan(code) {
   });
   */
 
-  // NOUVELLE VERSION SANS CONTRÔLE DES DOUBLONS
+  // NOUVELLE VERSION SANS CONTRÔLE DES DOUBLONS besoin particulier
   const quantite = 1;
   
   // Éviter les doublons dans l'historique local uniquement
@@ -530,7 +530,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (updated) return;
   */
 
-  // NOUVELLE VERSION : TOUJOURS CRÉER UN NOUVEAU DOCUMENT
+  // NOUVELLE VERSION : TOUJOURS CRÉER UN NOUVEAU DOCUMENT besoin particulier
   const record = {
     _id: new Date().toISOString(), // ID unique basé sur le timestamp
     type: "bobine",
