@@ -466,83 +466,88 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("bobinesForm").onsubmit = async (e) => {
-    e.preventDefault();
-    const code = document.getElementById("code_produit").value.trim();
+  e.preventDefault();
+  const code = document.getElementById("code_produit").value.trim();
 
-    if (!/^\d{16}$/.test(code)) {
-      showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
-      playBeep();
-      return;
+  if (!/^\d{16}$/.test(code)) {
+    showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
+    playBeep();
+    return;
+  }
+  
+  const quantité_consommee = 1;
+  const remarques = document.getElementById("remarques").value.trim();
+  const axe1 = currentAccount;
+
+  const photos = [];
+  for (const f of imageFiles) {
+    if (f.dataUrl) {
+      photos.push(f.dataUrl);
+    } else {
+      const base64 = await new Promise((ok) => {
+        const r = new FileReader();
+        r.onload = () => ok(r.result);
+        r.readAsDataURL(f);
+      });
+      photos.push(base64);
     }
-    
-    const quantité_consommee = 1;
-    const remarques = document.getElementById("remarques").value.trim();
-    const axe1 = currentAccount;
+  }
 
-    const photos = [];
-    for (const f of imageFiles) {
-      if (f.dataUrl) {
-        photos.push(f.dataUrl);
-      } else {
-        const base64 = await new Promise((ok) => {
-          const r = new FileReader();
-          r.onload = () => ok(r.result);
-          r.readAsDataURL(f);
-        });
-        photos.push(base64);
-      }
-    }
-
-    let updated = false;
-    try {
-      const docs = await localDB.allDocs({ include_docs: true });
-      const toUpdate = docs.rows.find(
-        (row) =>
-          row.doc &&
-          row.doc.code_produit === code &&
-          row.doc.axe1 === currentAccount
-      );
-      if (toUpdate) {
-        toUpdate.doc.remarques = remarques;
-        toUpdate.doc.quantité_consommee = quantité_consommee;
-        if (photos.length) {
-          if (!toUpdate.doc.photos) toUpdate.doc.photos = [];
-          toUpdate.doc.photos = toUpdate.doc.photos.concat(photos);
-          if (toUpdate.doc.photos.length > 3) {
-            toUpdate.doc.photos = toUpdate.doc.photos.slice(0, 3);
-            showScanInfo("Maximum 3 photos ! Les photos supplémentaires ont été ignorées", "warning");
-          }
+  // ANCIENNE VERSION AVEC MISE À JOUR DES DOUBLONS (commentée)
+  /*
+  let updated = false;
+  try {
+    const docs = await localDB.allDocs({ include_docs: true });
+    const toUpdate = docs.rows.find(
+      (row) =>
+        row.doc &&
+        row.doc.code_produit === code &&
+        row.doc.axe1 === currentAccount
+    );
+    if (toUpdate) {
+      toUpdate.doc.remarques = remarques;
+      toUpdate.doc.quantité_consommee = quantité_consommee;
+      if (photos.length) {
+        if (!toUpdate.doc.photos) toUpdate.doc.photos = [];
+        toUpdate.doc.photos = toUpdate.doc.photos.concat(photos);
+        if (toUpdate.doc.photos.length > 3) {
+          toUpdate.doc.photos = toUpdate.doc.photos.slice(0, 3);
+          showScanInfo("Maximum 3 photos ! Les photos supplémentaires ont été ignorées", "warning");
         }
-        await localDB.put(toUpdate.doc);
-        showScanInfo("Enregistrement mis à jour ✅", "success");
-        updated = true;
-        resetForm(true);
       }
-    } catch (err) {
-      console.error("Erreur lors de la mise à jour:", err);
-      showScanInfo("Erreur lors de la mise à jour", "warning");
-      playBeep();
-      return;
-    }
-
-    if (updated) return;
-
-    const record = {
-      _id: new Date().toISOString(),
-      type: "bobine",
-      code_produit: code,
-      quantité_consommee,
-      remarques,
-      axe1,
-      photos,
-    };
-
-    try {
-      await localDB.put(record);
-      showScanInfo("Nouveau code-barres enregistré ✅", "success");
+      await localDB.put(toUpdate.doc);
+      showScanInfo("Enregistrement mis à jour ✅", "success");
+      updated = true;
       resetForm(true);
-    } catch {
-      showScanInfo("Erreur lors de l'enregistrement", "warning");
     }
+  } catch (err) {
+    console.error("Erreur lors de la mise à jour:", err);
+    showScanInfo("Erreur lors de la mise à jour", "warning");
+    playBeep();
+    return;
+  }
+
+  if (updated) return;
+  */
+
+  // NOUVELLE VERSION : TOUJOURS CRÉER UN NOUVEAU DOCUMENT
+  const record = {
+    _id: new Date().toISOString(), // ID unique basé sur le timestamp
+    type: "bobine",
+    code_produit: code,
+    quantité_consommee,
+    remarques,
+    axe1,
+    photos,
   };
-});
+
+  try {
+    await localDB.put(record);
+    showScanInfo("Nouveau code-barres enregistré ✅", "success");
+    resetForm(true);
+  } catch (err) {
+    console.error("Erreur lors de l'enregistrement:", err);
+    showScanInfo("Erreur lors de l'enregistrement", "warning");
+    playBeep();
+  }
+};
