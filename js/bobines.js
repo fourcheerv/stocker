@@ -147,6 +147,8 @@ function enregistreScan(code) {
   input.classList.add("grandScan");
   setTimeout(() => input.classList.remove("grandScan"), 800);
 
+  // ANCIENNE VERSION AVEC CONTRÔLE DES DOUBLONS (commentée)
+  /*
   localDB.allDocs({ include_docs: true }).then((docs) => {
     const existant = docs.rows.find(
       (row) =>
@@ -154,10 +156,10 @@ function enregistreScan(code) {
         row.doc.code_produit === code &&
         row.doc.axe1 === currentAccount
     );
-   // suppression du controle de doublons dans la base de données
-    /*if (existant) {
+
+    if (existant) {
       showScanInfo("⚠️ Code barre déjà scanné", "warning");
-    } else {*/
+    } else {
       const quantite = 1;
       
       // === Éviter les doublons dans l'historique ===
@@ -186,13 +188,46 @@ function enregistreScan(code) {
         showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
         playBeep();
       });
-    // suppression du controle de doublons dans la base de données 
-    /*}
+    }
   }).catch((err) => {
     console.error("Erreur DB:", err);
     showScanInfo("❌ Erreur de connexion", "warning");
     playBeep();
-  });*/
+  });
+  */
+
+  // NOUVELLE VERSION SANS CONTRÔLE DES DOUBLONS
+  const quantite = 1;
+  
+  // Éviter les doublons dans l'historique local uniquement
+  const existingIndex = produitsScannes.findIndex(item => item.code === code);
+  if (existingIndex !== -1) {
+    produitsScannes[existingIndex].quantite += 1;
+  } else {
+    produitsScannes.push({ code, quantite, ts: new Date().toISOString() });
+  }
+  
+  majAffichageListeScans();
+
+  const record = {
+    _id: new Date().toISOString(),
+    type: "bobine",
+    code_produit: code,
+    quantité_consommee: quantite,
+    remarques: "",
+    axe1: currentAccount,
+    photos: [],
+  };
+
+  localDB.put(record)
+    .then(() => {
+      showScanInfo("✅ Code barre enregistré - Ajouter photos si besoin", "success");
+    })
+    .catch((err) => {
+      console.error("Erreur DB:", err);
+      showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
+      playBeep();
+    });
 
   input.value = "";
   focusScannerInput();
