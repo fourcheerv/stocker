@@ -154,10 +154,10 @@ function enregistreScan(code) {
         row.doc.code_produit === code &&
         row.doc.axe1 === currentAccount
     );
-   // suppression du controle de doublons dans la base de données
-    /*if (existant) {
+   
+    if (existant) {
       showScanInfo("⚠️ Code barre déjà scanné", "warning");
-    } else {*/
+    } else {
       const quantite = 1;
       
       // === Éviter les doublons dans l'historique ===
@@ -186,13 +186,13 @@ function enregistreScan(code) {
         showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
         playBeep();
       });
-    // suppression du controle de doublons dans la base de données 
-    /*}
+   
+    }
   }).catch((err) => {
     console.error("Erreur DB:", err);
     showScanInfo("❌ Erreur de connexion", "warning");
     playBeep();
-  });*/
+  });
 
   input.value = "";
   focusScannerInput();
