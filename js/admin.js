@@ -353,9 +353,6 @@ function filterData() {
   const commandeFilter = document.getElementById('commandeFilter').value;
   const magasinFilter = document.getElementById('magasinFilter').value;
 
-  
-
-
   filteredDocs = allDocs.filter(doc => {
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
