@@ -353,6 +353,26 @@ function filterData() {
   const commandeFilter = document.getElementById('commandeFilter').value;
   const magasinFilter = document.getElementById('magasinFilter').value;
 
+    // Récupérer le compte connecté
+  const currentAccount = sessionStorage.getItem('currentAccount');
+
+  // Définir le filtre par défaut en fonction du compte connecté
+  let defaultFilterValue = '';
+  if (currentAccount === 'SMI') {
+    defaultFilterValue = 'SCT=E359329';
+  } else if (currentAccount === 'Admin') {
+    defaultFilterValue = 'Admin';
+  } else if (currentAccount === 'BOB329') {
+    defaultFilterValue = 'BOB329';
+   } else if (currentAccount === 'Cantine') {
+    defaultFilterValue = 'SCT=E860329';
+
+  }
+  
+  // Si le filtre sélectionné est vide, utiliser le filtre par défaut
+  if (!filterValue) {
+    filterValue = defaultFilterValue;
+  }
 
   filteredDocs = allDocs.filter(doc => {
     // Filtre par compte
