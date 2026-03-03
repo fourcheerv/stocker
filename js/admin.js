@@ -893,8 +893,23 @@ async function exportAndSendEmail() {
           if (tokenResponse.error) throw new Error(tokenResponse.error);
           
           const csvContent = generateCSVContent();
-          const today = new Date();
-          const dateStr = formatDateForFilename(today);
+          //const today = new Date();
+          //const dateStr = formatDateForFilename(today);
+          //remplacement par date selectionnée dans datepicker date de sortie
+          const dateFilterValue = document.getElementById('dateFilter').value;
+          let dateToUse;
+          
+          if (dateFilterValue) {
+            // Si une date est sélectionnée, l'utiliser
+            dateToUse = new Date(dateFilterValue);
+          } else {
+            // Sinon, utiliser la date du jour
+            dateToUse = new Date();
+          }
+          
+          const dateStr = formatDateForFilename(dateToUse);
+           
+        
           const magasinFilter = document.getElementById('magasinFilter').value;
           let filename = `export_stock_${dateStr}`;
           if (magasinFilter) filename += `_${magasinFilter}`;
@@ -1297,4 +1312,5 @@ function formatDateForFilename(date) {
     String(date.getDate()).padStart(2, '0')
   ].join('-');
 }
+
 
