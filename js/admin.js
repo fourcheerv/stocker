@@ -1164,7 +1164,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (currentAccount === 'BOB329') {
     document.getElementById('exportXlsxBobinesBtn').style.display = '';
   }
-  document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
+   // SUPPRIMEZ CETTE LIGNE :
+  // document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
   if (typeof initAdmin === "function") initAdmin();
 });
 
@@ -1314,6 +1315,7 @@ function toBase64(str) {
 function chunkSplit(str, length) {
   return str.match(new RegExp(`.{1,${length}}`, 'g')).join("\r\n");
 }
+
 
 
 
