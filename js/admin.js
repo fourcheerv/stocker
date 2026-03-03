@@ -1314,13 +1314,8 @@ function toBase64(str) {
 function chunkSplit(str, length) {
   return str.match(new RegExp(`.{1,${length}}`, 'g')).join("\r\n");
 }
-function formatDateForFilename(date) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0')
-  ].join('-');
-}
+
+
 
 
 
