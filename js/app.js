@@ -54,6 +54,70 @@ function setStockFields({ stockActuel, stockMin, stockMax }) {
   document.getElementById("stock_actuel").value = String(stockActuel);
   document.getElementById("stock_min").value = String(stockMin);
   document.getElementById("stock_max").value = String(stockMax);
+  updateCommanderFieldFromStock();
+}
+
+function getStockStatus(stockActuel, stockMin, stockMax, quantiteConsommee) {
+  const stockApres = Math.max(0, stockActuel - quantiteConsommee);
+  const isMaxReached = stockMax > 0 && stockActuel >= stockMax;
+  const safetyZone = stockMax > stockMin ? Math.max(1, Math.round((stockMax - stockMin) * 0.2)) : 1;
+  const isNearMin = stockApres > stockMin && stockApres <= stockMin + safetyZone;
+
+  if (stockApres === 0) {
+    return {
+      alertClass: "is-critical",
+      shouldOrder: true,
+      message: "Rupture de stock: stock à 0 après déstockage."
+    };
+  }
+
+  if (isMaxReached) {
+    return {
+      alertClass: "is-max",
+      shouldOrder: true,
+      message: "Stock maximum atteint."
+    };
+  }
+
+  if (stockApres <= stockMin) {
+    return {
+      alertClass: "is-critical",
+      shouldOrder: true,
+      message: `Stock bas: seuil minimum atteint (${stockApres} <= ${stockMin}).`
+    };
+  }
+
+  if (isNearMin) {
+    return {
+      alertClass: "is-warning",
+      shouldOrder: false,
+      message: `Vigilance: stock proche du minimum (${stockApres}).`
+    };
+  }
+
+  return {
+    alertClass: "is-ok",
+    shouldOrder: false,
+    message: `Stock correct: ${stockApres} unité(s) restantes.`
+  };
+}
+
+function updateStockAlert(status) {
+  const alertBox = document.getElementById("stockAlert");
+  if (!alertBox) return;
+
+  alertBox.className = `stock-alert ${status.alertClass}`;
+  alertBox.textContent = status.message;
+}
+
+function updateCommanderFieldFromStock() {
+  const stockActuel = parseNonNegativeNumber(document.getElementById("stock_actuel").value);
+  const stockMin = parseNonNegativeNumber(document.getElementById("stock_min").value);
+  const stockMax = parseNonNegativeNumber(document.getElementById("stock_max").value);
+  const quantiteConsommee = parseNonNegativeNumber(document.getElementById("quantité_consommee").value);
+  const status = getStockStatus(stockActuel, stockMin, stockMax, quantiteConsommee);
+  document.getElementById("a_commander").value = status.shouldOrder ? "Oui" : "Non";
+  updateStockAlert(status);
 }
 
 async function loadStockStateForCode(code, excelRow = null) {
@@ -270,6 +334,10 @@ async function fillFormFromExcel(match) {
 
 // Écouteurs d'événements (reste identique)
 function setupEventListeners() {
+  ["stock_actuel", "stock_min", "stock_max", "quantité_consommee"].forEach((fieldId) => {
+    document.getElementById(fieldId).addEventListener("input", updateCommanderFieldFromStock);
+  });
+
   document.getElementById("code_produit").addEventListener("input", function() {
     const codeValue = normalizeProductCode(this.value);
     if (codeValue) {
@@ -462,6 +530,7 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   }
 
   const stockApres = stockActuel - quantiteConsommee;
+  const status = getStockStatus(stockActuel, stockMin, stockMax, quantiteConsommee);
   const record = { 
     _id: new Date().toISOString(), 
     photos: [],
@@ -483,7 +552,7 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   record.stock_actuel = stockApres;
   record.stock_min = stockMin;
   record.stock_max = stockMax;
-  if (stockApres <= stockMin) {
+  if (status.shouldOrder) {
     record.a_commander = "Oui";
   } else if (!record.a_commander) {
     record.a_commander = "Non";

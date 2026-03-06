@@ -208,6 +208,41 @@ main {
   border: 1px solid rgba(0, 61, 102, 0.1);
 }
 
+.stock-alert {
+  border-radius: var(--border-radius);
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.stock-alert.hidden {
+  display: none;
+}
+
+.stock-alert.is-ok {
+  color: #166534;
+  background-color: #ecfdf3;
+  border-color: #bbf7d0;
+}
+
+.stock-alert.is-warning {
+  color: #92400e;
+  background-color: #fffbeb;
+  border-color: #fde68a;
+}
+
+.stock-alert.is-critical {
+  color: #991b1b;
+  background-color: #fef2f2;
+  border-color: #fecaca;
+}
+
+.stock-alert.is-max {
+  color: #1d4ed8;
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
 label {
   font-weight: 600;
   margin-bottom: 8px;
