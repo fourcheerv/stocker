@@ -134,9 +134,9 @@
   </div>
 
   <!-- Carte 3 : À commander -->
-  <div class="stat-card" data-tooltip="Articles marqués 'À commander'">
+  <div class="stat-card" data-tooltip="Produits à commander selon le dernier stock (<= min ou max atteint)">
     <span class="stat-value" id="toOrderCount">0</span>
-    <span class="stat-label">À commander</span>
+    <span class="stat-label">À commander (stock)</span>
     <div class="stat-badge" id="urgentOrders"></div>
   </div>
 
@@ -150,7 +150,42 @@
     </div>
     <span class="stat-label">Répartition magasin</span>
   </div>
+
+  <div class="stat-card" data-tooltip="Nombre de produits avec un stock courant calculé">
+    <span class="stat-value" id="trackedProductsCount">0</span>
+    <span class="stat-label">Produits suivis</span>
+  </div>
+
+  <div class="stat-card" data-tooltip="Produits en rupture de stock (stock actuel = 0)">
+    <span class="stat-value" id="ruptureCount">0</span>
+    <span class="stat-label">Ruptures</span>
+  </div>
+
+  <div class="stat-card" data-tooltip="Produits dont le stock actuel est inférieur ou égal au stock minimum">
+    <span class="stat-value" id="underMinCount">0</span>
+    <span class="stat-label">Sous minimum</span>
+  </div>
+
+  <div class="stat-card" data-tooltip="Produits dont le stock actuel atteint le stock maximum">
+    <span class="stat-value" id="maxReachedCount">0</span>
+    <span class="stat-label">Max atteint</span>
+  </div>
+
+  <div class="stat-card" data-tooltip="Somme des quantités sorties sur les 7 derniers jours">
+    <span class="stat-value" id="qtyOut7Days">0</span>
+    <span class="stat-label">Qté sortie 7 jours</span>
+  </div>
+
+  <div class="stat-card" data-tooltip="Couverture moyenne en jours sur les produits suivis avec consommation récente">
+    <span class="stat-value" id="avgCoverageDays">0</span>
+    <span class="stat-label">Couverture moyenne (j)</span>
+  </div>
 </div>
+
+    <section class="top-products-section">
+      <h2>Top 10 Produits Les Plus Sortis (30 jours)</h2>
+      <div id="topProductsList" class="top-products-list"></div>
+    </section>
 
     <div class="table-responsive">
       <table id="dataTable">

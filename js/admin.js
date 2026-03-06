@@ -456,6 +456,80 @@ function renderTable() {
   updatePagination();
 }
 
+function getDocDate(doc) {
+  const d = new Date(doc.date_sortie || doc._id);
+  return Number.isNaN(d.getTime()) ? new Date(0) : d;
+}
+
+function getNumericValue(...values) {
+  for (const value of values) {
+    const num = Number(value);
+    if (Number.isFinite(num)) return num;
+  }
+  return null;
+}
+
+function getQuantityValue(doc) {
+  return getNumericValue(doc.quantité_consommee, doc.quantite_consommee) || 0;
+}
+
+function buildLatestStockByProduct(docs) {
+  const latestByCode = new Map();
+
+  docs.forEach((doc) => {
+    const rawCode = doc.code_produit ?? doc.codeproduit;
+    const normalizedCode = rawCode ? String(rawCode).trim().toLowerCase() : '';
+    if (!normalizedCode) return;
+
+    const stockActuel = getNumericValue(doc.stock_actuel, doc.stock_apres);
+    if (stockActuel === null) return;
+
+    const stockMin = getNumericValue(doc.stock_min, 0) || 0;
+    const stockMax = getNumericValue(doc.stock_max, 0) || 0;
+    const timestamp = getDocDate(doc).getTime();
+    const previous = latestByCode.get(normalizedCode);
+
+    if (!previous || timestamp > previous.timestamp) {
+      latestByCode.set(normalizedCode, {
+        code: normalizedCode,
+        stockActuel,
+        stockMin,
+        stockMax,
+        timestamp
+      });
+    }
+  });
+
+  return Array.from(latestByCode.values());
+}
+
+function getCodeLabel(doc) {
+  return doc.code_produit || doc.codeproduit || 'sans-code';
+}
+
+function getDesignationLabel(doc) {
+  return doc.designation || doc.Designation || 'Sans désignation';
+}
+
+function renderTopProducts(topProducts) {
+  const container = document.getElementById('topProductsList');
+  if (!container) return;
+
+  if (!topProducts.length) {
+    container.innerHTML = '<div class="top-product-row">Aucune sortie sur les 30 derniers jours.</div>';
+    return;
+  }
+
+  container.innerHTML = topProducts.map((item, idx) => `
+    <div class="top-product-row">
+      <span class="top-product-rank">#${idx + 1}</span>
+      <span class="top-product-code">${item.code}</span>
+      <span>${item.designation}</span>
+      <span class="top-product-qty">${item.qty.toLocaleString('fr-FR')}</span>
+    </div>
+  `).join('');
+}
+
 function updateStats() {
   const currentAccount = sessionStorage.getItem('currentAccount');
   const isAdmin = currentAccount === 'Admin';
@@ -470,23 +544,85 @@ function updateStats() {
 
   // 2. Activité récente (7 jours)
   const last7Days = filteredByAccount.filter(doc => {
-    const docDate = new Date(doc.date_sortie || doc._id);
+    const docDate = getDocDate(doc);
     return docDate > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   });
   document.getElementById('last7DaysCount').textContent = last7Days.length;
+  document.getElementById('qtyOut7Days').textContent = last7Days
+    .reduce((sum, doc) => sum + getQuantityValue(doc), 0)
+    .toLocaleString('fr-FR');
 
-  // 3. Articles à commander (avec indicateur d'urgence)
-  const toOrder = filteredByAccount.filter(doc => 
-    ['oui', 'o', 'yes', 'y'].includes(doc.a_commander?.toString().toLowerCase())
+  // 3. Articles à commander (calculés depuis le dernier stock par produit)
+  const latestStocks = buildLatestStockByProduct(filteredByAccount);
+  const toOrder = latestStocks.filter(item => 
+    item.stockActuel <= item.stockMin || (item.stockMax > 0 && item.stockActuel >= item.stockMax)
   );
   document.getElementById('toOrderCount').textContent = toOrder.length;
   document.getElementById('urgentOrders').textContent = toOrder.length > 5 ? "!" : "";
+  document.getElementById('trackedProductsCount').textContent = latestStocks.length;
+
+  const ruptures = latestStocks.filter(item => item.stockActuel <= 0);
+  const underMin = latestStocks.filter(item => item.stockActuel > 0 && item.stockActuel <= item.stockMin);
+  const maxReached = latestStocks.filter(item => item.stockMax > 0 && item.stockActuel >= item.stockMax);
+
+  document.getElementById('ruptureCount').textContent = ruptures.length;
+  document.getElementById('underMinCount').textContent = underMin.length;
+  document.getElementById('maxReachedCount').textContent = maxReached.length;
 
   // 4. Répartition par magasin
   const magasinMP = filteredByAccount.filter(doc => doc.magasin === 'ER-MP').length;
   const magasinMG = filteredByAccount.filter(doc => doc.magasin === 'ER-MG').length;
   document.getElementById('magasinMP').textContent = magasinMP;
   document.getElementById('magasinMG').textContent = magasinMG;
+  document.getElementById('trendTotal').textContent = `${latestStocks.length} produit(s) suivis`;
+
+  const now = Date.now();
+  const window30d = 30 * 24 * 60 * 60 * 1000;
+  const last30DaysDocs = filteredByAccount.filter((doc) => getDocDate(doc).getTime() > (now - window30d));
+
+  const topByCode = new Map();
+  last30DaysDocs.forEach((doc) => {
+    const normalizedCode = getCodeLabel(doc).toString().trim().toLowerCase();
+    if (!normalizedCode) return;
+    const qty = getQuantityValue(doc);
+    if (qty <= 0) return;
+
+    const existing = topByCode.get(normalizedCode) || {
+      code: getCodeLabel(doc),
+      designation: getDesignationLabel(doc),
+      qty: 0
+    };
+    existing.qty += qty;
+    if ((!existing.designation || existing.designation === 'Sans désignation') && getDesignationLabel(doc) !== 'Sans désignation') {
+      existing.designation = getDesignationLabel(doc);
+    }
+    topByCode.set(normalizedCode, existing);
+  });
+
+  const topProducts = Array.from(topByCode.values())
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 10);
+  renderTopProducts(topProducts);
+
+  const consumptionByCode = new Map();
+  last30DaysDocs.forEach((doc) => {
+    const normalizedCode = getCodeLabel(doc).toString().trim().toLowerCase();
+    if (!normalizedCode) return;
+    const qty = getQuantityValue(doc);
+    if (qty <= 0) return;
+    consumptionByCode.set(normalizedCode, (consumptionByCode.get(normalizedCode) || 0) + qty);
+  });
+
+  const coverages = latestStocks.map((item) => {
+    const dailyConsumption = (consumptionByCode.get(item.code || '') || 0) / 30;
+    if (dailyConsumption <= 0) return null;
+    return item.stockActuel / dailyConsumption;
+  }).filter((value) => value !== null && Number.isFinite(value));
+
+  const avgCoverage = coverages.length
+    ? (coverages.reduce((sum, days) => sum + days, 0) / coverages.length)
+    : 0;
+  document.getElementById('avgCoverageDays').textContent = avgCoverage ? avgCoverage.toFixed(1) : '0';
 
   // [Optionnel] Tendances (flèches ↑/↓)
   updateTrends(filteredByAccount);
@@ -494,15 +630,16 @@ function updateStats() {
 
 // Fonction pour calculer les tendances
 function updateTrends(data) {
-  const today = new Date();
+  const now = Date.now();
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
   const lastWeekData = data.filter(doc => {
-    const docDate = new Date(doc.date_sortie || doc._id);
-    return docDate > new Date(today - 14 * 24 * 60 * 60 * 1000) && docDate <= new Date(today - 7 * 24 * 60 * 60 * 1000);
+    const docTime = getDocDate(doc).getTime();
+    return docTime > (now - 2 * weekMs) && docTime <= (now - weekMs);
   });
 
   const currentWeekData = data.filter(doc => {
-    const docDate = new Date(doc.date_sortie || doc._id);
-    return docDate > new Date(today - 7 * 24 * 60 * 60 * 1000);
+    const docTime = getDocDate(doc).getTime();
+    return docTime > (now - weekMs);
   });
 
   const trendElement = document.getElementById('trend7Days');
@@ -510,6 +647,9 @@ function updateTrends(data) {
     const trend = ((currentWeekData.length - lastWeekData.length) / lastWeekData.length) * 100;
     trendElement.innerHTML = trend >= 0 ? `↑ ${Math.abs(trend.toFixed(1))}%` : `↓ ${Math.abs(trend.toFixed(1))}%`;
     trendElement.style.color = trend >= 0 ? '#2ecc71' : '#e74c3c';
+  } else {
+    trendElement.textContent = 'N/A';
+    trendElement.style.color = '#6c757d';
   }
 }
 
