@@ -478,10 +478,16 @@ main {
 .top-products-list {
   display: grid;
   gap: 0.4rem;
+  width: max-content;
+  min-width: 100%;
 }
 
 .top-products-scroll {
+  display: block;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -494,7 +500,7 @@ main {
   border-radius: 6px;
   background: #f8fafc;
   font-size: 0.92rem;
-  min-width: 560px;
+  min-width: 620px;
 }
 
 .top-product-rank {
@@ -513,8 +519,12 @@ main {
 }
 
 @media (max-width: 767px) {
+  .top-products-scroll {
+    padding-bottom: 0.25rem;
+  }
+
   .top-products-list {
-    min-width: 560px;
+    min-width: 620px;
   }
 }
 
