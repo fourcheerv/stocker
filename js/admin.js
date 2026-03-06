@@ -893,8 +893,20 @@ async function exportAndSendEmail() {
           if (tokenResponse.error) throw new Error(tokenResponse.error);
           
           const csvContent = generateCSVContent();
-          const today = new Date();
-          const dateStr = formatDateForFilename(today);
+          
+          // MODIFICATION : Utiliser la date du calendrier si disponible
+          const dateFilterValue = document.getElementById('dateFilter').value;
+          let dateToUse;
+          
+          if (dateFilterValue) {
+            // Si une date est sélectionnée, l'utiliser
+            dateToUse = new Date(dateFilterValue);
+          } else {
+            // Sinon, utiliser la date du jour
+            dateToUse = new Date();
+          }
+          
+          const dateStr = formatDateForFilename(dateToUse);
           const magasinFilter = document.getElementById('magasinFilter').value;
           let filename = `export_stock_${dateStr}`;
           if (magasinFilter) filename += `_${magasinFilter}`;
@@ -1152,7 +1164,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (currentAccount === 'BOB329') {
     document.getElementById('exportXlsxBobinesBtn').style.display = '';
   }
-  document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
+   // SUPPRIMEZ CETTE LIGNE :
+  // document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
   if (typeof initAdmin === "function") initAdmin();
 });
 
@@ -1182,8 +1195,20 @@ async function exportAndSendXlsxBobines() {
     XLSX.utils.book_append_sheet(wb, ws, "bobines");
 
     const wbout = XLSX.write(wb, {bookType:"xlsx", type:"base64"});
-    const today = new Date();
-    const dateStr = formatDateForFilename(today);
+    
+    // MODIFICATION ICI : Utiliser la date sélectionnée dans le calendrier au lieu de la date du jour
+    const dateFilterValue = document.getElementById('dateFilter').value;
+    let dateToUse;
+    
+    if (dateFilterValue) {
+      // Si une date est sélectionnée, l'utiliser
+      dateToUse = new Date(dateFilterValue);
+    } else {
+      // Sinon, utiliser la date du jour
+      dateToUse = new Date();
+    }
+    
+    const dateStr = formatDateForFilename(dateToUse);
     const filename = `bobines_export_${dateStr}.xlsx`;
 
     const boundary = "----boundary_" + Math.random().toString(16).substr(2);
@@ -1290,11 +1315,9 @@ function toBase64(str) {
 function chunkSplit(str, length) {
   return str.match(new RegExp(`.{1,${length}}`, 'g')).join("\r\n");
 }
-function formatDateForFilename(date) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0')
-  ].join('-');
-}
+
+
+
+
+
 
