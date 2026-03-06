@@ -4,6 +4,7 @@ let imageFiles = [];
 let qrReader = null;
 let isSubmitting = false;
 let currentAccount = null;
+const STOCK_STATE_PREFIX = "stock_state::";
 
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
@@ -23,6 +24,100 @@ function formatToDateTimeLocal(date) {
 
 function updateSortieDate() {
   document.getElementById("date_sortie").value = formatToDateTimeLocal(new Date());
+}
+
+function normalizeProductCode(code) {
+  return String(code || "").trim().toLowerCase();
+}
+
+function parseNonNegativeNumber(value, fallback = 0) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return fallback;
+  return number;
+}
+
+function getNumberFromRow(row, keys = [], fallback = 0) {
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
+      const parsed = Number(row[key]);
+      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+    }
+  }
+  return fallback;
+}
+
+function getStockStateDocId(code) {
+  return `${STOCK_STATE_PREFIX}${normalizeProductCode(code)}`;
+}
+
+function setStockFields({ stockActuel, stockMin, stockMax }) {
+  document.getElementById("stock_actuel").value = String(stockActuel);
+  document.getElementById("stock_min").value = String(stockMin);
+  document.getElementById("stock_max").value = String(stockMax);
+}
+
+async function loadStockStateForCode(code, excelRow = null) {
+  const normalizedCode = normalizeProductCode(code);
+  if (!normalizedCode) {
+    setStockFields({ stockActuel: 0, stockMin: 0, stockMax: 0 });
+    return;
+  }
+
+  const fallbackMin = excelRow ? getNumberFromRow(excelRow, ["Stock Min", "Stock_Min", "Stock minimum"], 0) : 0;
+  const fallbackMax = excelRow ? getNumberFromRow(excelRow, ["Stock Max", "Stock_Max", "Stock maximum"], 0) : 0;
+  const fallbackCurrent = excelRow ? getNumberFromRow(excelRow, ["Stock", "Stock Actuel", "Stock_Actuel", "Stock actuel", "Stock initial"], 0) : 0;
+
+  try {
+    const stateDoc = await localDB.get(getStockStateDocId(normalizedCode));
+    setStockFields({
+      stockActuel: parseNonNegativeNumber(stateDoc.stock_actuel, fallbackCurrent),
+      stockMin: parseNonNegativeNumber(stateDoc.stock_min, fallbackMin),
+      stockMax: parseNonNegativeNumber(stateDoc.stock_max, fallbackMax)
+    });
+  } catch (error) {
+    if (error.status !== 404) {
+      console.error("Erreur chargement stock courant :", error);
+    }
+
+    setStockFields({
+      stockActuel: fallbackCurrent,
+      stockMin: fallbackMin,
+      stockMax: fallbackMax
+    });
+  }
+}
+
+async function upsertStockState(code, stockActuel, stockMin, stockMax) {
+  const originalCode = String(code || "").trim();
+  const normalizedCode = normalizeProductCode(code);
+  if (!normalizedCode) return;
+
+  const docId = getStockStateDocId(normalizedCode);
+
+  try {
+    const existingDoc = await localDB.get(docId);
+    await localDB.put({
+      ...existingDoc,
+      type: "stock_state",
+      code_produit: originalCode,
+      stock_actuel: stockActuel,
+      stock_min: stockMin,
+      stock_max: stockMax,
+      updated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    if (error.status !== 404) throw error;
+
+    await localDB.put({
+      _id: docId,
+      type: "stock_state",
+      code_produit: originalCode,
+      stock_actuel: stockActuel,
+      stock_min: stockMin,
+      stock_max: stockMax,
+      updated_at: new Date().toISOString()
+    });
+  }
 }
 
 function updateUIForUserRole() {
@@ -145,7 +240,7 @@ function loadExcelData() {
 }
 
 // Remplissage du formulaire (reste identique)
-function fillFormFromExcel(match) {
+async function fillFormFromExcel(match) {
   const map = {
     "Code_Produit": "code_produit",
     "Désignation:": "designation",
@@ -170,20 +265,26 @@ function fillFormFromExcel(match) {
 
   document.getElementById("axe1").value = currentAccount;
   updateSortieDate();
+  await loadStockStateForCode(document.getElementById("code_produit").value, match);
 }
 
 // Écouteurs d'événements (reste identique)
 function setupEventListeners() {
   document.getElementById("code_produit").addEventListener("input", function() {
-    const codeValue = String(this.value).trim().toLowerCase();
+    const codeValue = normalizeProductCode(this.value);
     if (codeValue) {
       const match = excelData.find(
-        (row) => (row["Code_Produit"] || "").toString().toLowerCase() === codeValue
+        (row) => normalizeProductCode(row["Code_Produit"]) === codeValue
       );
-      if (match) fillFormFromExcel(match);
-      else updateSortieDate();
+      if (match) {
+        fillFormFromExcel(match);
+      } else {
+        updateSortieDate();
+        loadStockStateForCode(codeValue);
+      }
     } else {
       updateSortieDate();
+      loadStockStateForCode("");
     }
   });
 
@@ -192,8 +293,11 @@ function setupEventListeners() {
     const match = excelData.find(
       (row) => (row["Désignation:"] || row["Désignation"] || "").toLowerCase() === val
     );
-    if (match) fillFormFromExcel(match);
-    else updateSortieDate();
+    if (match) {
+      fillFormFromExcel(match);
+    } else {
+      updateSortieDate();
+    }
   });
 }
 
@@ -322,6 +426,42 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   stopQRScanner();
 
   const form = new FormData(e.target);
+  const codeProduit = String(form.get("code_produit") || "").trim();
+  const normalizedCodeProduit = normalizeProductCode(codeProduit);
+  const quantiteConsommee = parseNonNegativeNumber(form.get("quantité_consommee"));
+  const stockActuel = parseNonNegativeNumber(form.get("stock_actuel"));
+  const stockMin = parseNonNegativeNumber(form.get("stock_min"));
+  const stockMax = parseNonNegativeNumber(form.get("stock_max"));
+
+  if (!normalizedCodeProduit) {
+    alert("Veuillez renseigner un code produit.");
+    isSubmitting = false;
+    initQRScanner();
+    return;
+  }
+
+  if (!quantiteConsommee || quantiteConsommee <= 0) {
+    alert("La quantité déstockée doit être supérieure à 0.");
+    isSubmitting = false;
+    initQRScanner();
+    return;
+  }
+
+  if (stockMin > stockMax) {
+    alert("Le stock minimum ne peut pas être supérieur au stock maximum.");
+    isSubmitting = false;
+    initQRScanner();
+    return;
+  }
+
+  if (quantiteConsommee > stockActuel) {
+    alert("Déstockage impossible : la quantité dépasse le stock actuel.");
+    isSubmitting = false;
+    initQRScanner();
+    return;
+  }
+
+  const stockApres = stockActuel - quantiteConsommee;
   const record = { 
     _id: new Date().toISOString(), 
     photos: [],
@@ -336,6 +476,19 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
     }
   });
 
+  record.code_produit = codeProduit;
+  record.quantité_consommee = quantiteConsommee;
+  record.stock_avant = stockActuel;
+  record.stock_apres = stockApres;
+  record.stock_actuel = stockApres;
+  record.stock_min = stockMin;
+  record.stock_max = stockMax;
+  if (stockApres <= stockMin) {
+    record.a_commander = "Oui";
+  } else if (!record.a_commander) {
+    record.a_commander = "Non";
+  }
+
   if (imageFiles.length > 0) {
     for (const file of imageFiles) {
       const base64 = await new Promise((resolve) => {
@@ -349,6 +502,7 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
 
   try {
     await localDB.put(record);
+    await upsertStockState(codeProduit, stockApres, stockMin, stockMax);
     alert("Stock enregistré !");
     resetForm();
   } catch (err) {
@@ -370,6 +524,7 @@ function resetForm() {
   document.getElementById("designation").value = "";
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("axe2").value = "SUP=SEMPQRLER";
+  setStockFields({ stockActuel: 0, stockMin: 0, stockMax: 0 });
   updateSortieDate();
 }
 

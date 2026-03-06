@@ -336,7 +336,7 @@ async function loadData() {
     const result = await localDB.allDocs({ include_docs: true });
     allDocs = result.rows
       .map(row => row.doc)
-      .filter(doc => !doc._id.startsWith('_design'))
+      .filter(doc => !doc._id.startsWith('_design') && doc.type !== 'stock_state')
       .sort((a, b) => new Date(b._id) - new Date(a._id));
     
     filterData();
