@@ -479,7 +479,7 @@ main {
   display: grid;
   gap: 0.4rem;
   width: max-content;
-  min-width: 100%;
+  min-width: 620px;
 }
 
 .top-products-scroll {
@@ -501,6 +501,7 @@ main {
   background: #f8fafc;
   font-size: 0.92rem;
   min-width: 620px;
+  white-space: nowrap;
 }
 
 .top-product-rank {
