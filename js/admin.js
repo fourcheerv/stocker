@@ -554,23 +554,34 @@ function filterData() {
     
     // Filtre "À commander"
     if (commandeFilter) {
-      const latestStock = latestStocksByCode.get(normalizedCode);
+      if (commandeFilter === 'oui_saisie' || commandeFilter === 'non_saisie') {
+        const isMarkedToOrder = isManualOrderFlag(doc.a_commander);
 
-      if (!latestStock || latestStock.latestDoc._id !== doc._id) {
-        return false;
-      }
+        if (commandeFilter === 'oui_saisie' && !isMarkedToOrder) {
+          return false;
+        }
+        if (commandeFilter === 'non_saisie' && isMarkedToOrder) {
+          return false;
+        }
+      } else {
+        const latestStock = latestStocksByCode.get(normalizedCode);
 
-      const shouldOrder = shouldOrderFromStockValues(
-        latestStock.stockActuel,
-        latestStock.stockMin,
-        latestStock.stockMax
-      );
+        if (!latestStock || latestStock.latestDoc._id !== doc._id) {
+          return false;
+        }
 
-      if (commandeFilter === 'oui' && !shouldOrder) {
-        return false;
-      }
-      if (commandeFilter === 'non' && shouldOrder) {
-        return false;
+        const shouldOrder = shouldOrderFromStockValues(
+          latestStock.stockActuel,
+          latestStock.stockMin,
+          latestStock.stockMax
+        );
+
+        if (commandeFilter === 'oui_stock' && !shouldOrder) {
+          return false;
+        }
+        if (commandeFilter === 'non_stock' && shouldOrder) {
+          return false;
+        }
       }
     }
 
@@ -705,6 +716,11 @@ function shouldOrderFromStockValues(stockActuel, stockMin, stockMax) {
   return stockActuel <= stockMin || (stockMax > 0 && stockActuel >= stockMax);
 }
 
+function isManualOrderFlag(value) {
+  const normalized = value ? value.toString().trim().toLowerCase() : '';
+  return ['oui', 'o', 'yes', 'y'].includes(normalized);
+}
+
 function getCodeLabel(doc) {
   return doc.code_produit || doc.codeproduit || 'sans-code';
 }
@@ -759,7 +775,9 @@ function updateStats() {
   const toOrder = latestStocks.filter(item => 
     shouldOrderFromStockValues(item.stockActuel, item.stockMin, item.stockMax)
   );
+  const toOrderInput = filteredByAccount.filter((doc) => isManualOrderFlag(doc.a_commander));
   document.getElementById('toOrderCount').textContent = toOrder.length;
+  document.getElementById('toOrderInputCount').textContent = toOrderInput.length;
   document.getElementById('urgentOrders').textContent = toOrder.length > 5 ? "!" : "";
   document.getElementById('trackedProductsCount').textContent = latestStocks.length;
 

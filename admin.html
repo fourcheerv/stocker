@@ -97,8 +97,10 @@
         <div class="floating-filter">
           <select id="commandeFilter" class="filter-input">
             <option value="" selected>Toutes</option>
-            <option value="oui">Oui</option>
-            <option value="non">Non</option>
+            <option value="oui_stock">Oui (stock)</option>
+            <option value="non_stock">Non (stock)</option>
+            <option value="oui_saisie">Oui (saisie)</option>
+            <option value="non_saisie">Non (saisie)</option>
           </select>
           <label for="commandeFilter" class="filter-label">À commander</label>
           <span class="filter-icon">▼</span>
@@ -138,6 +140,11 @@
     <span class="stat-value" id="toOrderCount">0</span>
     <span class="stat-label">À commander (stock)</span>
     <div class="stat-badge" id="urgentOrders"></div>
+  </div>
+
+  <div class="stat-card" data-tooltip="Enregistrements marqués à commander dans le champ saisi">
+    <span class="stat-value" id="toOrderInputCount">0</span>
+    <span class="stat-label">À commander (saisie)</span>
   </div>
 
   <!-- Carte 4 : Par magasin (ER-MP/ER-MG) -->
