@@ -130,6 +130,33 @@ async function loadStockStateForCode(code, excelRow = null) {
   const fallbackMin = excelRow ? getNumberFromRow(excelRow, ["Stock Min", "Stock_Min", "Stock minimum"], 0) : 0;
   const fallbackMax = excelRow ? getNumberFromRow(excelRow, ["Stock Max", "Stock_Max", "Stock maximum"], 0) : 0;
   const fallbackCurrent = excelRow ? getNumberFromRow(excelRow, ["Stock", "Stock Actuel", "Stock_Actuel", "Stock actuel", "Stock initial"], 0) : 0;
+  let resolvedStock = {
+    stockActuel: fallbackCurrent,
+    stockMin: fallbackMin,
+    stockMax: fallbackMax
+  };
+
+  try {
+    const docs = await localDB.allDocs({ include_docs: true });
+    const latestRecord = docs.rows
+      .map((row) => row.doc)
+      .filter((doc) => {
+        if (!doc || doc.type === "stock_state" || String(doc._id || "").startsWith("_design")) return false;
+        return normalizeProductCode(doc.code_produit || doc.codeproduit) === normalizedCode;
+      })
+      .sort((a, b) => new Date(b.date_sortie || b._id).getTime() - new Date(a.date_sortie || a._id).getTime())[0];
+
+    if (latestRecord) {
+      resolvedStock = {
+        stockActuel: parseNonNegativeNumber(latestRecord.stock_actuel, fallbackCurrent),
+        stockMin: parseNonNegativeNumber(latestRecord.stock_min, fallbackMin),
+        stockMax: parseNonNegativeNumber(latestRecord.stock_max, fallbackMax)
+      };
+      setStockFields(resolvedStock);
+    }
+  } catch (error) {
+    console.error("Erreur chargement dernier enregistrement stock :", error);
+  }
 
   try {
     const stateDoc = await localDB.get(getStockStateDocId(normalizedCode));
@@ -143,11 +170,7 @@ async function loadStockStateForCode(code, excelRow = null) {
       console.error("Erreur chargement stock courant :", error);
     }
 
-    setStockFields({
-      stockActuel: fallbackCurrent,
-      stockMin: fallbackMin,
-      stockMax: fallbackMax
-    });
+    setStockFields(resolvedStock);
   }
 }
 

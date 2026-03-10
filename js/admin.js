@@ -138,7 +138,7 @@ function setStockColumnVisibility(visible) {
   ["stockActuelHeader", "stockMinHeader", "stockMaxHeader"].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
-      element.style.display = visible ? "" : "none";
+      element.style.display = "";
     }
   });
 }
@@ -512,9 +512,7 @@ function filterData() {
 function renderTable() {
   const tableBody = document.getElementById('dataTable').querySelector('tbody');
   tableBody.innerHTML = '';
-  const showStockColumns = filteredDocs.some((doc) => isTrackedMagasin(doc.magasin));
-  const stockColumnStyle = showStockColumns ? '' : ' style="display:none;"';
-  setStockColumnVisibility(showStockColumns);
+  setStockColumnVisibility(true);
 
   totalPages = Math.ceil(filteredDocs.length / itemsPerPage);
   currentPage = Math.min(currentPage, totalPages);
@@ -540,9 +538,9 @@ function renderTable() {
       <td>${doc.magasin || ''}</td>
       <td>${getAxe1Label(doc.axe1)}</td>
       <td>${doc.axe2 || ''}</td>
-      <td${stockColumnStyle}>${shouldDisplayStock ? stockValues.stockActuel : ''}</td>
-      <td${stockColumnStyle}>${shouldDisplayStock ? stockValues.stockMin : ''}</td>
-      <td${stockColumnStyle}>${shouldDisplayStock ? stockValues.stockMax : ''}</td>
+      <td>${shouldDisplayStock ? stockValues.stockActuel : ''}</td>
+      <td>${shouldDisplayStock ? stockValues.stockMin : ''}</td>
+      <td>${shouldDisplayStock ? stockValues.stockMax : ''}</td>
       <td class="photo-indicator">${hasPhotos ? '📷' : ''}</td>
       <td>
         <div class="action-buttons-container">
@@ -1066,7 +1064,10 @@ function formatFieldName(key) {
     a_commander: "À Commander",
     magasin: "Magasin",
     unites: "Unités",
-    date_sortie: "Date de Sortie"
+    date_sortie: "Date de Sortie",
+    stock_actuel: "Stock actuel",
+    stock_min: "Stock min",
+    stock_max: "Stock max"
   };
   return names[key] || key.replace(/_/g, ' ');
 }
