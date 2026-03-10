@@ -554,34 +554,23 @@ function filterData() {
     
     // Filtre "À commander"
     if (commandeFilter) {
-      if (commandeFilter === 'oui_saisie' || commandeFilter === 'non_saisie') {
-        const isMarkedToOrder = isManualOrderFlag(doc.a_commander);
+      const latestStock = latestStocksByCode.get(normalizedCode);
 
-        if (commandeFilter === 'oui_saisie' && !isMarkedToOrder) {
-          return false;
-        }
-        if (commandeFilter === 'non_saisie' && isMarkedToOrder) {
-          return false;
-        }
-      } else {
-        const latestStock = latestStocksByCode.get(normalizedCode);
+      if (!latestStock || latestStock.latestDoc._id !== doc._id) {
+        return false;
+      }
 
-        if (!latestStock || latestStock.latestDoc._id !== doc._id) {
-          return false;
-        }
+      const shouldOrder = shouldOrderFromStockValues(
+        latestStock.stockActuel,
+        latestStock.stockMin,
+        latestStock.stockMax
+      );
 
-        const shouldOrder = shouldOrderFromStockValues(
-          latestStock.stockActuel,
-          latestStock.stockMin,
-          latestStock.stockMax
-        );
-
-        if (commandeFilter === 'oui_stock' && !shouldOrder) {
-          return false;
-        }
-        if (commandeFilter === 'non_stock' && shouldOrder) {
-          return false;
-        }
+      if (commandeFilter === 'oui' && !shouldOrder) {
+        return false;
+      }
+      if (commandeFilter === 'non' && shouldOrder) {
+        return false;
       }
     }
 
@@ -716,11 +705,6 @@ function shouldOrderFromStockValues(stockActuel, stockMin, stockMax) {
   return stockActuel <= stockMin || (stockMax > 0 && stockActuel >= stockMax);
 }
 
-function isManualOrderFlag(value) {
-  const normalized = value ? value.toString().trim().toLowerCase() : '';
-  return ['oui', 'o', 'yes', 'y'].includes(normalized);
-}
-
 function getCodeLabel(doc) {
   return doc.code_produit || doc.codeproduit || 'sans-code';
 }
@@ -775,9 +759,7 @@ function updateStats() {
   const toOrder = latestStocks.filter(item => 
     shouldOrderFromStockValues(item.stockActuel, item.stockMin, item.stockMax)
   );
-  const toOrderInput = filteredByAccount.filter((doc) => isManualOrderFlag(doc.a_commander));
   document.getElementById('toOrderCount').textContent = toOrder.length;
-  document.getElementById('toOrderInputCount').textContent = toOrderInput.length;
   document.getElementById('urgentOrders').textContent = toOrder.length > 5 ? "!" : "";
   document.getElementById('trackedProductsCount').textContent = latestStocks.length;
 
@@ -1041,10 +1023,7 @@ function generateEditFields(doc) {
 function getInputField(key, value, isBobine = false) {
   if (key === 'a_commander') {
     return `
-      <select id="edit_${key}" class="form-control">
-        <option value="Oui" ${value === 'Oui' ? 'selected' : ''}>Oui</option>
-        <option value="Non" ${value === 'Non' ? 'selected' : ''}>Non</option>
-      </select>
+      <input type="text" id="edit_${key}" class="form-control" value="${value || ''}" readonly disabled>
     `;
   } else if (key === 'unites') {
     // Pour les bobines, défaut "bobine", sinon vide
@@ -1076,6 +1055,7 @@ async function saveEditedDoc(docId) {
     
     inputs.forEach(input => {
       const key = input.id.replace('edit_', '');
+      if (key === 'a_commander') return;
       if (input.type === 'datetime-local') {
         doc[key] = input.value ? new Date(input.value).toISOString() : '';
       } else {
@@ -1086,6 +1066,12 @@ async function saveEditedDoc(docId) {
     if (Number.isFinite(doc.stock_actuel) && doc.stock_actuel >= 0) {
       doc.stock_apres = doc.stock_actuel;
     }
+
+    doc.a_commander = shouldOrderFromStockValues(
+      parseNonNegativeNumber(doc.stock_actuel, 0),
+      parseNonNegativeNumber(doc.stock_min, 0),
+      parseNonNegativeNumber(doc.stock_max, 0)
+    ) ? 'Oui' : 'Non';
     
     // Sauvegarder les photos modifiées
     if (editModalPhotos.length > 0) {
