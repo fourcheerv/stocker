@@ -10,6 +10,7 @@ if (urlAccount && urlAccount !== currentAccount) {
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
 const remoteDB = new PouchDB("https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks");
+const STOCK_STATE_PREFIX = "stock_state::";
 
 // Variables globales
 let allDocs = [];
@@ -19,6 +20,7 @@ const itemsPerPage = 30;
 let totalPages = 1;
 let selectedDocs = new Set();
 let editModalPhotos = []; // Photos temporaires pendant l'édition
+let stockStateByCode = new Map();
 
 // Gestionnaire de modales
 const modalManager = {
@@ -88,6 +90,90 @@ function formatDateForDisplay(isoString) {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+function normalizeProductCode(code) {
+  return String(code || "").trim().toLowerCase();
+}
+
+function parseNonNegativeNumber(value, fallback = 0) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) return fallback;
+  return number;
+}
+
+function getStockStateDocId(code) {
+  return `${STOCK_STATE_PREFIX}${normalizeProductCode(code)}`;
+}
+
+function isTrackedMagasin(magasin) {
+  const normalizedMagasin = String(magasin || "").trim().toUpperCase();
+  return normalizedMagasin === "ER-MP" || normalizedMagasin === "ER-MG";
+}
+
+function getStockStateForCode(code) {
+  return stockStateByCode.get(normalizeProductCode(code)) || null;
+}
+
+function getResolvedStockValues(doc) {
+  const stockState = getStockStateForCode(doc.code_produit || doc.codeproduit);
+
+  return {
+    stockActuel: parseNonNegativeNumber(
+      stockState?.stock_actuel,
+      getNumericValue(doc.stock_actuel, doc.stock_apres, 0) || 0
+    ),
+    stockMin: parseNonNegativeNumber(
+      stockState?.stock_min,
+      getNumericValue(doc.stock_min, 0) || 0
+    ),
+    stockMax: parseNonNegativeNumber(
+      stockState?.stock_max,
+      getNumericValue(doc.stock_max, 0) || 0
+    )
+  };
+}
+
+function setStockColumnVisibility(visible) {
+  ["stockActuelHeader", "stockMinHeader", "stockMaxHeader"].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.display = visible ? "" : "none";
+    }
+  });
+}
+
+async function upsertStockState(code, stockActuel, stockMin, stockMax) {
+  const originalCode = String(code || "").trim();
+  const normalizedCode = normalizeProductCode(code);
+  if (!normalizedCode) return;
+
+  const docId = getStockStateDocId(normalizedCode);
+
+  try {
+    const existingDoc = await localDB.get(docId);
+    await localDB.put({
+      ...existingDoc,
+      type: "stock_state",
+      code_produit: originalCode,
+      stock_actuel: stockActuel,
+      stock_min: stockMin,
+      stock_max: stockMax,
+      updated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    if (error.status !== 404) throw error;
+
+    await localDB.put({
+      _id: docId,
+      type: "stock_state",
+      code_produit: originalCode,
+      stock_actuel: stockActuel,
+      stock_min: stockMin,
+      stock_max: stockMax,
+      updated_at: new Date().toISOString()
+    });
+  }
 }
 
 // Initialisation
@@ -334,9 +420,18 @@ function resetFilters() {
 async function loadData() {
   try {
     const result = await localDB.allDocs({ include_docs: true });
-    allDocs = result.rows
+    const docs = result.rows
       .map(row => row.doc)
-      .filter(doc => !doc._id.startsWith('_design') && doc.type !== 'stock_state')
+      .filter(doc => !doc._id.startsWith('_design'));
+
+    stockStateByCode = new Map(
+      docs
+        .filter(doc => doc.type === 'stock_state')
+        .map((doc) => [normalizeProductCode(doc.code_produit || doc._id.replace(STOCK_STATE_PREFIX, "")), doc])
+    );
+
+    allDocs = docs
+      .filter(doc => doc.type !== 'stock_state')
       .sort((a, b) => new Date(b._id) - new Date(a._id));
     
     filterData();
@@ -417,6 +512,9 @@ function filterData() {
 function renderTable() {
   const tableBody = document.getElementById('dataTable').querySelector('tbody');
   tableBody.innerHTML = '';
+  const showStockColumns = filteredDocs.some((doc) => isTrackedMagasin(doc.magasin));
+  const stockColumnStyle = showStockColumns ? '' : ' style="display:none;"';
+  setStockColumnVisibility(showStockColumns);
 
   totalPages = Math.ceil(filteredDocs.length / itemsPerPage);
   currentPage = Math.min(currentPage, totalPages);
@@ -428,6 +526,8 @@ function renderTable() {
     const row = document.createElement('tr');
     const isSelected = selectedDocs.has(doc._id);
     const hasPhotos = Array.isArray(doc.photos) && doc.photos.length > 0;
+    const shouldDisplayStock = isTrackedMagasin(doc.magasin);
+    const stockValues = getResolvedStockValues(doc);
 
     row.innerHTML = `
       <td><input type="checkbox" class="row-checkbox" data-id="${doc._id}" ${isSelected ? 'checked' : ''}></td>
@@ -440,7 +540,10 @@ function renderTable() {
       <td>${doc.magasin || ''}</td>
       <td>${getAxe1Label(doc.axe1)}</td>
       <td>${doc.axe2 || ''}</td>
-       <td class="photo-indicator">${hasPhotos ? '📷' : ''}</td>
+      <td${stockColumnStyle}>${shouldDisplayStock ? stockValues.stockActuel : ''}</td>
+      <td${stockColumnStyle}>${shouldDisplayStock ? stockValues.stockMin : ''}</td>
+      <td${stockColumnStyle}>${shouldDisplayStock ? stockValues.stockMax : ''}</td>
+      <td class="photo-indicator">${hasPhotos ? '📷' : ''}</td>
       <td>
         <div class="action-buttons-container">
           <button class="view-btn" data-id="${doc._id}">👁️</button>
@@ -481,12 +584,21 @@ function buildLatestStockByProduct(docs) {
     const normalizedCode = rawCode ? String(rawCode).trim().toLowerCase() : '';
     if (!normalizedCode) return;
 
-    const stockActuel = getNumericValue(doc.stock_actuel, doc.stock_apres);
+    const stockState = getStockStateForCode(rawCode);
+    const stockActuel = stockState
+      ? parseNonNegativeNumber(stockState.stock_actuel, 0)
+      : getNumericValue(doc.stock_actuel, doc.stock_apres);
     if (stockActuel === null) return;
 
-    const stockMin = getNumericValue(doc.stock_min, 0) || 0;
-    const stockMax = getNumericValue(doc.stock_max, 0) || 0;
-    const timestamp = getDocDate(doc).getTime();
+    const stockMin = stockState
+      ? parseNonNegativeNumber(stockState.stock_min, 0)
+      : (getNumericValue(doc.stock_min, 0) || 0);
+    const stockMax = stockState
+      ? parseNonNegativeNumber(stockState.stock_max, 0)
+      : (getNumericValue(doc.stock_max, 0) || 0);
+    const timestamp = stockState?.updated_at
+      ? new Date(stockState.updated_at).getTime()
+      : getDocDate(doc).getTime();
     const previous = latestByCode.get(normalizedCode);
 
     if (!previous || timestamp > previous.timestamp) {
@@ -722,13 +834,20 @@ async function syncWithServer() {
 function setupEditModal(doc) {
   // Réinitialiser les photos temporaires
   editModalPhotos = [];
+  const editableDoc = { ...doc };
+  if (isTrackedMagasin(doc.magasin)) {
+    const stockValues = getResolvedStockValues(doc);
+    editableDoc.stock_actuel = stockValues.stockActuel;
+    editableDoc.stock_min = stockValues.stockMin;
+    editableDoc.stock_max = stockValues.stockMax;
+  }
   
   const modalContent = `
     <div class="edit-modal-content">
       <span class="close-btn">&times;</span>
       <h2>Modifier l'entrée</h2>
       <form id="editForm">
-        ${generateEditFields(doc)}
+        ${generateEditFields(editableDoc)}
         
         <div class="photo-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
           <h3 style="margin-bottom: 10px;">📸 Photos</h3>
@@ -855,6 +974,10 @@ async function saveEditedDoc(docId) {
         doc[key] = input.type === 'number' ? parseFloat(input.value) : input.value;
       }
     });
+
+    if (Number.isFinite(doc.stock_actuel) && doc.stock_actuel >= 0) {
+      doc.stock_apres = doc.stock_actuel;
+    }
     
     // Sauvegarder les photos modifiées
     if (editModalPhotos.length > 0) {
@@ -864,6 +987,16 @@ async function saveEditedDoc(docId) {
     }
     
     await localDB.put(doc);
+
+    if (isTrackedMagasin(doc.magasin)) {
+      await upsertStockState(
+        doc.code_produit || doc.codeproduit,
+        parseNonNegativeNumber(doc.stock_actuel, 0),
+        parseNonNegativeNumber(doc.stock_min, 0),
+        parseNonNegativeNumber(doc.stock_max, 0)
+      );
+    }
+
     alert('Modifications enregistrées avec succès');
     loadData();
   } catch (error) {
@@ -1228,6 +1361,8 @@ async function deleteDocs(docIds) {
 function showDetails(docId) {
   const doc = allDocs.find(d => d._id === docId);
   if (!doc) return;
+  const stockValues = getResolvedStockValues(doc);
+  const displayStock = isTrackedMagasin(doc.magasin);
 
   let detailsHtml = `
     <div class="modal-content">
@@ -1245,6 +1380,9 @@ function showDetails(docId) {
         <div class="detail-item"><strong>Date de sortie:</strong> ${doc.date_sortie ? formatDateForDisplay(doc.date_sortie) : '-'}</div>
         <div class="detail-item"><strong>Axe 1:</strong> ${getAxe1Label(doc.axe1)}</div>
         <div class="detail-item"><strong>Axe 2:</strong> ${doc.axe2 || '-'}</div>
+        <div class="detail-item"><strong>Stock actuel:</strong> ${displayStock ? stockValues.stockActuel : '-'}</div>
+        <div class="detail-item"><strong>Stock min:</strong> ${displayStock ? stockValues.stockMin : '-'}</div>
+        <div class="detail-item"><strong>Stock max:</strong> ${displayStock ? stockValues.stockMax : '-'}</div>
   `;
 
   if (doc.photos) {
