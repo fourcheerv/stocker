@@ -310,9 +310,6 @@ async function fillFormFromExcel(match) {
     "Désignation:": "designation",
     "Désignation": "designation",
     "Quantité_Consommée": "quantité_consommee",
-    "Stock_Actuel": "stock_actuel",
-    "Stock_Min": "stock_min",
-    "Stock_Max": "stock_max",
     "unité(s)": "unites",
     "A Commander": "a_commander",
     "Remarques:": "remarques",
@@ -321,17 +318,24 @@ async function fillFormFromExcel(match) {
   };
 
   for (const [excelKey, formId] of Object.entries(map)) {
-    if (match[excelKey] !== undefined) {
+    if (match[excelKey] !== undefined && document.getElementById(formId)) {
       document.getElementById(formId).value = match[excelKey];
     }
   }
 
-  if (!match["axe2"] || match["axe2"].trim() === "") {
+  setStockFields({
+    stockActuel: getNumberFromRow(match, ["Stock_Actuel", "Stock Actuel", "Stock actuel", "Stock"], 0),
+    stockMin: getNumberFromRow(match, ["Stock_Min", "Stock Min", "Stock minimum"], 0),
+    stockMax: getNumberFromRow(match, ["Stock_Max", "Stock Max", "Stock maximum"], 0)
+  });
+
+  if (!match["axe2"] || String(match["axe2"]).trim() === "") {
     document.getElementById("axe2").value = "SUP=SEMPQRLER";
   }
 
   document.getElementById("axe1").value = currentAccount;
   updateSortieDate();
+
   await loadStockStateForCode(document.getElementById("code_produit").value, match);
 }
 
@@ -605,4 +609,5 @@ document.getElementById("resetBtn").addEventListener("click", () => {
     resetForm();
   }
 });
+
 
