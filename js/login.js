@@ -1,100 +1,51 @@
-// Configuration des comptes avec mots de passe
+const COUCHDB_BASE_URL = "https://couchdb.monproprecloud.fr";
+
 const serviceAccounts = {
-
-  'btn-bobines': {
-        id: 'BOB329',
-        password: 'bobines2025',
-        name: 'Bobines',
-        redirect: 'bobines.html'
-    },
-
-  'btn-info-sport': {
-    id: 'SCT=E260329',
-    password: 'sport2025',
-    name: 'SCE Informations Sportives',
-    redirect: 'index.html'
-  },
-  'btn-support-redac': {
-    id: 'SCT=E272329',
-    password: 'redac2025',
-    name: 'SCE Support Rédaction',
-    redirect: 'index.html'
-  },
-  'btn-maintenance': {
-    id: 'SCT=E370329',
-    password: 'maintenance2025',
-    name: 'Maintenance Machines',
-    redirect: 'index.html'
-  },
-  'btn-rotatives': {
-    id: 'SCT=E382329',
-    password: 'rotatives2025',
-    name: 'Service Rotatives',
-    redirect: 'index.html'
-  },
-  'btn-expedition': {
-    id: 'SCT=E390329',
-    password: 'expedition2025',
-    name: 'Service Expédition',
-    redirect: 'index.html'
-  },
-  'btn-direction': {
-    id: 'SCT=E500329',
-    password: 'direction2025',
-    name: 'Direction Vente',
-    redirect: 'index.html'
-  },
-  'btn-ler': {
-    id: 'SCT=E730329',
-    password: 'ler2025',
-    name: 'LER Charges',
-    redirect: 'index.html'
-  },
-  'btn-travaux': {
-    id: 'SCT=E736329',
-    password: 'travaux2025',
-    name: 'Service Travaux',
-    redirect: 'index.html'
-  },
-  'btn-achats': {
-    id: 'SCT=E760329',
-    password: 'achats2025',
-    name: 'Achats Magasin',
-    redirect: 'index.html'
-  },
-  'btn-manutention': {
-    id: 'SCT=E762329',
-    password: 'manutention2025',
-    name: 'Manutention Papier',
-    redirect: 'index.html'
-  },
-  'btn-coursiers': {
-    id: 'SCT=E772329',
-    password: 'coursiers2025',
-    name: 'Coursiers',
-    redirect: 'index.html'
-  },
-  'btn-cantine': {
-    id: 'SCT=E860329',
-    password: 'cantine2025',
-    name: 'Cantine',
-    redirect: 'index.html'
-  },
-  'btn-smi': {
-    id: 'SCT=E359329',
-    password: 'smi2025',
-    name: 'SMI',
-    redirect: 'index.html'
-  },
-  'btn-admin': {
-    id: 'Admin',
-    password: 'adminStocker2025!',
-    name: 'Administrateur',
-    redirect: 'admin.html'
-  }
+  "btn-bobines": { id: "BOB329", name: "Bobines", redirect: "bobines.html" },
+  "btn-info-sport": { id: "SCT=E260329", name: "SCE Informations Sportives", redirect: "index.html" },
+  "btn-support-redac": { id: "SCT=E272329", name: "SCE Support Rédaction", redirect: "index.html" },
+  "btn-maintenance": { id: "SCT=E370329", name: "Maintenance Machines", redirect: "index.html" },
+  "btn-rotatives": { id: "SCT=E382329", name: "Service Rotatives", redirect: "index.html" },
+  "btn-expedition": { id: "SCT=E390329", name: "Service Expédition", redirect: "index.html" },
+  "btn-direction": { id: "SCT=E500329", name: "Direction Vente", redirect: "index.html" },
+  "btn-ler": { id: "SCT=E730329", name: "LER Charges", redirect: "index.html" },
+  "btn-travaux": { id: "SCT=E736329", name: "Service Travaux", redirect: "index.html" },
+  "btn-achats": { id: "SCT=E760329", name: "Achats Magasin", redirect: "index.html" },
+  "btn-manutention": { id: "SCT=E762329", name: "Manutention Papier", redirect: "index.html" },
+  "btn-coursiers": { id: "SCT=E772329", name: "Coursiers", redirect: "index.html" },
+  "btn-cantine": { id: "SCT=E860329", name: "Cantine", redirect: "index.html" },
+  "btn-smi": { id: "SCT=E359329", name: "SMI", redirect: "index.html" },
+  "btn-admin": { id: "Admin", name: "Administrateur", redirect: "admin.html" }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+function clearClientSession() {
+  sessionStorage.removeItem("currentAccount");
+  sessionStorage.removeItem("currentServiceName");
+  sessionStorage.removeItem("authenticated");
+}
+
+async function loginCouchDB(username, password) {
+  try {
+    const response = await fetch(`${COUCHDB_BASE_URL}/_session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      credentials: "include",
+      body: `name=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+    });
+    const payload = await response.json();
+
+    if (!response.ok || !payload.ok) {
+      return { success: false, error: payload.reason || "Authentification échouée" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur connexion CouchDB:", error);
+    return { success: false, error: "Connexion au serveur impossible" };
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
   const passwordSection = document.getElementById('passwordSection');
   const passwordInput = document.getElementById('passwordInput');
   const loginBtn = document.getElementById('loginBtn');
@@ -136,19 +87,36 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Gestion de la connexion
-  loginBtn.addEventListener('click', () => {
+  loginBtn.addEventListener('click', async () => {
     if (!selectedService) {
       errorMsg.textContent = "Veuillez sélectionner un service";
       return;
     }
-    
-    if (passwordInput.value === selectedService.password) {
-      sessionStorage.setItem('currentAccount', selectedService.id);
-      sessionStorage.setItem('currentServiceName', selectedService.name);
-      window.location.href = selectedService.redirect;
-    } else {
-      errorMsg.textContent = "Mot de passe incorrect";
+
+    if (!passwordInput.value) {
+      errorMsg.textContent = "Veuillez entrer votre mot de passe";
+      return;
     }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Connexion...";
+    errorMsg.textContent = "";
+
+    const result = await loginCouchDB(selectedService.id, passwordInput.value);
+    if (result.success) {
+      sessionStorage.setItem("currentAccount", selectedService.id);
+      sessionStorage.setItem("currentServiceName", selectedService.name);
+      sessionStorage.setItem("authenticated", "true");
+      window.location.href = selectedService.redirect;
+      return;
+    }
+
+    clearClientSession();
+    errorMsg.textContent = result.error || "Identifiant ou mot de passe incorrect";
+    passwordInput.value = "";
+    passwordInput.focus();
+    loginBtn.disabled = false;
+    loginBtn.textContent = "Se connecter";
   });
 
   // Entrée pour valider
@@ -158,10 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-
- const passwordInput = document.getElementById("passwordInput");
-  const togglePassword = document.getElementById("togglePassword");
-
 
 document.addEventListener("click", function (e) {
   if (e.target.id === "togglePassword") {

@@ -2,6 +2,8 @@
 const urlParams = new URLSearchParams(window.location.search);
 const urlAccount = urlParams.get('account');
 const currentAccount = sessionStorage.getItem('currentAccount');
+const COUCHDB_BASE_URL = "https://couchdb.monproprecloud.fr";
+const COUCHDB_DB_URL = `${COUCHDB_BASE_URL}/stocks`;
 
 if (urlAccount && urlAccount !== currentAccount) {
   window.location.href = 'index.html';
@@ -9,8 +11,9 @@ if (urlAccount && urlAccount !== currentAccount) {
 
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
-const remoteDB = new PouchDB("https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks");
+let remoteDB = null;
 const STOCK_STATE_PREFIX = "stock_state::";
+let syncHandler = null;
 
 // Variables globales
 let allDocs = [];
@@ -21,6 +24,75 @@ let totalPages = 1;
 let selectedDocs = new Set();
 let editModalPhotos = []; // Photos temporaires pendant l'édition
 let stockStateByCode = new Map();
+
+function clearClientSession() {
+  sessionStorage.removeItem("currentAccount");
+  sessionStorage.removeItem("currentServiceName");
+  sessionStorage.removeItem("authenticated");
+}
+
+function setupRemoteDB() {
+  if (remoteDB) return remoteDB;
+
+  remoteDB = new PouchDB(COUCHDB_DB_URL, {
+    fetch: (url, options = {}) => {
+      const requestOptions = options;
+      requestOptions.credentials = "include";
+      if (requestOptions.headers) {
+        delete requestOptions.headers.Authorization;
+      }
+      return PouchDB.fetch(url, requestOptions);
+    },
+    skip_setup: true
+  });
+
+  return remoteDB;
+}
+
+function startSync() {
+  if (syncHandler) return;
+
+  syncHandler = localDB.sync(setupRemoteDB(), { live: true, retry: true })
+    .on("error", async (error) => {
+      console.error("Erreur de synchronisation :", error);
+      if (error && (error.status === 401 || error.name === "unauthorized")) {
+        alert("Session CouchDB expirée. Veuillez vous reconnecter.");
+        await logout();
+      }
+    });
+}
+
+async function ensureAuthenticatedSession() {
+  const storedAccount = sessionStorage.getItem("currentAccount");
+  const isAuthenticated = sessionStorage.getItem("authenticated") === "true";
+
+  if (!storedAccount || !isAuthenticated) {
+    clearClientSession();
+    window.location.href = "login.html";
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${COUCHDB_BASE_URL}/_session`, {
+      method: "GET",
+      credentials: "include"
+    });
+    const session = await response.json();
+
+    if (!response.ok || !session.userCtx || session.userCtx.name !== storedAccount) {
+      clearClientSession();
+      window.location.href = "login.html";
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Erreur vérification session :", error);
+    clearClientSession();
+    window.location.href = "login.html";
+    return false;
+  }
+}
 
 // Gestionnaire de modales
 const modalManager = {
@@ -177,7 +249,14 @@ async function upsertStockState(code, stockActuel, stockMin, stockMax) {
 }
 
 // Initialisation
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  if (!(await ensureAuthenticatedSession())) {
+    return;
+  }
+
+  setupRemoteDB();
+  startSync();
+
   const currentAccount = sessionStorage.getItem('currentAccount');
 
   // Bobines : cacher CSV/mail standard, afficher bouton Excel
@@ -820,7 +899,7 @@ function goToPage(page) {
 
 async function syncWithServer() {
   try {
-    await localDB.sync(remoteDB);
+    await localDB.sync(setupRemoteDB());
     alert("Synchronisation réussie");
     loadData();
   } catch (error) {
@@ -1431,22 +1510,19 @@ function getAxe1Label(axe1) {
   return mappings[axe1] || axe1;
 }
 
-function logout() {
-  sessionStorage.removeItem('currentAccount');
-  sessionStorage.removeItem('currentServiceName');
-  window.location.href = 'login.html';
-}
-
-// Affichage sécurisé du bouton Excel Bobines uniquement pour ce profil bobine:
-document.addEventListener("DOMContentLoaded", () => {
-  const currentAccount = sessionStorage.getItem('currentAccount');
-  if (currentAccount === 'BOB329') {
-    document.getElementById('exportXlsxBobinesBtn').style.display = '';
+async function logout() {
+  try {
+    await fetch(`${COUCHDB_BASE_URL}/_session`, {
+      method: "DELETE",
+      credentials: "include"
+    });
+  } catch (error) {
+    console.error("Erreur de déconnexion CouchDB :", error);
+  } finally {
+    clearClientSession();
+    window.location.href = "login.html";
   }
-   // SUPPRIMEZ CETTE LIGNE :
-  // document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
-  if (typeof initAdmin === "function") initAdmin();
-});
+}
 
 // ATTACHE l'event sur bouton (DOIT être dans setupEventListeners si existant)
 document.getElementById('exportXlsxBobinesBtn').addEventListener('click', exportAndSendXlsxBobines);

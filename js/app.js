@@ -5,12 +5,82 @@ let qrReader = null;
 let isSubmitting = false;
 let currentAccount = null;
 const STOCK_STATE_PREFIX = "stock_state::";
+const COUCHDB_BASE_URL = "https://couchdb.monproprecloud.fr";
+const COUCHDB_DB_URL = `${COUCHDB_BASE_URL}/stocks`;
 
 // Configuration PouchDB
 const localDB = new PouchDB("stocks");
-const remoteDB = new PouchDB("https://access:4G9?r3oKH7tSbCB7rMM9PDpq7L5Yn&tCgE8?qEDD@couchdb.monproprecloud.fr/stocks");
+let remoteDB = null;
+let syncHandler = null;
 
-localDB.sync(remoteDB, { live: true, retry: true }).on("error", console.error);
+function clearClientSession() {
+  sessionStorage.removeItem("currentAccount");
+  sessionStorage.removeItem("currentServiceName");
+  sessionStorage.removeItem("authenticated");
+}
+
+function setupRemoteDB() {
+  if (remoteDB) return remoteDB;
+
+  remoteDB = new PouchDB(COUCHDB_DB_URL, {
+    fetch: (url, options = {}) => {
+      const requestOptions = options;
+      requestOptions.credentials = "include";
+      if (requestOptions.headers) {
+        delete requestOptions.headers.Authorization;
+      }
+      return PouchDB.fetch(url, requestOptions);
+    },
+    skip_setup: true
+  });
+
+  return remoteDB;
+}
+
+function startSync() {
+  if (syncHandler) return;
+
+  syncHandler = localDB.sync(setupRemoteDB(), { live: true, retry: true })
+    .on("error", async (error) => {
+      console.error("Erreur de synchronisation :", error);
+      if (error && (error.status === 401 || error.name === "unauthorized")) {
+        alert("Session CouchDB expirée. Veuillez vous reconnecter.");
+        await logout();
+      }
+    });
+}
+
+async function ensureAuthenticatedSession() {
+  const storedAccount = sessionStorage.getItem("currentAccount");
+  const isAuthenticated = sessionStorage.getItem("authenticated") === "true";
+
+  if (!storedAccount || !isAuthenticated) {
+    clearClientSession();
+    window.location.href = "login.html";
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${COUCHDB_BASE_URL}/_session`, {
+      method: "GET",
+      credentials: "include"
+    });
+    const session = await response.json();
+
+    if (!response.ok || !session.userCtx || session.userCtx.name !== storedAccount) {
+      clearClientSession();
+      window.location.href = "login.html";
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Erreur vérification session :", error);
+    clearClientSession();
+    window.location.href = "login.html";
+    return false;
+  }
+}
 
 // Fonction utilitaire pour la date
 function formatToDateTimeLocal(date) {
@@ -220,21 +290,32 @@ function updateUIForUserRole() {
   }
 }
 
-function logout() {
-  sessionStorage.removeItem('currentAccount');
-  sessionStorage.removeItem('currentServiceName');
-  window.location.href = 'login.html';
+async function logout() {
+  try {
+    await fetch(`${COUCHDB_BASE_URL}/_session`, {
+      method: "DELETE",
+      credentials: "include"
+    });
+  } catch (error) {
+    console.error("Erreur de déconnexion CouchDB :", error);
+  } finally {
+    clearClientSession();
+    window.location.href = "login.html";
+  }
 }
 
 // Gestion de la session
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
   currentAccount = sessionStorage.getItem('currentAccount');
-  
-  if (!currentAccount) {
-    window.location.href = 'login.html';
+
+  if (!(await ensureAuthenticatedSession())) {
     return;
   }
-  
+
+  currentAccount = sessionStorage.getItem("currentAccount");
+  setupRemoteDB();
+  startSync();
+
   // Mise à jour de l'interface utilisateur
   updateUIForUserRole(); 
   updateUserInterface();
@@ -512,7 +593,7 @@ document.getElementById("chooseGalleryBtn").addEventListener("click", () => docu
 document.getElementById("stockForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   
-  if (!currentAccount) {
+  if (!currentAccount || sessionStorage.getItem("authenticated") !== "true") {
     alert("Veuillez vous authentifier avant de soumettre le formulaire");
     window.location.href = 'login.html';
     return;
