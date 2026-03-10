@@ -526,8 +526,17 @@ function filterData() {
   const dateFilterValue = document.getElementById('dateFilter').value;
   const commandeFilter = document.getElementById('commandeFilter').value;
   const magasinFilter = document.getElementById('magasinFilter').value;
+  const docsForOrderCalculation = filterValue
+    ? allDocs.filter((doc) => doc.axe1 === filterValue)
+    : allDocs;
+  const latestStocksByCode = new Map(
+    buildLatestStockByProduct(docsForOrderCalculation).map((item) => [item.code, item])
+  );
 
   filteredDocs = allDocs.filter(doc => {
+    const rawCode = doc.code_produit ?? doc.codeproduit;
+    const normalizedCode = rawCode ? String(rawCode).trim().toLowerCase() : '';
+
     // Filtre par compte
     if (filterValue && doc.axe1 !== filterValue) return false;
     
@@ -543,15 +552,34 @@ function filterData() {
       }
     }
     
-    // Filtre "À commander" 
+    // Filtre "À commander"
     if (commandeFilter) {
-      const aCommander = doc.a_commander ? doc.a_commander.toString().trim().toLowerCase() : '';
-      
-      if (commandeFilter === 'oui' && !['oui', 'o', 'yes', 'y'].includes(aCommander)) {
-        return false;
-      }
-      if (commandeFilter === 'non' && ['oui', 'o', 'yes', 'y'].includes(aCommander)) {
-        return false;
+      const latestStock = latestStocksByCode.get(normalizedCode);
+
+      if (latestStock) {
+        if (latestStock.latestDoc._id !== doc._id) return false;
+
+        const shouldOrder = shouldOrderFromStockValues(
+          latestStock.stockActuel,
+          latestStock.stockMin,
+          latestStock.stockMax
+        );
+
+        if (commandeFilter === 'oui' && !shouldOrder) {
+          return false;
+        }
+        if (commandeFilter === 'non' && shouldOrder) {
+          return false;
+        }
+      } else {
+        const aCommander = doc.a_commander ? doc.a_commander.toString().trim().toLowerCase() : '';
+
+        if (commandeFilter === 'oui' && !['oui', 'o', 'yes', 'y'].includes(aCommander)) {
+          return false;
+        }
+        if (commandeFilter === 'non' && ['oui', 'o', 'yes', 'y'].includes(aCommander)) {
+          return false;
+        }
       }
     }
 
@@ -654,42 +682,36 @@ function getQuantityValue(doc) {
 }
 
 function buildLatestStockByProduct(docs) {
-  const latestByCode = new Map();
+  const latestDocsByCode = new Map();
 
   docs.forEach((doc) => {
     const rawCode = doc.code_produit ?? doc.codeproduit;
     const normalizedCode = rawCode ? String(rawCode).trim().toLowerCase() : '';
     if (!normalizedCode) return;
 
-    const stockState = getStockStateForCode(rawCode);
-    const stockActuel = stockState
-      ? parseNonNegativeNumber(stockState.stock_actuel, 0)
-      : getNumericValue(doc.stock_actuel, doc.stock_apres);
-    if (stockActuel === null) return;
-
-    const stockMin = stockState
-      ? parseNonNegativeNumber(stockState.stock_min, 0)
-      : (getNumericValue(doc.stock_min, 0) || 0);
-    const stockMax = stockState
-      ? parseNonNegativeNumber(stockState.stock_max, 0)
-      : (getNumericValue(doc.stock_max, 0) || 0);
-    const timestamp = stockState?.updated_at
-      ? new Date(stockState.updated_at).getTime()
-      : getDocDate(doc).getTime();
-    const previous = latestByCode.get(normalizedCode);
+    const timestamp = getDocDate(doc).getTime();
+    const previous = latestDocsByCode.get(normalizedCode);
 
     if (!previous || timestamp > previous.timestamp) {
-      latestByCode.set(normalizedCode, {
-        code: normalizedCode,
-        stockActuel,
-        stockMin,
-        stockMax,
-        timestamp
-      });
+      latestDocsByCode.set(normalizedCode, { doc, timestamp });
     }
   });
 
-  return Array.from(latestByCode.values());
+  return Array.from(latestDocsByCode.entries()).map(([normalizedCode, entry]) => {
+    const stockValues = getResolvedStockValues(entry.doc);
+    return {
+      code: normalizedCode,
+      stockActuel: stockValues.stockActuel,
+      stockMin: stockValues.stockMin,
+      stockMax: stockValues.stockMax,
+      timestamp: entry.timestamp,
+      latestDoc: entry.doc
+    };
+  });
+}
+
+function shouldOrderFromStockValues(stockActuel, stockMin, stockMax) {
+  return stockActuel <= stockMin || (stockMax > 0 && stockActuel >= stockMax);
 }
 
 function getCodeLabel(doc) {
@@ -744,7 +766,7 @@ function updateStats() {
   // 3. Articles à commander (calculés depuis le dernier stock par produit)
   const latestStocks = buildLatestStockByProduct(filteredByAccount);
   const toOrder = latestStocks.filter(item => 
-    item.stockActuel <= item.stockMin || (item.stockMax > 0 && item.stockActuel >= item.stockMax)
+    shouldOrderFromStockValues(item.stockActuel, item.stockMin, item.stockMax)
   );
   document.getElementById('toOrderCount').textContent = toOrder.length;
   document.getElementById('urgentOrders').textContent = toOrder.length > 5 ? "!" : "";
