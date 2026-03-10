@@ -144,7 +144,7 @@ function getStockStatus(stockActuel, stockMin, stockMax, quantiteConsommee) {
   if (isMaxReached) {
     return {
       alertClass: "is-max",
-      shouldOrder: true,
+      shouldOrder: false,
       message: "Stock maximum atteint."
     };
   }

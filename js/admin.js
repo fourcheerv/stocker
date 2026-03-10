@@ -702,7 +702,7 @@ function buildLatestStockByProduct(docs) {
 }
 
 function shouldOrderFromStockValues(stockActuel, stockMin, stockMax) {
-  return stockActuel <= stockMin || (stockMax > 0 && stockActuel >= stockMax);
+  return stockActuel <= stockMin;
 }
 
 function getCodeLabel(doc) {
