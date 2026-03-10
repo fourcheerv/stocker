@@ -310,6 +310,9 @@ async function fillFormFromExcel(match) {
     "Désignation:": "designation",
     "Désignation": "designation",
     "Quantité_Consommée": "quantité_consommee",
+    "Stock_Actuel": "stock_actuel",
+    "Stock_Min": "stock_min",
+    "Stock_Max": "stock_max",
     "unité(s)": "unites",
     "A Commander": "a_commander",
     "Remarques:": "remarques",
@@ -602,3 +605,4 @@ document.getElementById("resetBtn").addEventListener("click", () => {
     resetForm();
   }
 });
+
