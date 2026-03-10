@@ -556,30 +556,21 @@ function filterData() {
     if (commandeFilter) {
       const latestStock = latestStocksByCode.get(normalizedCode);
 
-      if (latestStock) {
-        if (latestStock.latestDoc._id !== doc._id) return false;
+      if (!latestStock || latestStock.latestDoc._id !== doc._id) {
+        return false;
+      }
 
-        const shouldOrder = shouldOrderFromStockValues(
-          latestStock.stockActuel,
-          latestStock.stockMin,
-          latestStock.stockMax
-        );
+      const shouldOrder = shouldOrderFromStockValues(
+        latestStock.stockActuel,
+        latestStock.stockMin,
+        latestStock.stockMax
+      );
 
-        if (commandeFilter === 'oui' && !shouldOrder) {
-          return false;
-        }
-        if (commandeFilter === 'non' && shouldOrder) {
-          return false;
-        }
-      } else {
-        const aCommander = doc.a_commander ? doc.a_commander.toString().trim().toLowerCase() : '';
-
-        if (commandeFilter === 'oui' && !['oui', 'o', 'yes', 'y'].includes(aCommander)) {
-          return false;
-        }
-        if (commandeFilter === 'non' && ['oui', 'o', 'yes', 'y'].includes(aCommander)) {
-          return false;
-        }
+      if (commandeFilter === 'oui' && !shouldOrder) {
+        return false;
+      }
+      if (commandeFilter === 'non' && shouldOrder) {
+        return false;
       }
     }
 
