@@ -441,9 +441,32 @@ function setupEventListeners() {
     filterData();
   });
   
-  document.getElementById('commandeFilter').addEventListener('change', () => {
+  document.getElementById('commandeFilter').addEventListener('change', async () => {
     currentPage = 1;
     filterData();
+
+    const commandeFilter = document.getElementById('commandeFilter').value;
+    if (commandeFilter !== 'oui') {
+      return;
+    }
+
+    if (filteredDocs.length === 0) {
+      alert("Aucun produit à commander pour ce filtre.");
+      return;
+    }
+
+    const choice = await showOrderMailPrompt();
+
+    if (choice === 'yes') {
+      await sendFilteredOrderEmail();
+      return;
+    }
+
+    if (choice === 'cancel') {
+      document.getElementById('commandeFilter').value = '';
+      currentPage = 1;
+      filterData();
+    }
   });
   
   document.getElementById('magasinFilter').addEventListener('change', () => {
@@ -1092,6 +1115,7 @@ async function saveEditedDoc(docId) {
     }
 
     alert('Modifications enregistrées avec succès');
+
     loadData();
   } catch (error) {
     console.error("Erreur lors de la mise à jour:", error);
@@ -1116,6 +1140,69 @@ function handleModalFiles(fileList) {
       };
       reader.readAsDataURL(blob);
     });
+  });
+}
+
+function showOrderMailPrompt() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.background = 'rgba(0, 0, 0, 0.45)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '9999';
+
+    const dialog = document.createElement('div');
+    dialog.style.background = '#fff';
+    dialog.style.borderRadius = '12px';
+    dialog.style.padding = '20px';
+    dialog.style.width = 'min(420px, calc(100vw - 32px))';
+    dialog.style.boxShadow = '0 18px 48px rgba(0, 0, 0, 0.2)';
+
+    const title = document.createElement('p');
+    title.textContent = 'Voulez vous envoyer un mail pour la commande ?';
+    title.style.margin = '0 0 16px';
+    title.style.fontSize = '16px';
+    title.style.fontWeight = '600';
+
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '10px';
+    actions.style.justifyContent = 'flex-end';
+    actions.style.flexWrap = 'wrap';
+
+    const choices = [
+      { label: 'Oui', value: 'yes' },
+      { label: 'Non', value: 'no' },
+      { label: 'Annuler', value: 'cancel' }
+    ];
+
+    const cleanup = (value) => {
+      overlay.remove();
+      resolve(value);
+    };
+
+    choices.forEach((choice) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = choice.label;
+      button.className = choice.value === 'yes' ? 'btn-primary' : 'btn-secondary';
+      button.addEventListener('click', () => cleanup(choice.value));
+      actions.appendChild(button);
+    });
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        cleanup('cancel');
+      }
+    });
+
+    dialog.appendChild(title);
+    dialog.appendChild(actions);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
   });
 }
 
@@ -1253,120 +1340,72 @@ async function exportAndSendEmail() {
       return;
     }
 
-    await loadGAPI();
-    
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: '283743756981-c3dp88fodaudspddumurobveupvhll7e.apps.googleusercontent.com',
-      scope: 'https://www.googleapis.com/auth/gmail.send',
-      callback: async (tokenResponse) => {
-        try {
-          if (tokenResponse.error) throw new Error(tokenResponse.error);
-          
-          const csvContent = generateCSVContent();
-          
-          // MODIFICATION : Utiliser la date du calendrier si disponible
-          const dateFilterValue = document.getElementById('dateFilter').value;
-          let dateToUse;
-          
-          if (dateFilterValue) {
-            // Si une date est sélectionnée, l'utiliser
-            dateToUse = new Date(dateFilterValue);
-          } else {
-            // Sinon, utiliser la date du jour
-            dateToUse = new Date();
-          }
-          
-          const dateStr = formatDateForFilename(dateToUse);
-          const magasinFilter = document.getElementById('magasinFilter').value;
-          let filename = `export_stock_${dateStr}`;
-          if (magasinFilter) filename += `_${magasinFilter}`;
-          filename += '.csv';
+    const dateFilterValue = document.getElementById('dateFilter').value;
+    const dateToUse = dateFilterValue ? new Date(dateFilterValue) : new Date();
+    const dateStr = formatDateForFilename(dateToUse);
+    const magasinFilter = document.getElementById('magasinFilter').value;
+    let filename = `export_stock_${dateStr}`;
+    if (magasinFilter) filename += `_${magasinFilter}`;
+    filename += '.csv';
 
-          const boundary = "----boundary_" + Math.random().toString(16).substr(2);
-          const nl = "\r\n";
-          
-          const mimeParts = [
-            `--${boundary}`,
-            'Content-Type: text/plain; charset=UTF-8',
-            'Content-Transfer-Encoding: quoted-printable',
-            '',
-            'Veuillez trouver ci-joint l\'export des stocks.',
-            '',
-            `--${boundary}`,
-            'Content-Type: text/csv; charset=UTF-8',
-            `Content-Disposition: attachment; filename="${filename}"`,
-            'Content-Transfer-Encoding: base64',
-            '',
-            chunkSplit(toBase64(csvContent), 76),
-            ''
-          ];
-
-          // Ajouter les photos comme pièces jointes
-          let photoIndex = 1;
-          for (const doc of filteredDocs) {
-            if (doc.photos && Array.isArray(doc.photos)) {
-              for (const photo of doc.photos) {
-                if (photo) {
-                  // Extraire le base64 si c'est une data URL
-                  const base64Data = photo.startsWith('data:image') ? photo.split(',')[1] : photo;
-                  const imageExt = photo.includes('jpeg') || photo.includes('jpg') ? 'jpg' : 'png';
-                  const photoFilename = `photo_${photoIndex}.${imageExt}`;
-                  
-                  mimeParts.push(`--${boundary}`);
-                  mimeParts.push(`Content-Type: image/${imageExt}`);
-                  mimeParts.push(`Content-Disposition: attachment; filename="${photoFilename}"`);
-                  mimeParts.push('Content-Transfer-Encoding: base64');
-                  mimeParts.push('');
-                  mimeParts.push(chunkSplit(base64Data, 76));
-                  mimeParts.push('');
-                  photoIndex++;
-                }
-              }
-            }
-          }
-
-          mimeParts.push(`--${boundary}--`);
-
-          const rawMessage = [
-            `To: ervachats@ervmedia.fr`,
-            `Subject: Export Stocks ${dateStr}${magasinFilter ? ` (${magasinFilter})` : ''}`,
-            'MIME-Version: 1.0',
-            `Content-Type: multipart/mixed; boundary="${boundary}"`,
-            '',
-            ...mimeParts
-          ].join(nl);
-
-          const encodedMessage = toBase64(rawMessage)
-            .replace(/\+/g, '-')
-            .replace(/\//g, '_')
-            .replace(/=+$/, '');
-
-          const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${tokenResponse.access_token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ raw: encodedMessage })
-          });
-
-          if (!response.ok) throw new Error(await response.text());
-          alert(`Export envoyé avec succès: ${filename}`);
-        } catch (error) {
-          console.error("Erreur d'envoi:", error);
-          alert(`Erreur lors de l'envoi: ${error.message}`);
-        }
-      },
-      error_callback: (error) => {
-        console.error("Erreur OAuth:", error);
-        alert("Erreur d'authentification Google");
-      }
+    await sendDocsToPurchasingEmail({
+      docs: filteredDocs,
+      filename,
+      subject: `Export Stocks ${dateStr}${magasinFilter ? ` (${magasinFilter})` : ''}`,
+      bodyText: 'Veuillez trouver ci-joint l\'export des stocks.'
     });
 
-    client.requestAccessToken();
+    alert(`Export envoyé avec succès: ${filename}`);
   } catch (error) {
-    console.error("Erreur initiale:", error);
-    alert(`Erreur: ${error.message}`);
+    console.error("Erreur d'envoi:", error);
+    alert(`Erreur lors de l'envoi: ${error.message}`);
+  }
+}
+
+async function sendFilteredOrderEmail() {
+  try {
+    checkAuth();
+
+    if (filteredDocs.length === 0) {
+      alert("Aucune donnée à exporter");
+      return;
+    }
+
+    const dateFilterValue = document.getElementById('dateFilter').value;
+    const dateToUse = dateFilterValue ? new Date(dateFilterValue) : new Date();
+    const dateStr = formatDateForFilename(dateToUse);
+    const magasinFilter = document.getElementById('magasinFilter').value;
+    let filename = `export_stock_${dateStr}`;
+    if (magasinFilter) filename += `_${magasinFilter}`;
+    filename += '.csv';
+
+    const adminUrl = new URL('admin.html', window.location.href).toString();
+    const referenceLines = filteredDocs.map((doc) => {
+      const code = doc.code_produit || doc.codeproduit || 'Sans code';
+      const designation = doc.designation || 'Sans designation';
+      return `- ${code} | ${designation}`;
+    });
+
+    const bodyText = [
+      'Veuillez trouver ci-joint les references filtrees a Oui.',
+      '',
+      'References filtrees a Oui :',
+      ...referenceLines,
+      '',
+      `Lien vers l'interface d'administration : ${adminUrl}`
+    ].join('\r\n');
+
+    await sendDocsToPurchasingEmail({
+      docs: filteredDocs,
+      filename,
+      subject: `Produits a commander ${dateStr}${magasinFilter ? ` (${magasinFilter})` : ''}`,
+      bodyText
+    });
+
+    alert(`Mail de commande envoyé avec succès: ${filename}`);
+  } catch (error) {
+    console.error("Erreur d'envoi du mail de commande:", error);
+    alert(`Erreur lors de l'envoi du mail de commande: ${error.message}`);
   }
 }
 
