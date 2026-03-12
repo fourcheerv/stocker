@@ -210,7 +210,28 @@ function setStockColumnVisibility(visible) {
   ["stockActuelHeader", "stockMinHeader", "stockMaxHeader"].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
-      element.style.display = "";
+      element.style.display = visible ? "" : "none";
+    }
+  });
+}
+
+function isBobinesAccount() {
+  return sessionStorage.getItem('currentAccount') === 'BOB329';
+}
+
+function setBobinesTableColumnsVisibility(hidden) {
+  [
+    'designationHeader',
+    'unitesHeader',
+    'aCommanderHeader',
+    'magasinHeader',
+    'axe2Header',
+    'stockMinHeader',
+    'stockMaxHeader'
+  ].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.display = hidden ? 'none' : '';
     }
   });
 }
@@ -268,6 +289,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (statsContainer) {
       statsContainer.style.display = 'none';
     }
+    setBobinesTableColumnsVisibility(true);
   } else {
     // Afficher CSV/mail, cacher le bouton Excel bobines
     document.getElementById('exportBtn').style.display = '';
@@ -276,6 +298,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (statsContainer) {
       statsContainer.style.display = '';
     }
+    setBobinesTableColumnsVisibility(false);
   }
   document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
   initAdmin();
@@ -641,6 +664,7 @@ function renderTable() {
   const tableBody = document.getElementById('dataTable').querySelector('tbody');
   tableBody.innerHTML = '';
   setStockColumnVisibility(true);
+  setBobinesTableColumnsVisibility(isBobinesAccount());
 
   totalPages = Math.ceil(filteredDocs.length / itemsPerPage);
   currentPage = Math.min(currentPage, totalPages);
@@ -654,21 +678,22 @@ function renderTable() {
     const hasPhotos = Array.isArray(doc.photos) && doc.photos.length > 0;
     const shouldDisplayStock = isTrackedMagasin(doc.magasin);
     const stockValues = getResolvedStockValues(doc);
+    const hideBobinesColumns = isBobinesAccount();
 
     row.innerHTML = `
       <td><input type="checkbox" class="row-checkbox" data-id="${doc._id}" ${isSelected ? 'checked' : ''}></td>
       <td>${doc.date_sortie ? formatDateForDisplay(doc.date_sortie) : formatDateForDisplay(doc._id)}</td>
       <td>${doc.code_produit || ''}</td>
-      <td class="designation-cell" title="${doc.designation || ''}">${doc.designation || ''}</td>
+      ${hideBobinesColumns ? '' : `<td class="designation-cell" title="${doc.designation || ''}">${doc.designation || ''}</td>`}
       <td>${doc.quantité_consommee ?? doc.quantite_consommee ?? ''}</td>
-      <td>${doc.unites || ''}</td>
-      <td>${doc.a_commander || ''}</td>
-      <td>${doc.magasin || ''}</td>
+      ${hideBobinesColumns ? '' : `<td>${doc.unites || ''}</td>`}
+      ${hideBobinesColumns ? '' : `<td>${doc.a_commander || ''}</td>`}
+      ${hideBobinesColumns ? '' : `<td>${doc.magasin || ''}</td>`}
       <td>${getAxe1Label(doc.axe1)}</td>
-      <td>${doc.axe2 || ''}</td>
+      ${hideBobinesColumns ? '' : `<td>${doc.axe2 || ''}</td>`}
       <td>${shouldDisplayStock ? stockValues.stockActuel : ''}</td>
-      <td>${shouldDisplayStock ? stockValues.stockMin : ''}</td>
-      <td>${shouldDisplayStock ? stockValues.stockMax : ''}</td>
+      ${hideBobinesColumns ? '' : `<td>${shouldDisplayStock ? stockValues.stockMin : ''}</td>`}
+      ${hideBobinesColumns ? '' : `<td>${shouldDisplayStock ? stockValues.stockMax : ''}</td>`}
       <td class="photo-indicator">${hasPhotos ? '📷' : ''}</td>
       <td>
         <div class="action-buttons-container">
