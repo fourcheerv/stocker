@@ -226,9 +226,19 @@ function setBobinesTableColumnsVisibility(hidden) {
     'aCommanderHeader',
     'magasinHeader',
     'axe2Header',
+    'stockActuelHeader',
     'stockMinHeader',
     'stockMaxHeader'
   ].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.display = hidden ? 'none' : '';
+    }
+  });
+}
+
+function setBobinesFilterVisibility(hidden) {
+  ['commandeFilterContainer', 'magasinFilterContainer'].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.style.display = hidden ? 'none' : '';
@@ -290,6 +300,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       statsContainer.style.display = 'none';
     }
     setBobinesTableColumnsVisibility(true);
+    setBobinesFilterVisibility(true);
   } else {
     // Afficher CSV/mail, cacher le bouton Excel bobines
     document.getElementById('exportBtn').style.display = '';
@@ -299,6 +310,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       statsContainer.style.display = '';
     }
     setBobinesTableColumnsVisibility(false);
+    setBobinesFilterVisibility(false);
   }
   document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
   initAdmin();
@@ -691,7 +703,7 @@ function renderTable() {
       ${hideBobinesColumns ? '' : `<td>${doc.magasin || ''}</td>`}
       <td>${getAxe1Label(doc.axe1)}</td>
       ${hideBobinesColumns ? '' : `<td>${doc.axe2 || ''}</td>`}
-      <td>${shouldDisplayStock ? stockValues.stockActuel : ''}</td>
+      ${hideBobinesColumns ? '' : `<td>${shouldDisplayStock ? stockValues.stockActuel : ''}</td>`}
       ${hideBobinesColumns ? '' : `<td>${shouldDisplayStock ? stockValues.stockMin : ''}</td>`}
       ${hideBobinesColumns ? '' : `<td>${shouldDisplayStock ? stockValues.stockMax : ''}</td>`}
       <td class="photo-indicator">${hasPhotos ? '📷' : ''}</td>
