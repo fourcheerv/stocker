@@ -290,6 +290,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const currentAccount = sessionStorage.getItem('currentAccount');
   const statsContainer = document.getElementById('statsContainer');
+  const topProductsSection = document.getElementById('topProductsSection');
 
   // Bobines : cacher CSV/mail standard, afficher bouton Excel
   if (currentAccount === 'BOB329') {
@@ -298,6 +299,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('exportXlsxBobinesBtn').style.display = '';
     if (statsContainer) {
       statsContainer.style.display = 'none';
+    }
+    if (topProductsSection) {
+      topProductsSection.style.display = 'none';
     }
     setBobinesTableColumnsVisibility(true);
     setBobinesFilterVisibility(true);
@@ -308,6 +312,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('exportXlsxBobinesBtn').style.display = 'none';
     if (statsContainer) {
       statsContainer.style.display = '';
+    }
+    if (topProductsSection) {
+      topProductsSection.style.display = '';
     }
     setBobinesTableColumnsVisibility(false);
     setBobinesFilterVisibility(false);
