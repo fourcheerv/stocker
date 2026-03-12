@@ -258,17 +258,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   startSync();
 
   const currentAccount = sessionStorage.getItem('currentAccount');
+  const statsContainer = document.getElementById('statsContainer');
 
   // Bobines : cacher CSV/mail standard, afficher bouton Excel
   if (currentAccount === 'BOB329') {
     document.getElementById('exportBtn').style.display = 'none';
     document.getElementById('exportToDriveBtn').style.display = 'none';
     document.getElementById('exportXlsxBobinesBtn').style.display = '';
+    if (statsContainer) {
+      statsContainer.style.display = 'none';
+    }
   } else {
     // Afficher CSV/mail, cacher le bouton Excel bobines
     document.getElementById('exportBtn').style.display = '';
     document.getElementById('exportToDriveBtn').style.display = '';
     document.getElementById('exportXlsxBobinesBtn').style.display = 'none';
+    if (statsContainer) {
+      statsContainer.style.display = '';
+    }
   }
   document.getElementById('dateFilter').value = (new Date()).toISOString().split('T')[0];
   initAdmin();
