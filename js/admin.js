@@ -632,10 +632,14 @@ function filterData() {
         return false;
       }
 
-      const shouldOrder = shouldOrderFromStockValues(
-        latestStock.stockActuel,
-        latestStock.stockMin,
-        latestStock.stockMax
+     const shouldOrder = shouldOrderFromStockValues(
+      latestStock.stockActuel,
+      latestStock.stockMin,
+      latestStock.stockMax,
+        parseNonNegativeNumber(
+        latestStock.latestDoc.quantité_consommee ?? latestStock.latestDoc.quantite_consommee,
+        0
+      )
       );
 
       if (commandeFilter === 'oui' && !shouldOrder) {
@@ -794,8 +798,8 @@ function getStockStatus(stockActuel, stockMin, stockMax, quantiteConsommee) {
   return { shouldOrder: false };
 }
 
-function shouldOrderFromStockValues(stockActuel, stockMin, stockMax) {
-  return getStockStatus(stockActuel, stockMin, stockMax, 0).shouldOrder;
+function shouldOrderFromStockValues(stockActuel, stockMin, stockMax, quantiteConsommee = 0) {
+  return getStockStatus(stockActuel, stockMin, stockMax, quantiteConsommee).shouldOrder;
 }
 
 function updateEditCommanderField() {
@@ -1833,3 +1837,4 @@ function chunkSplit(str, length) {
 
 
 js/admin.js
+
