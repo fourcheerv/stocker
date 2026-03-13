@@ -775,8 +775,55 @@ function buildLatestStockByProduct(docs) {
   });
 }
 
+function getStockStatus(stockActuel, stockMin, stockMax, quantiteConsommee) {
+  const stockApres = Math.max(0, stockActuel - quantiteConsommee);
+  const isMaxReached = stockMax > 0 && stockActuel >= stockMax;
+
+  if (stockApres === 0) {
+    return { shouldOrder: true };
+  }
+
+  if (isMaxReached) {
+    return { shouldOrder: false };
+  }
+
+  if (stockApres <= stockMin) {
+    return { shouldOrder: true };
+  }
+
+  return { shouldOrder: false };
+}
+
 function shouldOrderFromStockValues(stockActuel, stockMin, stockMax) {
-  return stockActuel <= stockMin;
+  return getStockStatus(stockActuel, stockMin, stockMax, 0).shouldOrder;
+}
+
+function updateEditCommanderField() {
+  const commanderField = document.getElementById('edit_a_commander');
+  if (!commanderField) return;
+
+  const stockActuel = parseNonNegativeNumber(document.getElementById('edit_stock_actuel')?.value, 0);
+  const stockMin = parseNonNegativeNumber(document.getElementById('edit_stock_min')?.value, 0);
+  const stockMax = parseNonNegativeNumber(document.getElementById('edit_stock_max')?.value, 0);
+  const quantiteConsommee = parseNonNegativeNumber(
+    document.getElementById('edit_quantité_consommee')?.value ?? document.getElementById('edit_quantite_consommee')?.value,
+    0
+  );
+
+  const status = getStockStatus(stockActuel, stockMin, stockMax, quantiteConsommee);
+  commanderField.value = status.shouldOrder ? 'Oui' : 'Non';
+}
+
+function bindEditStockFieldListeners() {
+  ['edit_stock_actuel', 'edit_stock_min', 'edit_stock_max', 'edit_quantité_consommee', 'edit_quantite_consommee']
+    .forEach((id) => {
+      const input = document.getElementById(id);
+      if (!input) return;
+      input.addEventListener('input', updateEditCommanderField);
+      input.addEventListener('change', updateEditCommanderField);
+    });
+
+  updateEditCommanderField();
 }
 
 function getCodeLabel(doc) {
@@ -1037,6 +1084,7 @@ function setupEditModal(doc) {
   `;
   
   const modal = modalManager.openModal(modalContent, true);
+  bindEditStockFieldListeners();
 
   // Initialiser les photos existantes
   if (doc.photos && doc.photos.length > 0) {
@@ -1141,11 +1189,13 @@ async function saveEditedDoc(docId) {
       doc.stock_apres = doc.stock_actuel;
     }
 
-    doc.a_commander = shouldOrderFromStockValues(
+    const stockStatus = getStockStatus(
       parseNonNegativeNumber(doc.stock_actuel, 0),
       parseNonNegativeNumber(doc.stock_min, 0),
-      parseNonNegativeNumber(doc.stock_max, 0)
-    ) ? 'Oui' : 'Non';
+      parseNonNegativeNumber(doc.stock_max, 0),
+      parseNonNegativeNumber(doc.quantité_consommee ?? doc.quantite_consommee, 0)
+    );
+    doc.a_commander = stockStatus.shouldOrder ? 'Oui' : 'Non';
     
     // Sauvegarder les photos modifiées
     if (editModalPhotos.length > 0) {
