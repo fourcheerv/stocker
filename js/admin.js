@@ -207,7 +207,7 @@ function getResolvedStockValues(doc) {
 }
 
 function setStockColumnVisibility(visible) {
-  ["stockActuelHeader", "stockMinHeader", "stockMaxHeader"].forEach((id) => {
+  ["stockActuelHeader", "stockMinHeader", "stockMaxHeader", "stockCoverageHeader"].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.style.display = visible ? "" : "none";
@@ -228,7 +228,8 @@ function setBobinesTableColumnsVisibility(hidden) {
     'axe2Header',
     'stockActuelHeader',
     'stockMinHeader',
-    'stockMaxHeader'
+    'stockMaxHeader',
+    'stockCoverageHeader'
   ].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
@@ -694,6 +695,7 @@ function renderTable() {
   
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedDocs = filteredDocs.slice(startIndex, startIndex + itemsPerPage);
+  const coverageByCode = buildCoverageDaysByCode(allDocs);
 
   paginatedDocs.forEach(doc => {
     const row = document.createElement('tr');
@@ -701,6 +703,9 @@ function renderTable() {
     const hasPhotos = Array.isArray(doc.photos) && doc.photos.length > 0;
     const shouldDisplayStock = isTrackedMagasin(doc.magasin);
     const stockValues = getResolvedStockValues(doc);
+    const coverageDays = shouldDisplayStock
+      ? coverageByCode.get(normalizeProductCode(doc.code_produit || doc.codeproduit)) ?? null
+      : null;
     const hideBobinesColumns = isBobinesAccount();
 
     row.innerHTML = `
@@ -717,6 +722,7 @@ function renderTable() {
       ${hideBobinesColumns ? '' : `<td>${shouldDisplayStock ? stockValues.stockActuel : ''}</td>`}
       ${hideBobinesColumns ? '' : `<td>${shouldDisplayStock ? stockValues.stockMin : ''}</td>`}
       ${hideBobinesColumns ? '' : `<td>${shouldDisplayStock ? stockValues.stockMax : ''}</td>`}
+      ${hideBobinesColumns ? '' : `<td>${shouldDisplayStock ? formatCoverageDays(coverageDays) : ''}</td>`}
       <td class="photo-indicator">${hasPhotos ? '📷' : ''}</td>
       <td>
         <div class="action-buttons-container">
@@ -748,6 +754,50 @@ function getNumericValue(...values) {
 
 function getQuantityValue(doc) {
   return getNumericValue(doc.quantité_consommee, doc.quantite_consommee) || 0;
+}
+
+function getCoverageDaysForProduct(code, stockActuel, docs = allDocs, periodDays = 30) {
+  const normalizedCode = normalizeProductCode(code);
+  if (!normalizedCode) return null;
+
+  const now = Date.now();
+  const periodMs = periodDays * 24 * 60 * 60 * 1000;
+  const consumedQty = docs.reduce((sum, doc) => {
+    const docCode = normalizeProductCode(doc.code_produit ?? doc.codeproduit);
+    if (docCode !== normalizedCode) return sum;
+    if (getDocDate(doc).getTime() <= now - periodMs) return sum;
+    return sum + getQuantityValue(doc);
+  }, 0);
+
+  if (consumedQty <= 0) return null;
+
+  const dailyConsumption = consumedQty / periodDays;
+  if (dailyConsumption <= 0) return null;
+
+  return stockActuel / dailyConsumption;
+}
+
+function formatCoverageDays(coverageDays) {
+  if (coverageDays === null || coverageDays === undefined || !Number.isFinite(coverageDays)) {
+    return '-';
+  }
+
+  if (coverageDays <= 0) {
+    return '0 j';
+  }
+
+  return `${coverageDays.toFixed(1)} j`;
+}
+
+function buildCoverageDaysByCode(docs = allDocs, periodDays = 30) {
+  const latestStocks = buildLatestStockByProduct(docs);
+  const coverageByCode = new Map();
+
+  latestStocks.forEach((item) => {
+    coverageByCode.set(item.code, getCoverageDaysForProduct(item.code, item.stockActuel, docs, periodDays));
+  });
+
+  return coverageByCode;
 }
 
 function buildLatestStockByProduct(docs) {
@@ -931,19 +981,8 @@ function updateStats() {
     .slice(0, 10);
   renderTopProducts(topProducts);
 
-  const consumptionByCode = new Map();
-  last30DaysDocs.forEach((doc) => {
-    const normalizedCode = getCodeLabel(doc).toString().trim().toLowerCase();
-    if (!normalizedCode) return;
-    const qty = getQuantityValue(doc);
-    if (qty <= 0) return;
-    consumptionByCode.set(normalizedCode, (consumptionByCode.get(normalizedCode) || 0) + qty);
-  });
-
   const coverages = latestStocks.map((item) => {
-    const dailyConsumption = (consumptionByCode.get(item.code || '') || 0) / 30;
-    if (dailyConsumption <= 0) return null;
-    return item.stockActuel / dailyConsumption;
+    return getCoverageDaysForProduct(item.code || '', item.stockActuel, last30DaysDocs);
   }).filter((value) => value !== null && Number.isFinite(value));
 
   const avgCoverage = coverages.length
@@ -1606,6 +1645,9 @@ function showDetails(docId) {
   if (!doc) return;
   const stockValues = getResolvedStockValues(doc);
   const displayStock = isTrackedMagasin(doc.magasin);
+  const coverageDays = displayStock
+    ? getCoverageDaysForProduct(doc.code_produit || doc.codeproduit, stockValues.stockActuel)
+    : null;
 
   let detailsHtml = `
     <div class="modal-content">
@@ -1626,6 +1668,7 @@ function showDetails(docId) {
         <div class="detail-item"><strong>Stock actuel:</strong> ${displayStock ? stockValues.stockActuel : '-'}</div>
         <div class="detail-item"><strong>Stock min:</strong> ${displayStock ? stockValues.stockMin : '-'}</div>
         <div class="detail-item"><strong>Stock max:</strong> ${displayStock ? stockValues.stockMax : '-'}</div>
+        <div class="detail-item"><strong>Couverture stock:</strong> ${displayStock ? formatCoverageDays(coverageDays) : '-'}</div>
   `;
 
   if (doc.photos) {
