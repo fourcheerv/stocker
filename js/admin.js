@@ -1486,15 +1486,17 @@ async function sendFilteredOrderEmail() {
 
     const adminUrl = new URL('admin.html', window.location.href).toString();
     const referenceLines = filteredDocs.map((doc) => {
-      const code = doc.code_produit || doc.codeproduit || 'Sans code';
-      const designation = doc.designation || 'Sans designation';
-      return `- ${code} | ${designation}`;
+    const code = doc.code_produit || doc.codeproduit || 'Sans code';
+    const designation = doc.designation || 'Sans designation';
+    const stockValues = getResolvedStockValues(doc);
+
+    return `- ${code} | ${designation} | Stock actuel: ${stockValues.stockActuel} | Stock min: ${stockValues.stockMin} | Stock max: ${stockValues.stockMax}`;
     });
 
     const bodyText = [
-      'Veuillez trouver ci-joint les references filtrees a Oui.',
+      'Veuillez trouver ci-joint les references filtrees a Oui. (références article à commander)',
       '',
-      'References filtrees a Oui :',
+      'References filtrees a Oui (avec niveaux de stock) :',
       ...referenceLines,
       '',
       `Lien vers l'interface d'administration : ${adminUrl}`
@@ -1837,4 +1839,5 @@ function chunkSplit(str, length) {
 
 
 js/admin.js
+
 
