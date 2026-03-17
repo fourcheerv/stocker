@@ -205,9 +205,9 @@ main {
 }
 
 .sync-status-indicator {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
   flex: 0 0 auto;
   background: rgba(255, 255, 255, 0.22);
   border: 1px solid rgba(255, 255, 255, 0.32);
@@ -218,12 +218,11 @@ main {
 }
 
 .sync-status-indicator::after {
-  content: '';
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.12);
+  content: '\27F3';
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  color: currentColor;
 }
 
 .sync-status-copy {
@@ -243,6 +242,11 @@ main {
   font-size: 0.95rem;
   line-height: 1.45;
   opacity: 0.95;
+}
+
+.sync-status-banner.is-syncing .sync-status-indicator::after,
+.sync-status-banner.is-pending .sync-status-indicator::after {
+  animation: sync-rotate 1s linear infinite;
 }
 
 .sync-status-banner.is-pending {
@@ -273,6 +277,15 @@ main {
   background: linear-gradient(135deg, #fef1f1, #ffd8d8);
   border-color: #efadb5;
   color: #c0392b;
+}
+
+@keyframes sync-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Contrôles admin */

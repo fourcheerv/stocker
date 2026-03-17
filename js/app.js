@@ -15,20 +15,22 @@ let syncHandler = null;
 
 function updateSubmitStatus(state, message) {
   const statusBox = document.getElementById("submitStatus");
-  if (!statusBox) return;
+  const statusText = document.getElementById("submitStatusText");
+  if (!statusBox || !statusText) return;
 
   statusBox.classList.remove("hidden", "is-pending", "is-syncing", "is-ok", "is-warning", "is-error");
   statusBox.classList.add(state);
-  statusBox.textContent = message;
+  statusText.textContent = message;
 }
 
 function hideSubmitStatus() {
   const statusBox = document.getElementById("submitStatus");
-  if (!statusBox) return;
+  const statusText = document.getElementById("submitStatusText");
+  if (!statusBox || !statusText) return;
 
   statusBox.classList.add("hidden");
   statusBox.classList.remove("is-pending", "is-syncing", "is-ok", "is-warning", "is-error");
-  statusBox.textContent = "";
+  statusText.textContent = "";
 }
 
 async function confirmRemoteSync(docId, expectedRev, successMessage) {

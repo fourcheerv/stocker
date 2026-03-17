@@ -61,7 +61,13 @@
     </div>
 
     <form id="stockForm">
-      <div id="submitStatus" class="submit-status hidden" role="status" aria-live="polite"></div>
+      <section id="submitStatus" class="submit-status hidden is-pending" role="status" aria-live="polite">
+        <div class="sync-status-indicator" aria-hidden="true"></div>
+        <div class="sync-status-copy">
+          <strong>Synchronisation distante</strong>
+          <span id="submitStatusText">En attente...</span>
+        </div>
+      </section>
 
       <!-- Produit -->
       <div class="field-group">
