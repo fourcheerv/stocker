@@ -586,6 +586,17 @@ function focusScannerInput() {
   document.getElementById("code_produit").focus();
 }
 
+function restoreSelectedScanMode() {
+  const mode = document.getElementById("modeScan");
+  if (mode && mode.value === "camera") {
+    initQRScanner();
+    return;
+  }
+
+  stopQRScanner();
+  focusScannerInput();
+}
+
 function stopQRScanner() {
   if (qrReader) {
     qrReader.stop().catch(err => console.error("Failed to stop QR scanner", err));
@@ -689,28 +700,28 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   if (!normalizedCodeProduit) {
     alert("Veuillez renseigner un code produit.");
     isSubmitting = false;
-    initQRScanner();
+    restoreSelectedScanMode();
     return;
   }
 
   if (!quantiteConsommee || quantiteConsommee <= 0) {
     alert("La quantité déstockée doit être supérieure à 0.");
     isSubmitting = false;
-    initQRScanner();
+    restoreSelectedScanMode();
     return;
   }
 
   if (stockMin > stockMax) {
     alert("Le stock minimum ne peut pas être supérieur au stock maximum.");
     isSubmitting = false;
-    initQRScanner();
+    restoreSelectedScanMode();
     return;
   }
 
   if (quantiteConsommee > stockActuel) {
     alert("Déstockage impossible : la quantité dépasse le stock actuel.");
     isSubmitting = false;
-    initQRScanner();
+    restoreSelectedScanMode();
     return;
   }
 
@@ -766,7 +777,7 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
     updateSubmitStatus("is-error", "Erreur lors de l'enregistrement du stock.");
   } finally {
     isSubmitting = false;
-    initQRScanner();
+    restoreSelectedScanMode();
   }
 });
 
