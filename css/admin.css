@@ -177,6 +177,69 @@ main {
   padding: 0 1.5rem 2rem;
 }
 
+.sync-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 1.25rem;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  box-shadow: 0 8px 24px rgba(0, 61, 102, 0.08);
+}
+
+.sync-status-indicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: currentColor;
+}
+
+.sync-status-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sync-status-copy strong {
+  font-size: 1rem;
+}
+
+.sync-status-copy span {
+  font-size: 0.95rem;
+}
+
+.sync-status-banner.is-pending {
+  background: #fff7e6;
+  border-color: #f5c26b;
+  color: #9a6700;
+}
+
+.sync-status-banner.is-syncing {
+  background: #eaf5ff;
+  border-color: #8cc8f2;
+  color: #0c81b4;
+}
+
+.sync-status-banner.is-ok {
+  background: #eafaf1;
+  border-color: #86d7aa;
+  color: #1f8f50;
+}
+
+.sync-status-banner.is-warning {
+  background: #fff8e1;
+  border-color: #f1d27a;
+  color: #a56700;
+}
+
+.sync-status-banner.is-error {
+  background: #fef0f0;
+  border-color: #f1aeb5;
+  color: #c0392b;
+}
+
 /* Contrôles admin */
 .admin-controls {
   display: flex;
@@ -1033,6 +1096,10 @@ footer {
   
   .admin-controls {
     flex-direction: column;
+  }
+
+  .sync-status-banner {
+    align-items: flex-start;
   }
   
   .search-filter-container {

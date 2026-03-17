@@ -24,6 +24,24 @@ let totalPages = 1;
 let selectedDocs = new Set();
 let editModalPhotos = []; // Photos temporaires pendant l'édition
 let stockStateByCode = new Map();
+let syncRefreshTimer = null;
+
+function updateSyncStatus(state, message) {
+  const banner = document.getElementById("syncStatusBanner");
+  const text = document.getElementById("syncStatusText");
+  if (!banner || !text) return;
+
+  banner.classList.remove("is-pending", "is-syncing", "is-ok", "is-warning", "is-error");
+  banner.classList.add(state);
+  text.textContent = message;
+}
+
+function scheduleAdminRefresh(delay = 400) {
+  clearTimeout(syncRefreshTimer);
+  syncRefreshTimer = window.setTimeout(() => {
+    loadData();
+  }, delay);
+}
 
 function clearClientSession() {
   sessionStorage.removeItem("currentAccount");
@@ -52,9 +70,43 @@ function setupRemoteDB() {
 function startSync() {
   if (syncHandler) return;
 
+  updateSyncStatus("is-pending", "Connexion a CouchDB en cours...");
+
   syncHandler = localDB.sync(setupRemoteDB(), { live: true, retry: true })
+    .on("active", () => {
+      updateSyncStatus("is-syncing", "Synchronisation en cours avec CouchDB...");
+    })
+    .on("change", () => {
+      updateSyncStatus("is-syncing", "Mise a jour des donnees en cours...");
+      scheduleAdminRefresh();
+    })
+    .on("paused", (error) => {
+      if (error) {
+        updateSyncStatus("is-warning", "Synchronisation en pause. Reconnexion automatique en cours...");
+        return;
+      }
+
+      const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
+      updateSyncStatus(
+        isOffline ? "is-warning" : "is-ok",
+        isOffline
+          ? "Mode hors ligne. Les changements seront synchronises des que la connexion revient."
+          : "Toutes les donnees sont synchronisees avec CouchDB."
+      );
+    })
+    .on("denied", (error) => {
+      console.error("Synchronisation refusee :", error);
+      updateSyncStatus("is-error", "Synchronisation refusee par CouchDB. Veuillez verifier vos droits.");
+    })
     .on("error", async (error) => {
       console.error("Erreur de synchronisation :", error);
+      const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
+      updateSyncStatus(
+        isOffline ? "is-warning" : "is-error",
+        isOffline
+          ? "Connexion internet indisponible. Synchronisation en attente."
+          : "Erreur de synchronisation avec CouchDB. Nouvelle tentative automatique..."
+      );
       if (error && (error.status === 401 || error.name === "unauthorized")) {
         alert("Session CouchDB expirée. Veuillez vous reconnecter.");
         await logout();
@@ -286,6 +338,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  updateSyncStatus(
+    typeof navigator !== "undefined" && navigator.onLine === false ? "is-warning" : "is-pending",
+    typeof navigator !== "undefined" && navigator.onLine === false
+      ? "Connexion internet indisponible. Synchronisation en attente."
+      : "Initialisation de la synchronisation CouchDB..."
+  );
+
+  window.addEventListener("online", () => {
+    updateSyncStatus("is-pending", "Connexion retablie. Reprise de la synchronisation CouchDB...");
+  });
+
+  window.addEventListener("offline", () => {
+    updateSyncStatus("is-warning", "Mode hors ligne. Les changements seront synchronises plus tard.");
+  });
+
   setupRemoteDB();
   startSync();
 
@@ -470,7 +537,6 @@ function setupEventListeners() {
   
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('exportBtn').addEventListener('click', exportToCSV);
-  document.getElementById('syncBtn').addEventListener('click', syncWithServer);
   document.getElementById('deleteSelectedBtn').addEventListener('click', confirmDeleteSelected);
   document.getElementById('deleteAllBtn').addEventListener('click', confirmDeleteAll);
   document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
@@ -1072,17 +1138,6 @@ function goToPage(page) {
   if (page < 1 || page > totalPages) return;
   currentPage = page;
   renderTable();
-}
-
-async function syncWithServer() {
-  try {
-    await localDB.sync(setupRemoteDB());
-    alert("Synchronisation réussie");
-    loadData();
-  } catch (error) {
-    console.error("Erreur de synchronisation:", error);
-    alert("Erreur lors de la synchronisation");
-  }
 }
 
 function setupEditModal(doc) {

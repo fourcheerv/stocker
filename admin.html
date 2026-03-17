@@ -34,11 +34,18 @@
   </header>
 
   <main>
+    <section id="syncStatusBanner" class="sync-status-banner is-pending" role="status" aria-live="polite">
+      <div class="sync-status-indicator" aria-hidden="true"></div>
+      <div class="sync-status-copy">
+        <strong id="syncStatusTitle">Synchronisation CouchDB</strong>
+        <span id="syncStatusText">Initialisation de la synchronisation...</span>
+      </div>
+    </section>
+
     <div class="admin-controls">
       <button id="exportBtn">Exporter en CSV</button>
       <button id="exportToDriveBtn" class="btn-primary">Envoi par mail des produits aux achats</button>
       <button id="exportXlsxBobinesBtn" class="btn-primary" style="display:none">Envoi par mail des bobines aux achats</button>
-      <button id="syncBtn">Synchroniser avec le serveur</button>
       <button id="deleteSelectedBtn" class="danger">Supprimer la sélection</button>
       <button id="deleteAllBtn" class="danger">Tout supprimer</button>
       <button id="resetFiltersBtn">Réinitialiser les filtres</button>
