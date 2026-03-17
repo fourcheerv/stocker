@@ -67,10 +67,31 @@ function setupRemoteDB() {
   return remoteDB;
 }
 
-function startSync() {
+async function startSync() {
   if (syncHandler) return;
 
-  updateSyncStatus("is-pending", "Connexion a CouchDB en cours...");
+  updateSyncStatus("is-syncing", "Synchronisation initiale avec CouchDB en cours...");
+
+  try {
+    await localDB.sync(setupRemoteDB());
+    updateSyncStatus("is-ok", "Synchronisation initiale terminee. Surveillance des changements active.");
+    await loadData();
+  } catch (error) {
+    console.error("Erreur de synchronisation initiale :", error);
+    const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
+    updateSyncStatus(
+      isOffline ? "is-warning" : "is-error",
+      isOffline
+        ? "Connexion internet indisponible. Synchronisation initiale reportee."
+        : "La synchronisation initiale avec CouchDB a echoue. Nouvelle tentative automatique..."
+    );
+
+    if (error && (error.status === 401 || error.name === "unauthorized")) {
+      alert("Session CouchDB expirée. Veuillez vous reconnecter.");
+      await logout();
+      return;
+    }
+  }
 
   syncHandler = localDB.sync(setupRemoteDB(), { live: true, retry: true })
     .on("active", () => {
@@ -354,7 +375,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   setupRemoteDB();
-  startSync();
+  await startSync();
 
   const currentAccount = sessionStorage.getItem('currentAccount');
   const statsContainer = document.getElementById('statsContainer');
