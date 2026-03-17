@@ -33,11 +33,11 @@ function hideSubmitStatus() {
 
 async function confirmRemoteSync(docId, expectedRev, successMessage) {
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    updateSubmitStatus("is-warning", "Enregistre localement. Synchronisation avec la base distante en attente de connexion.");
+    updateSubmitStatus("is-warning", "Enregistrement effectue. Synchronisation avec la base distante en attente de connexion.");
     return;
   }
 
-  updateSubmitStatus("is-syncing", "Enregistrement effectue. Verification de la synchronisation avec la base distante...");
+  updateSubmitStatus("is-syncing", "Enregistrement effectue. Verification de la synchronisation avec la base distante en cours...");
 
   const db = setupRemoteDB();
   const attempts = 8;
@@ -58,7 +58,7 @@ async function confirmRemoteSync(docId, expectedRev, successMessage) {
     await new Promise((resolve) => window.setTimeout(resolve, 1500));
   }
 
-  updateSubmitStatus("is-warning", "Enregistre sur l'appareil. Synchronisation distante en attente ou plus lente que prevu.");
+  updateSubmitStatus("is-warning", "Enregistrement effectue, mais la confirmation de synchronisation distante prend plus de temps que prevu.");
 }
 
 function clearClientSession() {
@@ -757,7 +757,8 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   try {
     const saveResult = await localDB.put(record);
     await upsertStockState(codeProduit, stockApres, stockMin, stockMax);
-    updateSubmitStatus("is-pending", "Stock enregistre sur l'appareil. Synchronisation distante en cours...");
+    alert("Stock enregistre !");
+    updateSubmitStatus("is-pending", "Stock enregistre. Synchronisation avec la base distante en cours...");
     await confirmRemoteSync(record._id, saveResult.rev, "Stock enregistre et synchronise avec la base distante.");
     resetForm();
   } catch (err) {
