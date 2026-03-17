@@ -62,15 +62,15 @@
     <form id="bobinesForm">
       <div class="field-group">
         <label for="code_produit">📵 Code Produit :</label>
-        <input type="number" id="code_produit" required />
+        <input type="number" id="code_produit" inputmode="numeric" autocomplete="off" enterkeyhint="next" required />
       </div>
       <div class="field-group">
         <label for="quantité_consommee">📉 Quantité consommée :</label>
-        <input type="number" id="quantité_consommee" value="1" min="1" required />
+        <input type="number" id="quantité_consommee" value="1" min="1" inputmode="numeric" enterkeyhint="next" required />
       </div>
       <div class="field-group">
         <label for="remarques">📌 Remarques :</label>
-        <textarea id="remarques" rows="3" placeholder="Remarques optionnelles..."></textarea>
+        <textarea id="remarques" rows="3" placeholder="Remarques optionnelles..." autocapitalize="sentences" spellcheck="true" enterkeyhint="done"></textarea>
       </div>
       <input type="hidden" id="axe1" />
       <div class="button-group">
@@ -87,6 +87,7 @@
     <p>&copy; 🗞️ 2025 - Application Bobines</p>
   </footer>
 
+  <script src="js/voice-input.js"></script>
   <script src="js/bobines.js"></script>
 </body>
 </html>

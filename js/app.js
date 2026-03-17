@@ -290,6 +290,30 @@ function updateUIForUserRole() {
   }
 }
 
+function initializeVoiceInputSupport() {
+  if (!window.VoiceInputEnhancer) return;
+
+  window.VoiceInputEnhancer.attach("#designation", {
+    lang: "fr-FR",
+    ariaLabel: "Dicter la designation"
+  });
+
+  window.VoiceInputEnhancer.attach("#unites", {
+    lang: "fr-FR",
+    ariaLabel: "Dicter l'unite"
+  });
+
+  window.VoiceInputEnhancer.attach("#remarques", {
+    lang: "fr-FR",
+    ariaLabel: "Dicter les remarques"
+  });
+
+  window.VoiceInputEnhancer.attach("#axe2", {
+    lang: "fr-FR",
+    ariaLabel: "Dicter l'axe 2"
+  });
+}
+
 async function logout() {
   try {
     await fetch(`${COUCHDB_BASE_URL}/_session`, {
@@ -319,6 +343,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // Mise à jour de l'interface utilisateur
   updateUIForUserRole(); 
   updateUserInterface();
+  initializeVoiceInputSupport();
   
   // Chargement des données Excel
   loadExcelData();

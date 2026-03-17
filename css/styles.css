@@ -284,6 +284,41 @@ textarea {
   resize: vertical;
 }
 
+.voice-input-wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.voice-input-wrapper > input,
+.voice-input-wrapper > textarea {
+  flex: 1;
+}
+
+.voice-input-btn {
+  flex: 0 0 auto;
+  min-width: 48px;
+  padding: 0 14px;
+  border-radius: var(--border-radius);
+  background: linear-gradient(135deg, #0c81b4, #1177bb);
+  color: #fff;
+  box-shadow: none;
+}
+
+.voice-input-btn:hover {
+  box-shadow: 0 4px 10px rgba(12, 129, 180, 0.2);
+}
+
+.voice-input-btn.is-listening {
+  background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+.voice-input-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Preview Images */
 .preview-container {
   display: flex;
@@ -517,6 +552,15 @@ footer {
   textarea,
   select {
     padding: 10px 12px;
+  }
+
+  .voice-input-wrapper {
+    gap: 8px;
+  }
+
+  .voice-input-btn {
+    min-width: 44px;
+    padding: 0 12px;
   }
   
   button {

@@ -437,6 +437,15 @@ function resetForm(keepCode = true) {
   focusScannerInput();
 }
 
+function initializeVoiceInputSupport() {
+  if (!window.VoiceInputEnhancer) return;
+
+  window.VoiceInputEnhancer.attach("#remarques", {
+    lang: "fr-FR",
+    ariaLabel: "Dicter les remarques"
+  });
+}
+
 /* =======================
    INIT
 ======================= */
@@ -452,6 +461,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("axe1").value = currentAccount;
   document.getElementById("currentUserLabel").textContent =
     sessionStorage.getItem("currentServiceName") || currentAccount;
+  initializeVoiceInputSupport();
 
   const adminLink = document.getElementById("adminLink");
   adminLink.style.display = "block";
