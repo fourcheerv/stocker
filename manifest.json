@@ -1,21 +1,67 @@
 {
+  "id": "/stocker/",
   "name": "Stocker",
-  "short_name": "Gestion des sorties de stock",
+  "short_name": "Stocker",
   "description": "Suivez vos Stocks rapidement et avec facilité.",
   "start_url": "/stocker/",
+  "scope": "/stocker/",
+  "lang": "fr-FR",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "theme_color": "#0c81b4",
+  "categories": ["productivity", "business", "utilities"],
   "icons": [
     {
       "src": "/stocker/icons/logo_package_192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/stocker/icons/logo_package_512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouvelle sortie",
+      "short_name": "Sortie",
+      "url": "/stocker/index.html",
+      "icons": [
+        {
+          "src": "/stocker/icons/logo_package_192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Bobines",
+      "short_name": "Bobines",
+      "url": "/stocker/bobines.html",
+      "icons": [
+        {
+          "src": "/stocker/icons/logo_package_192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Administration",
+      "short_name": "Admin",
+      "url": "/stocker/admin.html",
+      "icons": [
+        {
+          "src": "/stocker/icons/logo_package_192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
