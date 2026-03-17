@@ -597,7 +597,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     };
 
     try {
-      await localDB.put(record);
+      const saveResult = await localDB.put(record);
       showScanInfo("Nouveau code-barres enregistré ✅", "success");
       resetForm(true);
     } catch {

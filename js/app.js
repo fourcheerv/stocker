@@ -13,6 +13,54 @@ const localDB = new PouchDB("stocks");
 let remoteDB = null;
 let syncHandler = null;
 
+function updateSubmitStatus(state, message) {
+  const statusBox = document.getElementById("submitStatus");
+  if (!statusBox) return;
+
+  statusBox.classList.remove("hidden", "is-pending", "is-syncing", "is-ok", "is-warning", "is-error");
+  statusBox.classList.add(state);
+  statusBox.textContent = message;
+}
+
+function hideSubmitStatus() {
+  const statusBox = document.getElementById("submitStatus");
+  if (!statusBox) return;
+
+  statusBox.classList.add("hidden");
+  statusBox.classList.remove("is-pending", "is-syncing", "is-ok", "is-warning", "is-error");
+  statusBox.textContent = "";
+}
+
+async function confirmRemoteSync(docId, expectedRev, successMessage) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    updateSubmitStatus("is-warning", "Enregistre localement. Synchronisation avec la base distante en attente de connexion.");
+    return;
+  }
+
+  updateSubmitStatus("is-syncing", "Enregistrement effectue. Verification de la synchronisation avec la base distante...");
+
+  const db = setupRemoteDB();
+  const attempts = 8;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const remoteDoc = await db.get(docId);
+      if (!expectedRev || remoteDoc._rev === expectedRev) {
+        updateSubmitStatus("is-ok", successMessage);
+        return;
+      }
+    } catch (error) {
+      if (error.status !== 404) {
+        console.warn("Verification de synchronisation distante impossible :", error);
+      }
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 1500));
+  }
+
+  updateSubmitStatus("is-warning", "Enregistre sur l'appareil. Synchronisation distante en attente ou plus lente que prevu.");
+}
+
 function clearClientSession() {
   sessionStorage.removeItem("currentAccount");
   sessionStorage.removeItem("currentServiceName");
@@ -344,6 +392,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   updateUIForUserRole(); 
   updateUserInterface();
   initializeVoiceInputSupport();
+  hideSubmitStatus();
   
   // Chargement des données Excel
   loadExcelData();
@@ -706,13 +755,14 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
   }
 
   try {
-    await localDB.put(record);
+    const saveResult = await localDB.put(record);
     await upsertStockState(codeProduit, stockApres, stockMin, stockMax);
-    alert("Stock enregistré !");
+    updateSubmitStatus("is-pending", "Stock enregistre sur l'appareil. Synchronisation distante en cours...");
+    await confirmRemoteSync(record._id, saveResult.rev, "Stock enregistre et synchronise avec la base distante.");
     resetForm();
   } catch (err) {
     console.error("Erreur sauvegarde :", err);
-    alert("Erreur lors de l'enregistrement.");
+    updateSubmitStatus("is-error", "Erreur lors de l'enregistrement du stock.");
   } finally {
     isSubmitting = false;
     initQRScanner();
@@ -735,6 +785,7 @@ function resetForm() {
 
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (confirm("Voulez-vous vraiment réinitialiser le formulaire ?")) {
+    hideSubmitStatus();
     resetForm();
   }
 });

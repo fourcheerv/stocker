@@ -219,6 +219,48 @@ main {
   display: none;
 }
 
+.submit-status {
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 61, 102, 0.08);
+}
+
+.submit-status.hidden {
+  display: none;
+}
+
+.submit-status.is-pending {
+  background: linear-gradient(135deg, #fff6df, #ffe9c7);
+  border-color: #f1c46a;
+  color: #9a6700;
+}
+
+.submit-status.is-syncing {
+  background: linear-gradient(135deg, #e9f6ff, #d4ecff);
+  border-color: #84c4f3;
+  color: #0c81b4;
+}
+
+.submit-status.is-ok {
+  background: linear-gradient(135deg, #ebfaf1, #daf5e5);
+  border-color: #82d4a6;
+  color: #1f8f50;
+}
+
+.submit-status.is-warning {
+  background: linear-gradient(135deg, #fff8e1, #ffefc8);
+  border-color: #efcf72;
+  color: #a56700;
+}
+
+.submit-status.is-error {
+  background: linear-gradient(135deg, #fef1f1, #ffdcdc);
+  border-color: #efadb5;
+  color: #c0392b;
+}
+
 .stock-alert.is-ok {
   color: #166534;
   background-color: #ecfdf3;
