@@ -5,7 +5,7 @@ let qrReader = null;
 let isSubmitting = false;
 let currentAccount = null;
 const STOCK_STATE_PREFIX = "stock_state::";
-const COUCHDB_BASE_URL = "https://couchdb.monproprecloud.fr";
+const COUCHDB_BASE_URL = window.StockerAuth.COUCHDB_BASE_URL;
 const COUCHDB_DB_URL = `${COUCHDB_BASE_URL}/stocks`;
 
 // Configuration PouchDB
@@ -39,6 +39,8 @@ async function confirmRemoteSync(docId, expectedRev, successMessage) {
     return;
   }
 
+  await window.StockerAuth.tryRestoreRemoteSession(sessionStorage.getItem("currentAccount"));
+
   updateSubmitStatus("is-syncing", "Enregistrement effectue. Verification de la synchronisation avec la base distante en cours...");
 
   const db = setupRemoteDB();
@@ -52,7 +54,12 @@ async function confirmRemoteSync(docId, expectedRev, successMessage) {
         return;
       }
     } catch (error) {
-      if (error.status !== 404) {
+      if (error.status === 401 || error.name === "unauthorized") {
+        const restored = await window.StockerAuth.tryRestoreRemoteSession(sessionStorage.getItem("currentAccount"));
+        if (!restored) {
+          break;
+        }
+      } else if (error.status !== 404) {
         console.warn("Verification de synchronisation distante impossible :", error);
       }
     }
@@ -64,9 +71,7 @@ async function confirmRemoteSync(docId, expectedRev, successMessage) {
 }
 
 function clearClientSession() {
-  sessionStorage.removeItem("currentAccount");
-  sessionStorage.removeItem("currentServiceName");
-  sessionStorage.removeItem("authenticated");
+  window.StockerAuth.clearClientSession();
 }
 
 function setupRemoteDB() {
@@ -87,6 +92,14 @@ function setupRemoteDB() {
   return remoteDB;
 }
 
+async function handleSyncAuthError() {
+  const restored = await window.StockerAuth.tryRestoreRemoteSession(sessionStorage.getItem("currentAccount"));
+  if (!restored && navigator.onLine !== false) {
+    alert("Session CouchDB expirée. Veuillez vous reconnecter.");
+    await logout();
+  }
+}
+
 function startSync() {
   if (syncHandler) return;
 
@@ -94,42 +107,13 @@ function startSync() {
     .on("error", async (error) => {
       console.error("Erreur de synchronisation :", error);
       if (error && (error.status === 401 || error.name === "unauthorized")) {
-        alert("Session CouchDB expirée. Veuillez vous reconnecter.");
-        await logout();
+        await handleSyncAuthError();
       }
     });
 }
 
 async function ensureAuthenticatedSession() {
-  const storedAccount = sessionStorage.getItem("currentAccount");
-  const isAuthenticated = sessionStorage.getItem("authenticated") === "true";
-
-  if (!storedAccount || !isAuthenticated) {
-    clearClientSession();
-    window.location.href = "login.html";
-    return false;
-  }
-
-  try {
-    const response = await fetch(`${COUCHDB_BASE_URL}/_session`, {
-      method: "GET",
-      credentials: "include"
-    });
-    const session = await response.json();
-
-    if (!response.ok || !session.userCtx || session.userCtx.name !== storedAccount) {
-      clearClientSession();
-      window.location.href = "login.html";
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Erreur vérification session :", error);
-    clearClientSession();
-    window.location.href = "login.html";
-    return false;
-  }
+  return window.StockerAuth.ensureAuthenticatedSession({ redirectTo: "login.html" });
 }
 
 // Fonction utilitaire pour la date
@@ -365,17 +349,7 @@ function initializeVoiceInputSupport() {
 }
 
 async function logout() {
-  try {
-    await fetch(`${COUCHDB_BASE_URL}/_session`, {
-      method: "DELETE",
-      credentials: "include"
-    });
-  } catch (error) {
-    console.error("Erreur de déconnexion CouchDB :", error);
-  } finally {
-    clearClientSession();
-    window.location.href = "login.html";
-  }
+  await window.StockerAuth.logout({ redirectTo: "login.html" });
 }
 
 // Gestion de la session
@@ -387,6 +361,11 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   currentAccount = sessionStorage.getItem("currentAccount");
+
+  window.addEventListener("online", async () => {
+    await window.StockerAuth.tryRestoreRemoteSession(currentAccount);
+  });
+
   setupRemoteDB();
   startSync();
 
@@ -771,7 +750,15 @@ document.getElementById("stockForm").addEventListener("submit", async (e) => {
     const saveResult = await localDB.put(record);
     await upsertStockState(codeProduit, stockApres, stockMin, stockMax);
     alert("Stock enregistre !");
-    updateSubmitStatus("is-pending", "Stock enregistre. Synchronisation avec la base distante en cours...");
+
+    const postLoginMessage = sessionStorage.getItem("postLoginMessage");
+    if (postLoginMessage) {
+      updateSubmitStatus("is-warning", postLoginMessage);
+      sessionStorage.removeItem("postLoginMessage");
+    } else {
+      updateSubmitStatus("is-pending", "Stock enregistre. Synchronisation avec la base distante en cours...");
+    }
+
     await confirmRemoteSync(record._id, saveResult.rev, "Stock enregistre et synchronise avec la base distante.");
     resetForm();
   } catch (err) {

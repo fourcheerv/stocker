@@ -2,7 +2,7 @@
 const urlParams = new URLSearchParams(window.location.search);
 const urlAccount = urlParams.get('account');
 const currentAccount = sessionStorage.getItem('currentAccount');
-const COUCHDB_BASE_URL = "https://couchdb.monproprecloud.fr";
+const COUCHDB_BASE_URL = window.StockerAuth.COUCHDB_BASE_URL;
 const COUCHDB_DB_URL = `${COUCHDB_BASE_URL}/stocks`;
 
 if (urlAccount && urlAccount !== currentAccount) {
@@ -44,9 +44,7 @@ function scheduleAdminRefresh(delay = 400) {
 }
 
 function clearClientSession() {
-  sessionStorage.removeItem("currentAccount");
-  sessionStorage.removeItem("currentServiceName");
-  sessionStorage.removeItem("authenticated");
+  window.StockerAuth.clearClientSession();
 }
 
 function setupRemoteDB() {
@@ -67,10 +65,20 @@ function setupRemoteDB() {
   return remoteDB;
 }
 
+async function handleSyncAuthError() {
+  const restored = await window.StockerAuth.tryRestoreRemoteSession(sessionStorage.getItem("currentAccount"));
+  if (!restored && navigator.onLine !== false) {
+    alert("Session CouchDB expirée. Veuillez vous reconnecter.");
+    await logout();
+  }
+  return restored;
+}
+
 async function startSync() {
   if (syncHandler) return;
 
   updateSyncStatus("is-syncing", "Synchronisation initiale avec CouchDB en cours...");
+  await window.StockerAuth.tryRestoreRemoteSession(sessionStorage.getItem("currentAccount"));
 
   try {
     await localDB.sync(setupRemoteDB());
@@ -87,9 +95,10 @@ async function startSync() {
     );
 
     if (error && (error.status === 401 || error.name === "unauthorized")) {
-      alert("Session CouchDB expirée. Veuillez vous reconnecter.");
-      await logout();
-      return;
+      const restored = await handleSyncAuthError();
+      if (!restored) {
+        return;
+      }
     }
   }
 
@@ -129,42 +138,13 @@ async function startSync() {
           : "Erreur de synchronisation avec CouchDB. Nouvelle tentative automatique..."
       );
       if (error && (error.status === 401 || error.name === "unauthorized")) {
-        alert("Session CouchDB expirée. Veuillez vous reconnecter.");
-        await logout();
+        await handleSyncAuthError();
       }
     });
 }
 
 async function ensureAuthenticatedSession() {
-  const storedAccount = sessionStorage.getItem("currentAccount");
-  const isAuthenticated = sessionStorage.getItem("authenticated") === "true";
-
-  if (!storedAccount || !isAuthenticated) {
-    clearClientSession();
-    window.location.href = "login.html";
-    return false;
-  }
-
-  try {
-    const response = await fetch(`${COUCHDB_BASE_URL}/_session`, {
-      method: "GET",
-      credentials: "include"
-    });
-    const session = await response.json();
-
-    if (!response.ok || !session.userCtx || session.userCtx.name !== storedAccount) {
-      clearClientSession();
-      window.location.href = "login.html";
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Erreur vérification session :", error);
-    clearClientSession();
-    window.location.href = "login.html";
-    return false;
-  }
+  return window.StockerAuth.ensureAuthenticatedSession({ redirectTo: "login.html" });
 }
 
 // Gestionnaire de modales
@@ -366,8 +346,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       : "Initialisation de la synchronisation CouchDB..."
   );
 
-  window.addEventListener("online", () => {
+  window.addEventListener("online", async () => {
     updateSyncStatus("is-pending", "Connexion retablie. Reprise de la synchronisation CouchDB...");
+    await window.StockerAuth.tryRestoreRemoteSession(sessionStorage.getItem("currentAccount"));
   });
 
   window.addEventListener("offline", () => {
@@ -1793,17 +1774,7 @@ function getAxe1Label(axe1) {
 }
 
 async function logout() {
-  try {
-    await fetch(`${COUCHDB_BASE_URL}/_session`, {
-      method: "DELETE",
-      credentials: "include"
-    });
-  } catch (error) {
-    console.error("Erreur de déconnexion CouchDB :", error);
-  } finally {
-    clearClientSession();
-    window.location.href = "login.html";
-  }
+  await window.StockerAuth.logout({ redirectTo: "login.html" });
 }
 
 // ATTACHE l'event sur bouton (DOIT être dans setupEventListeners si existant)

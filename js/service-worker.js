@@ -1,4 +1,4 @@
-const CACHE_NAME = "stocker-cache-v2";
+const CACHE_NAME = "stocker-cache-v3";
 const APP_SHELL = [
   "/stocker/",
   "/stocker/index.html",
@@ -11,6 +11,7 @@ const APP_SHELL = [
   "/stocker/css/admin.css",
   "/stocker/js/app.js",
   "/stocker/js/login.js",
+  "/stocker/js/auth.js",
   "/stocker/js/admin.js",
   "/stocker/js/bobines.js",
   "/stocker/js/gmail.js",

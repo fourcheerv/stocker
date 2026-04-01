@@ -1,5 +1,3 @@
-const COUCHDB_BASE_URL = "https://couchdb.monproprecloud.fr";
-
 const serviceAccounts = {
   "btn-bobines": { id: "BOB329", name: "Bobines", redirect: "bobines.html" },
   "btn-info-sport": { id: "SCT=E260329", name: "SCE Informations Sportives", redirect: "index.html" },
@@ -19,75 +17,49 @@ const serviceAccounts = {
 };
 
 function clearClientSession() {
-  sessionStorage.removeItem("currentAccount");
-  sessionStorage.removeItem("currentServiceName");
-  sessionStorage.removeItem("authenticated");
-}
-
-async function loginCouchDB(username, password) {
-  try {
-    const response = await fetch(`${COUCHDB_BASE_URL}/_session`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      credentials: "include",
-      body: `name=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
-    });
-    const payload = await response.json();
-
-    if (!response.ok || !payload.ok) {
-      return { success: false, error: payload.reason || "Authentification échouée" };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Erreur connexion CouchDB:", error);
-    return { success: false, error: "Connexion au serveur impossible" };
-  }
+  window.StockerAuth.clearClientSession();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const passwordSection = document.getElementById('passwordSection');
-  const passwordInput = document.getElementById('passwordInput');
-  const loginBtn = document.getElementById('loginBtn');
-  const errorMsg = document.getElementById('errorMsg');
-  const selectedServiceTitle = document.getElementById('selectedServiceTitle');
-  
+  const passwordSection = document.getElementById("passwordSection");
+  const passwordInput = document.getElementById("passwordInput");
+  const loginBtn = document.getElementById("loginBtn");
+  const errorMsg = document.getElementById("errorMsg");
+  const selectedServiceTitle = document.getElementById("selectedServiceTitle");
+
   let selectedService = null;
 
-  // Animation des boutons
-  const accountButtons = document.querySelectorAll('.account-btn');
+  const accountButtons = document.querySelectorAll(".account-btn");
   setTimeout(() => {
     accountButtons.forEach((btn, index) => {
       setTimeout(() => {
-        btn.style.opacity = '1';
-        btn.style.transform = 'translateY(0)';
+        btn.style.opacity = "1";
+        btn.style.transform = "translateY(0)";
       }, 100 * index);
     });
   }, 500);
-  
-  accountButtons.forEach(btn => {
-    btn.style.opacity = '0';
-    btn.style.transform = 'translateY(20px)';
-    btn.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+  accountButtons.forEach((btn) => {
+    btn.style.opacity = "0";
+    btn.style.transform = "translateY(20px)";
+    btn.style.transition = "opacity 0.5s ease, transform 0.5s ease";
   });
 
-  // Gestion de la sélection du service
-  accountButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
+  accountButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
       const serviceId = btn.id;
       if (serviceAccounts[serviceId]) {
         selectedService = serviceAccounts[serviceId];
         selectedServiceTitle.textContent = selectedService.name;
-        passwordSection.style.display = 'block';
-        passwordInput.value = '';
+        passwordSection.style.display = "block";
+        passwordInput.value = "";
         passwordInput.focus();
-        errorMsg.textContent = '';
+        errorMsg.textContent = "";
       }
     });
   });
 
-  // Gestion de la connexion
-  loginBtn.addEventListener('click', async () => {
+  loginBtn.addEventListener("click", async () => {
     if (!selectedService) {
       errorMsg.textContent = "Veuillez sélectionner un service";
       return;
@@ -102,11 +74,11 @@ document.addEventListener("DOMContentLoaded", () => {
     loginBtn.textContent = "Connexion...";
     errorMsg.textContent = "";
 
-    const result = await loginCouchDB(selectedService.id, passwordInput.value);
+    const result = await window.StockerAuth.login(selectedService, passwordInput.value);
     if (result.success) {
-      sessionStorage.setItem("currentAccount", selectedService.id);
-      sessionStorage.setItem("currentServiceName", selectedService.name);
-      sessionStorage.setItem("authenticated", "true");
+      if (result.mode === "offline" && result.warning) {
+        sessionStorage.setItem("postLoginMessage", result.warning);
+      }
       window.location.href = selectedService.redirect;
       return;
     }
@@ -119,9 +91,8 @@ document.addEventListener("DOMContentLoaded", () => {
     loginBtn.textContent = "Se connecter";
   });
 
-  // Entrée pour valider
-  passwordInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+  passwordInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
       loginBtn.click();
     }
   });
@@ -140,4 +111,3 @@ document.addEventListener("click", function (e) {
     }
   }
 });
-
