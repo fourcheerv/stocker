@@ -26,13 +26,22 @@ let editModalPhotos = []; // Photos temporaires pendant l'édition
 let stockStateByCode = new Map();
 let syncRefreshTimer = null;
 
-function updateSyncStatus(state, message) {
+function updateSyncStatus(state, message, titleOverride = null) {
   const banner = document.getElementById("syncStatusBanner");
+  const title = document.getElementById("syncStatusTitle");
   const text = document.getElementById("syncStatusText");
-  if (!banner || !text) return;
+  if (!banner || !text || !title) return;
+
+  const isOfflineMode =
+    typeof window !== "undefined" &&
+    window.StockerAuth &&
+    typeof window.StockerAuth.isOfflineSession === "function" &&
+    window.StockerAuth.isOfflineSession();
+  const isOfflineNetwork = typeof navigator !== "undefined" && navigator.onLine === false;
 
   banner.classList.remove("is-pending", "is-syncing", "is-ok", "is-warning", "is-error");
   banner.classList.add(state);
+  title.textContent = titleOverride || (isOfflineMode || isOfflineNetwork ? "Mode local actif" : "Synchronisation CouchDB");
   text.textContent = message;
 }
 
@@ -90,7 +99,7 @@ async function startSync() {
     updateSyncStatus(
       isOffline ? "is-warning" : "is-error",
       isOffline
-        ? "Connexion internet indisponible. Synchronisation initiale reportee."
+        ? "Mode local actif. Vous travaillez sur les donnees de cet appareil. La synchronisation avec CouchDB reprendra des que la connexion reviendra."
         : "La synchronisation initiale avec CouchDB a echoue. Nouvelle tentative automatique..."
     );
 
@@ -120,7 +129,7 @@ async function startSync() {
       updateSyncStatus(
         isOffline ? "is-warning" : "is-ok",
         isOffline
-          ? "Mode hors ligne. Les changements seront synchronises des que la connexion revient."
+          ? "Mode local actif. Vous travaillez sur les donnees de cet appareil. Les changements seront synchronises avec CouchDB des que possible."
           : "Toutes les donnees sont synchronisees avec CouchDB."
       );
     })
@@ -134,7 +143,7 @@ async function startSync() {
       updateSyncStatus(
         isOffline ? "is-warning" : "is-error",
         isOffline
-          ? "Connexion internet indisponible. Synchronisation en attente."
+          ? "Mode local actif. CouchDB est actuellement indisponible. Les modifications restent enregistrees localement et seront synchronisees plus tard."
           : "Erreur de synchronisation avec CouchDB. Nouvelle tentative automatique..."
       );
       if (error && (error.status === 401 || error.name === "unauthorized")) {
@@ -342,17 +351,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateSyncStatus(
     typeof navigator !== "undefined" && navigator.onLine === false ? "is-warning" : "is-pending",
     typeof navigator !== "undefined" && navigator.onLine === false
-      ? "Connexion internet indisponible. Synchronisation en attente."
-      : "Initialisation de la synchronisation CouchDB..."
+      ? "Mode local actif. CouchDB est actuellement indisponible. Les modifications restent enregistrees localement et seront synchronisees plus tard."
+      : "Connexion a CouchDB en cours..."
   );
 
   window.addEventListener("online", async () => {
-    updateSyncStatus("is-pending", "Connexion retablie. Reprise de la synchronisation CouchDB...");
+    updateSyncStatus("is-pending", "Connexion retablie. Reconnexion a CouchDB et reprise de la synchronisation...");
     await window.StockerAuth.tryRestoreRemoteSession(sessionStorage.getItem("currentAccount"));
   });
 
   window.addEventListener("offline", () => {
-    updateSyncStatus("is-warning", "Mode hors ligne. Les changements seront synchronises plus tard.");
+    updateSyncStatus("is-warning", "Mode local actif. Vous consultez les donnees locales de cet appareil. La synchronisation avec CouchDB reprendra automatiquement plus tard.");
   });
 
   setupRemoteDB();
