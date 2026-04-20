@@ -400,7 +400,7 @@ function updateUserInterface() {
 
 // Chargement Excel (reste identique)
 function loadExcelData() {
-  fetch("modele/stocker_temp.xlsx")
+  fetch("stocker_temp.xlsx")
     .then((r) => r.arrayBuffer())
     .then((data) => {
       const workbook = XLSX.read(data, { type: "array" });
