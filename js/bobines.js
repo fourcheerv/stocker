@@ -231,14 +231,20 @@ function enregistreScan(code) {
         photos: [],
       };
 
-      localDB.put(record).then(() => {
-        showScanInfo("✅ Code barre enregistré - Ajouter photos si besoin", "success");
-        input.value = "";
-        focusScannerInput();
-      }).catch(() => {
-        showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
-        playBeep();
-      });
+   localDB.put(record).then(() => {
+  showScanInfo("✅ Code barre enregistré - Ajouter photos si besoin", "success");
+  // ✅ Ajouter à l'historique des scans
+  const existingIndex = produitsScannes.findIndex(item => item.code === code);
+  if (existingIndex === -1) {
+    produitsScannes.push({ code, quantite: 1, ts: new Date().toISOString() });
+    majAffichageListeScans();
+  }
+  input.value = "";
+  focusScannerInput();
+}).catch(() => {
+  showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
+  playBeep();
+});
    
     }
   }).catch((err) => {
@@ -356,7 +362,18 @@ function showScanInfo(msg, type = "success") {
   el.textContent = msg;
   el.style.color = type === "success" ? "#27ae60" : "#e67e22";
   el.style.display = "block";
-  setTimeout(() => (el.style.display = "none"), 2600);
+  
+  // ✅ Animation d'entrée
+  el.style.animation = "none";
+  el.offsetHeight; // Force reflow
+  el.style.animation = "fadeIn 0.3s ease";
+  
+  // ✅ Reste visible 5 secondes au lieu de 2.6
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(() => {
+    el.style.animation = "fadeOut 0.3s ease";
+    setTimeout(() => (el.style.display = "none"), 300);
+  }, 5000);
 }
 
 /* =======================
@@ -597,13 +614,16 @@ window.addEventListener("DOMContentLoaded", async () => {
         await localDB.put(record);
         showScanInfo("✅ Nouveau code-barres enregistré avec succès !", "success");
         
-        // Ajouter à l'historique des scans
-        const existingIndex = produitsScannes.findIndex(item => item.code === code);
-        if (existingIndex === -1) {
-          produitsScannes.push({ code, quantite: 1, ts: new Date().toISOString() });
-          majAffichageListeScans();
-        }
-        
+       // ✅ AJOUTER À L'HISTORIQUE DES SCANS (MANUEL)
+      const existingIndex = produitsScannes.findIndex(item => item.code === code);
+      if (existingIndex === -1) {
+        produitsScannes.push({ code, quantite: 1, ts: new Date().toISOString() });
+        majAffichageListeScans();
+      } else {
+     // Si le code existe déjà, incrémenter la quantité
+     produitsScannes[existingIndex].quantite += 1;
+     majAffichageListeScans();
+      }
         // Réinitialiser le formulaire
         resetForm(false);
       }
