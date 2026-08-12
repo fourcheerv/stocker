@@ -425,6 +425,21 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   window.addEventListener("online", async () => {
     await window.StockerAuth.tryRestoreRemoteSession(currentAccount);
+
+     // Validation visuelle en temps réel
+   const codeInput = document.getElementById("code_produit");
+   codeInput.addEventListener("input", function() {
+   const code = this.value.trim();
+  this.classList.remove("code-input-success", "code-input-error");
+  
+  if (code.length === 16) {
+    if (/^\d{16}$/.test(code)) {
+      this.classList.add("code-input-success");
+    } else {
+      this.classList.add("code-input-error");
+    }
+  }
+});
   });
 
   setupRemoteDB();
@@ -493,6 +508,23 @@ window.addEventListener("DOMContentLoaded", async () => {
       
       enregistreScan(code);
       e.preventDefault();
+    }
+  });
+
+     // ==========================================
+  // ✅ AJOUTEZ ICI LA VALIDATION VISUELLE
+  // ==========================================
+  const codeInput = document.getElementById("code_produit");
+  codeInput.addEventListener("input", function() {
+    const code = this.value.trim();
+    this.classList.remove("code-input-success", "code-input-error");
+    
+    if (code.length === 16) {
+      if (/^\d{16}$/.test(code)) {
+        this.classList.add("code-input-success");
+      } else {
+        this.classList.add("code-input-error");
+      }
     }
   });
 
