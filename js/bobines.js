@@ -191,7 +191,6 @@ function enregistreScan(code) {
     return;
   }
   
-  // PAS DE BIP POUR SCAN RÉUSSI
   const input = document.getElementById("code_produit");
   input.value = code;
   input.classList.add("grandScan");
@@ -207,6 +206,8 @@ function enregistreScan(code) {
    
     if (existant) {
       showScanInfo("⚠️ Code barre déjà scanné", "warning");
+      // Charger les données existantes
+      loadFromHistory(code);
     } else {
       const quantite = 1;
       
@@ -232,6 +233,8 @@ function enregistreScan(code) {
 
       localDB.put(record).then(() => {
         showScanInfo("✅ Code barre enregistré - Ajouter photos si besoin", "success");
+        input.value = "";
+        focusScannerInput();
       }).catch(() => {
         showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
         playBeep();
@@ -243,9 +246,6 @@ function enregistreScan(code) {
     showScanInfo("❌ Erreur de connexion", "warning");
     playBeep();
   });
-
-  input.value = "";
-  focusScannerInput();
 }
 
 function loadFromHistory(code) {
@@ -425,21 +425,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   window.addEventListener("online", async () => {
     await window.StockerAuth.tryRestoreRemoteSession(currentAccount);
-
-     // Validation visuelle en temps réel
-   const codeInput = document.getElementById("code_produit");
-   codeInput.addEventListener("input", function() {
-   const code = this.value.trim();
-  this.classList.remove("code-input-success", "code-input-error");
-  
-  if (code.length === 16) {
-    if (/^\d{16}$/.test(code)) {
-      this.classList.add("code-input-success");
-    } else {
-      this.classList.add("code-input-error");
-    }
-  }
-});
   });
 
   setupRemoteDB();
@@ -487,7 +472,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (resetBtn) {
     resetBtn.onclick = () => {
       document.getElementById("bobinesForm").reset();
-      // === CORRECTION : Utiliser resetForm(false) pour vider le code ===
       resetForm(false);
     };
   }
@@ -511,8 +495,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-     // ==========================================
-  // ✅ AJOUTEZ ICI LA VALIDATION VISUELLE
+  // ==========================================
+  // ✅ VALIDATION VISUELLE EN TEMPS RÉEL
   // ==========================================
   const codeInput = document.getElementById("code_produit");
   codeInput.addEventListener("input", function() {
@@ -528,102 +512,107 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+  // ==========================================
+  // ✅ FORMULAIRE D'ENREGISTREMENT AMÉLIORÉ
+  // ==========================================
   document.getElementById("bobinesForm").onsubmit = async (e) => {
-  e.preventDefault();
-  const code = document.getElementById("code_produit").value.trim();
+    e.preventDefault();
+    const code = document.getElementById("code_produit").value.trim();
 
-  if (!/^\d{16}$/.test(code)) {
-    showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
-    playBeep();
-    return;
-  }
-  
-  const quantité_consommee = 1;
-  const remarques = document.getElementById("remarques").value.trim();
-  const axe1 = currentAccount;
-
-  // Récupération des photos
-  const photos = [];
-  for (const f of imageFiles) {
-    if (f.dataUrl) {
-      photos.push(f.dataUrl);
-    } else {
-      const base64 = await new Promise((ok) => {
-        const r = new FileReader();
-        r.onload = () => ok(r.result);
-        r.readAsDataURL(f);
-      });
-      photos.push(base64);
+    if (!/^\d{16}$/.test(code)) {
+      showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
+      playBeep();
+      return;
     }
-  }
-
-  try {
-    // Vérifier si le code existe déjà
-    const docs = await localDB.allDocs({ include_docs: true });
-    const toUpdate = docs.rows.find(
-      (row) =>
-        row.doc &&
-        row.doc.code_produit === code &&
-        row.doc.axe1 === currentAccount
-    );
     
-    if (toUpdate) {
-      // MISE À JOUR - Code existe déjà
-      toUpdate.doc.remarques = remarques || toUpdate.doc.remarques;
-      toUpdate.doc.quantité_consommee = quantité_consommee;
+    const quantité_consommee = 1;
+    const remarques = document.getElementById("remarques").value.trim();
+    const axe1 = currentAccount;
+
+    // Récupération des photos
+    const photos = [];
+    for (const f of imageFiles) {
+      if (f.dataUrl) {
+        photos.push(f.dataUrl);
+      } else {
+        const base64 = await new Promise((ok) => {
+          const r = new FileReader();
+          r.onload = () => ok(r.result);
+          r.readAsDataURL(f);
+        });
+        photos.push(base64);
+      }
+    }
+
+    try {
+      // Vérifier si le code existe déjà
+      const docs = await localDB.allDocs({ include_docs: true });
+      const toUpdate = docs.rows.find(
+        (row) =>
+          row.doc &&
+          row.doc.code_produit === code &&
+          row.doc.axe1 === currentAccount
+      );
       
-      if (photos.length) {
-        if (!toUpdate.doc.photos) toUpdate.doc.photos = [];
-        // Fusionner les photos sans doublons
-        const existingPhotos = new Set(toUpdate.doc.photos);
-        for (const photo of photos) {
-          if (!existingPhotos.has(photo)) {
-            toUpdate.doc.photos.push(photo);
-            existingPhotos.add(photo);
+      if (toUpdate) {
+        // MISE À JOUR - Code existe déjà
+        toUpdate.doc.remarques = remarques || toUpdate.doc.remarques;
+        toUpdate.doc.quantité_consommee = quantité_consommee;
+        
+        if (photos.length) {
+          if (!toUpdate.doc.photos) toUpdate.doc.photos = [];
+          // Fusionner les photos sans doublons
+          const existingPhotos = new Set(toUpdate.doc.photos);
+          for (const photo of photos) {
+            if (!existingPhotos.has(photo)) {
+              toUpdate.doc.photos.push(photo);
+              existingPhotos.add(photo);
+            }
+          }
+          // Limiter à 3 photos
+          if (toUpdate.doc.photos.length > 3) {
+            toUpdate.doc.photos = toUpdate.doc.photos.slice(0, 3);
+            showScanInfo("Maximum 3 photos ! Les photos supplémentaires ont été ignorées", "warning");
           }
         }
-        // Limiter à 3 photos
-        if (toUpdate.doc.photos.length > 3) {
-          toUpdate.doc.photos = toUpdate.doc.photos.slice(0, 3);
-          showScanInfo("Maximum 3 photos ! Les photos supplémentaires ont été ignorées", "warning");
-        }
-      }
-      
-      await localDB.put(toUpdate.doc);
-      showScanInfo("✅ Enregistrement mis à jour avec succès !", "success");
-      
-      // Réinitialiser le formulaire
-      resetForm(false);
-      
-    } else {
-      // NOUVEL ENREGISTREMENT
-      const record = {
-        _id: new Date().toISOString(),
-        type: "bobine",
-        code_produit: code,
-        quantité_consommee,
-        remarques,
-        axe1,
-        photos: photos.slice(0, 3), // Limiter à 3 photos
-      };
+        
+        await localDB.put(toUpdate.doc);
+        showScanInfo("✅ Enregistrement mis à jour avec succès !", "success");
+        
+        // Réinitialiser le formulaire
+        resetForm(false);
+        
+      } else {
+        // NOUVEL ENREGISTREMENT
+        const record = {
+          _id: new Date().toISOString(),
+          type: "bobine",
+          code_produit: code,
+          quantité_consommee,
+          remarques,
+          axe1,
+          photos: photos.slice(0, 3), // Limiter à 3 photos
+        };
 
-      await localDB.put(record);
-      showScanInfo("✅ Nouveau code-barres enregistré avec succès !", "success");
-      
-      // Ajouter à l'historique des scans
-      const existingIndex = produitsScannes.findIndex(item => item.code === code);
-      if (existingIndex === -1) {
-        produitsScannes.push({ code, quantite: 1, ts: new Date().toISOString() });
-        majAffichageListeScans();
+        await localDB.put(record);
+        showScanInfo("✅ Nouveau code-barres enregistré avec succès !", "success");
+        
+        // Ajouter à l'historique des scans
+        const existingIndex = produitsScannes.findIndex(item => item.code === code);
+        if (existingIndex === -1) {
+          produitsScannes.push({ code, quantite: 1, ts: new Date().toISOString() });
+          majAffichageListeScans();
+        }
+        
+        // Réinitialiser le formulaire
+        resetForm(false);
       }
       
-      // Réinitialiser le formulaire
-      resetForm(false);
+    } catch (err) {
+      console.error("Erreur lors de l'enregistrement:", err);
+      showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
+      playBeep();
     }
-    
-  } catch (err) {
-    console.error("Erreur lors de l'enregistrement:", err);
-    showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
-    playBeep();
-  }
-};
+  };
+
+}); // FIN de DOMContentLoaded
