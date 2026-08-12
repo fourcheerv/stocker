@@ -497,83 +497,101 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   document.getElementById("bobinesForm").onsubmit = async (e) => {
-    e.preventDefault();
-    const code = document.getElementById("code_produit").value.trim();
+  e.preventDefault();
+  const code = document.getElementById("code_produit").value.trim();
 
-    if (!/^\d{16}$/.test(code)) {
-      showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
-      playBeep();
-      return;
+  if (!/^\d{16}$/.test(code)) {
+    showScanInfo("❌ Code barre invalide - Doit contenir exactement 16 chiffres", "warning");
+    playBeep();
+    return;
+  }
+  
+  const quantité_consommee = 1;
+  const remarques = document.getElementById("remarques").value.trim();
+  const axe1 = currentAccount;
+
+  // Récupération des photos
+  const photos = [];
+  for (const f of imageFiles) {
+    if (f.dataUrl) {
+      photos.push(f.dataUrl);
+    } else {
+      const base64 = await new Promise((ok) => {
+        const r = new FileReader();
+        r.onload = () => ok(r.result);
+        r.readAsDataURL(f);
+      });
+      photos.push(base64);
     }
+  }
+
+  try {
+    // Vérifier si le code existe déjà
+    const docs = await localDB.allDocs({ include_docs: true });
+    const toUpdate = docs.rows.find(
+      (row) =>
+        row.doc &&
+        row.doc.code_produit === code &&
+        row.doc.axe1 === currentAccount
+    );
     
-    const quantité_consommee = 1;
-    const remarques = document.getElementById("remarques").value.trim();
-    const axe1 = currentAccount;
-
-    const photos = [];
-    for (const f of imageFiles) {
-      if (f.dataUrl) {
-        photos.push(f.dataUrl);
-      } else {
-        const base64 = await new Promise((ok) => {
-          const r = new FileReader();
-          r.onload = () => ok(r.result);
-          r.readAsDataURL(f);
-        });
-        photos.push(base64);
-      }
-    }
-
-    let updated = false;
-    try {
-      const docs = await localDB.allDocs({ include_docs: true });
-      const toUpdate = docs.rows.find(
-        (row) =>
-          row.doc &&
-          row.doc.code_produit === code &&
-          row.doc.axe1 === currentAccount
-      );
-      if (toUpdate) {
-        toUpdate.doc.remarques = remarques;
-        toUpdate.doc.quantité_consommee = quantité_consommee;
-        if (photos.length) {
-          if (!toUpdate.doc.photos) toUpdate.doc.photos = [];
-          toUpdate.doc.photos = toUpdate.doc.photos.concat(photos);
-          if (toUpdate.doc.photos.length > 3) {
-            toUpdate.doc.photos = toUpdate.doc.photos.slice(0, 3);
-            showScanInfo("Maximum 3 photos ! Les photos supplémentaires ont été ignorées", "warning");
+    if (toUpdate) {
+      // MISE À JOUR - Code existe déjà
+      toUpdate.doc.remarques = remarques || toUpdate.doc.remarques;
+      toUpdate.doc.quantité_consommee = quantité_consommee;
+      
+      if (photos.length) {
+        if (!toUpdate.doc.photos) toUpdate.doc.photos = [];
+        // Fusionner les photos sans doublons
+        const existingPhotos = new Set(toUpdate.doc.photos);
+        for (const photo of photos) {
+          if (!existingPhotos.has(photo)) {
+            toUpdate.doc.photos.push(photo);
+            existingPhotos.add(photo);
           }
         }
-        await localDB.put(toUpdate.doc);
-        showScanInfo("Enregistrement mis à jour ✅", "success");
-        updated = true;
-        resetForm(true);
+        // Limiter à 3 photos
+        if (toUpdate.doc.photos.length > 3) {
+          toUpdate.doc.photos = toUpdate.doc.photos.slice(0, 3);
+          showScanInfo("Maximum 3 photos ! Les photos supplémentaires ont été ignorées", "warning");
+        }
       }
-    } catch (err) {
-      console.error("Erreur lors de la mise à jour:", err);
-      showScanInfo("Erreur lors de la mise à jour", "warning");
-      playBeep();
-      return;
+      
+      await localDB.put(toUpdate.doc);
+      showScanInfo("✅ Enregistrement mis à jour avec succès !", "success");
+      
+      // Réinitialiser le formulaire
+      resetForm(false);
+      
+    } else {
+      // NOUVEL ENREGISTREMENT
+      const record = {
+        _id: new Date().toISOString(),
+        type: "bobine",
+        code_produit: code,
+        quantité_consommee,
+        remarques,
+        axe1,
+        photos: photos.slice(0, 3), // Limiter à 3 photos
+      };
+
+      await localDB.put(record);
+      showScanInfo("✅ Nouveau code-barres enregistré avec succès !", "success");
+      
+      // Ajouter à l'historique des scans
+      const existingIndex = produitsScannes.findIndex(item => item.code === code);
+      if (existingIndex === -1) {
+        produitsScannes.push({ code, quantite: 1, ts: new Date().toISOString() });
+        majAffichageListeScans();
+      }
+      
+      // Réinitialiser le formulaire
+      resetForm(false);
     }
-
-    if (updated) return;
-
-    const record = {
-      _id: new Date().toISOString(),
-      type: "bobine",
-      code_produit: code,
-      quantité_consommee,
-      remarques,
-      axe1,
-      photos,
-    };
-
-    try {
-      const saveResult = await localDB.put(record);
-      showScanInfo("Nouveau code-barres enregistré ✅", "success");
-      resetForm(true);
-    } catch {
-      showScanInfo("Erreur lors de l'enregistrement", "warning");
-    }
-  };
-});
+    
+  } catch (err) {
+    console.error("Erreur lors de l'enregistrement:", err);
+    showScanInfo("❌ Erreur lors de l'enregistrement", "warning");
+    playBeep();
+  }
+};
