@@ -819,3 +819,17 @@ header h1 {
   margin-top: 8px;
 }
 
+/* Valdition manuelle du code barre */
+.code-input-success {
+  border: 2px solid #27ae60 !important;
+  background-color: #f0fff4;
+  transition: all 0.3s ease;
+}
+
+.code-input-error {
+  border: 2px solid #e74c3c !important;
+  background-color: #fff5f5;
+  transition: all 0.3s ease;
+}
+
+
